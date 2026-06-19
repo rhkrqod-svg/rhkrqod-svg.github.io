@@ -550,15 +550,6 @@ const upgradePool = [
     },
   },
   {
-    id: "transferGate",
-    name: "환승 게이트",
-    desc: "적 많은 곳에 게이트 폭발",
-    apply: () => {
-      weapons.transferGate.level += 1;
-      weapons.transferGate.cooldown = Math.min(weapons.transferGate.cooldown, 0.8);
-    },
-  },
-  {
     id: "customerMissile",
     name: "고객센터 유도탄",
     desc: "가까운 적에게 유도탄을 발사하고 폭발 피해",
@@ -645,7 +636,6 @@ const weaponUpgradeIds = new Set([
   "strapOrbit",
   "announcement",
   "expressTrain",
-  "transferGate",
   "customerMissile",
   "laser",
 ]);
@@ -1141,16 +1131,18 @@ function spawnEnemy(type = null, boss = false) {
   const x = clamp(player.x + Math.cos(angle) * spawnDistance, 50, WORLD_SIZE - 50);
   const y = clamp(player.y + Math.sin(angle) * spawnDistance, 50, WORLD_SIZE - 50);
   const normalScale = boss ? 1 + minute * 0.11 : 1 + Math.min(1.35, minute * 0.08);
+  const levelHpScale = 1 + Math.max(0, player.level - 1) * 0.1;
+  const hpScale = normalScale * levelHpScale;
   const enemy = {
     ...chosen,
     x,
     y,
-    hp: chosen.hp * normalScale,
-    maxHp: chosen.hp * normalScale,
+    hp: chosen.hp * hpScale,
+    maxHp: chosen.hp * hpScale,
     speed: chosen.speed * (boss ? 1.42 : 1),
     damage: chosen.damage * (boss ? 1 : 1),
     radius: chosen.radius * (boss ? BOSS_SIZE_SCALE : MONSTER_SIZE_SCALE),
-    xp: calculateEnemyXp(chosen, normalScale),
+    xp: calculateEnemyXp(chosen, hpScale),
     boss,
     angleOffset: Math.random() * TAU,
     cooldown: rand(0.3, 1.1),
@@ -1159,6 +1151,7 @@ function spawnEnemy(type = null, boss = false) {
     wobble: Math.random() * TAU,
     swingCooldown: rand(0.5, 1.2),
     shockCooldown: rand(1.5, 2.4),
+    soundCooldown: rand(2.0, 3.2),
     tauntCooldown: rand(2.4, 3.8),
     crisisCooldown: rand(5.0, 6.8),
     flagCooldown: rand(2.8, 4.2),
@@ -1659,9 +1652,14 @@ function updateEnemies(delta) {
     if (enemy.special === "boss-danso") {
       enemy.swingCooldown -= delta;
       enemy.shockCooldown -= delta;
+      enemy.soundCooldown -= delta;
       if (enemy.swingCooldown <= 0 && playerDistance < 190) {
         createDansoSwing(enemy);
         enemy.swingCooldown = rand(1.35, 2.05);
+      }
+      if (enemy.soundCooldown <= 0 && playerDistance >= 160) {
+        createDansoSoundwave(enemy);
+        enemy.soundCooldown = rand(2.6, 3.8);
       }
       if (enemy.shockCooldown <= 0) {
         createDansoShockwave(enemy);
@@ -1839,6 +1837,28 @@ function createDansoShockwave(enemy) {
   });
   addParticles(enemy.x, enemy.y, "#f9c74f", 18);
   addPopup("단소 충격파", enemy.x, enemy.y - 34, "#fff3b0", 0.65, 15);
+}
+
+function createDansoSoundwave(enemy) {
+  const angle = angleTo(enemy, player);
+  addSpeechBubble(enemy, "삐이이익!", 1.05);
+  damageZones.push({
+    x: enemy.x + Math.cos(angle) * 54,
+    y: enemy.y + Math.sin(angle) * 54,
+    vx: Math.cos(angle) * 310,
+    vy: Math.sin(angle) * 310,
+    radius: 42,
+    damage: 19,
+    push: 48,
+    life: 1.25,
+    maxLife: 1.25,
+    color: "#fff3b0",
+    hostile: true,
+    consumeOnHit: true,
+    applied: false,
+    kind: "dansoSoundwave",
+  });
+  addParticles(enemy.x + Math.cos(angle) * 42, enemy.y + Math.sin(angle) * 42, "#fff3b0", 12);
 }
 
 function createAirportTaunt(enemy) {
@@ -2527,8 +2547,9 @@ function updateDamageZones(delta) {
           damageEnemy(enemy, zone.damage, zone.color);
           if (zone.push) {
             const push = zone.kind === "gate" || zone.kind === "train" ? zone.angle ?? angleTo(zone, enemy) : angleTo(zone, enemy);
-            enemy.x = clamp(enemy.x + Math.cos(push) * zone.push, 35, WORLD_SIZE - 35);
-            enemy.y = clamp(enemy.y + Math.sin(push) * zone.push, 35, WORLD_SIZE - 35);
+            const pushAmount = zone.push * (enemy.boss ? 1 / 3 : 1);
+            enemy.x = clamp(enemy.x + Math.cos(push) * pushAmount, 35, WORLD_SIZE - 35);
+            enemy.y = clamp(enemy.y + Math.sin(push) * pushAmount, 35, WORLD_SIZE - 35);
           }
         }
       }
@@ -2844,7 +2865,6 @@ function updateHud() {
     weapons.strapOrbit.level > 0 ? { label: `손잡이 Lv.${weapons.strapOrbit.level}`, type: "attack", power: chipPower(weapons.strapOrbit.level), desc: "지하철 손잡이가 주위를 회전하며 닿은 적을 계속 공격합니다." } : null,
     weapons.announcement.level > 0 ? { label: `방송파 Lv.${weapons.announcement.level}`, type: "attack", power: chipPower(weapons.announcement.level), desc: "주변 적을 밀쳐내는 방송파를 주기적으로 발생시킵니다." } : null,
     weapons.expressTrain.level > 0 ? { label: `급행 Lv.${weapons.expressTrain.level}`, type: "attack", power: chipPower(weapons.expressTrain.level), desc: "급행열차가 지나가며 직선 경로의 적에게 피해와 넉백을 줍니다." } : null,
-    weapons.transferGate.level > 0 ? { label: `환승 Lv.${weapons.transferGate.level}`, type: "attack", power: chipPower(weapons.transferGate.level), desc: "환승 게이트가 열리고 사람들이 지나가며 적을 밀어냅니다." } : null,
     weapons.customerMissile.level > 0 ? { label: `유도탄 Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level), desc: "고객센터 유도탄이 가까운 적을 추적해 폭발 피해를 줍니다." } : null,
     weapons.laser.level > 0 ? { label: `레이저 Lv.${weapons.laser.level}`, type: "attack", power: chipPower(weapons.laser.level), desc: "개찰구 레이저가 전방을 관통하며 일정 시간 피해를 줍니다." } : null,
     player.defenseBreakTimer > 0 ? { label: `방어저하 ${Math.ceil(player.defenseBreakTimer)}초`, type: "status", desc: "현재 방어력이 감소한 상태입니다." } : null,
@@ -3870,6 +3890,33 @@ function drawDamageZones() {
       ctx.moveTo(-3, -zone.radius * 0.52);
       ctx.lineTo(5, zone.radius * 0.04);
       ctx.stroke();
+      ctx.restore();
+      continue;
+    }
+
+    if (zone.kind === "dansoSoundwave") {
+      const wave = Math.sin(progress * Math.PI);
+      ctx.translate(p.x, p.y);
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = 0.18 + wave * 0.34;
+      ctx.fillStyle = "rgba(255, 243, 176, 0.18)";
+      ctx.beginPath();
+      ctx.arc(0, 0, zone.radius * (0.75 + wave * 0.3), 0, TAU);
+      ctx.fill();
+      ctx.globalAlpha = 0.86;
+      ctx.strokeStyle = "#fff3b0";
+      ctx.lineWidth = 5;
+      for (let i = 0; i < 3; i += 1) {
+        ctx.beginPath();
+        ctx.arc(0, 0, zone.radius * (0.42 + i * 0.28 + progress * 0.16), -0.7, 0.7);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = "#f9c74f";
+      ctx.font = "900 18px system-ui";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("♪", 0, 1);
       ctx.restore();
       continue;
     }
