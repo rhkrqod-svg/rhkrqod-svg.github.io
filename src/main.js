@@ -2731,25 +2731,26 @@ function updateHud() {
     refs.pauseButton.textContent = game.manualPaused ? "▶" : "Ⅱ";
     refs.pauseButton.classList.toggle("active", game.manualPaused);
   }
+  const chipPower = (level) => clamp((Number(level) || 1) / 7, 0.16, 1);
   const loadoutItems = [
-    { label: `탄환 x${player.shots}`, type: "attack" },
-    weapons.card.level > 0 ? { label: `교통카드 Lv.${weapons.card.level}`, type: "attack" } : null,
-    weapons.lightning.level > 0 ? { label: `번개 Lv.${weapons.lightning.level}`, type: "attack" } : null,
-    weapons.lowKick.level > 0 ? { label: `로우킥 Lv.${weapons.lowKick.level}`, type: "attack" } : null,
-    weapons.strapOrbit.level > 0 ? { label: `손잡이 Lv.${weapons.strapOrbit.level}`, type: "attack" } : null,
-    weapons.announcement.level > 0 ? { label: `방송파 Lv.${weapons.announcement.level}`, type: "attack" } : null,
-    weapons.expressTrain.level > 0 ? { label: `급행 Lv.${weapons.expressTrain.level}`, type: "attack" } : null,
-    weapons.transferGate.level > 0 ? { label: `환승 Lv.${weapons.transferGate.level}`, type: "attack" } : null,
-    weapons.customerMissile.level > 0 ? { label: `유도탄 Lv.${weapons.customerMissile.level}`, type: "attack" } : null,
-    weapons.laser.level > 0 ? { label: `레이저 Lv.${weapons.laser.level}`, type: "attack" } : null,
+    { label: `탄환 x${player.shots}`, type: "attack", power: chipPower(player.shots) },
+    weapons.card.level > 0 ? { label: `교통카드 Lv.${weapons.card.level}`, type: "attack", power: chipPower(weapons.card.level) } : null,
+    weapons.lightning.level > 0 ? { label: `번개 Lv.${weapons.lightning.level}`, type: "attack", power: chipPower(weapons.lightning.level) } : null,
+    weapons.lowKick.level > 0 ? { label: `로우킥 Lv.${weapons.lowKick.level}`, type: "attack", power: chipPower(weapons.lowKick.level) } : null,
+    weapons.strapOrbit.level > 0 ? { label: `손잡이 Lv.${weapons.strapOrbit.level}`, type: "attack", power: chipPower(weapons.strapOrbit.level) } : null,
+    weapons.announcement.level > 0 ? { label: `방송파 Lv.${weapons.announcement.level}`, type: "attack", power: chipPower(weapons.announcement.level) } : null,
+    weapons.expressTrain.level > 0 ? { label: `급행 Lv.${weapons.expressTrain.level}`, type: "attack", power: chipPower(weapons.expressTrain.level) } : null,
+    weapons.transferGate.level > 0 ? { label: `환승 Lv.${weapons.transferGate.level}`, type: "attack", power: chipPower(weapons.transferGate.level) } : null,
+    weapons.customerMissile.level > 0 ? { label: `유도탄 Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level) } : null,
+    weapons.laser.level > 0 ? { label: `레이저 Lv.${weapons.laser.level}`, type: "attack", power: chipPower(weapons.laser.level) } : null,
     player.defenseBreakTimer > 0 ? { label: `방어저하 ${Math.ceil(player.defenseBreakTimer)}초`, type: "status" } : null,
     player.stunTimer > 0 ? { label: `경직 ${Math.ceil(player.stunTimer)}초`, type: "status" } : null,
     player.slowTimer > 0 ? { label: `둔화 ${Math.ceil(player.slowTimer)}초`, type: "status" } : null,
-    player.damageReduction > 0 ? { label: `내성 ${Math.round(player.damageReduction * 100)}%`, type: "passive" } : null,
-    player.regenLevel > 0 ? { label: `회복 Lv.${player.regenLevel}`, type: "passive" } : null,
+    player.damageReduction > 0 ? { label: `내성 ${Math.round(player.damageReduction * 100)}%`, type: "passive", power: chipPower(Math.round(player.damageReduction / 0.08)) } : null,
+    player.regenLevel > 0 ? { label: `회복 Lv.${player.regenLevel}`, type: "passive", power: chipPower(player.regenLevel) } : null,
   ].filter(Boolean);
   refs.weaponList.innerHTML = loadoutItems
-    .map((item) => `<span class="${item.type}">${item.label}</span>`)
+    .map((item) => `<span class="${item.type}" style="--power:${item.power ?? 0.25}">${item.label}</span>`)
     .join("");
 }
 
