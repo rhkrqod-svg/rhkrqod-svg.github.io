@@ -2809,14 +2809,14 @@ function worldToScreen(x, y) {
 
 function drawGrid() {
   ctx.save();
-  ctx.fillStyle = "#20272c";
+  ctx.fillStyle = "#1f2529";
   ctx.fillRect(-80, -80, viewWidth + 160, viewHeight + 160);
 
   const tile = 72;
   const offsetX = -(((camera.x * 0.74) % tile) + tile) % tile;
   const offsetY = -(((camera.y * 0.74) % tile) + tile) % tile;
 
-  ctx.strokeStyle = "rgba(230, 236, 240, 0.095)";
+  ctx.strokeStyle = "rgba(230, 236, 240, 0.12)";
   ctx.lineWidth = 1;
   for (let x = offsetX - tile; x < viewWidth + tile * 2; x += tile) {
     ctx.beginPath();
@@ -2830,19 +2830,6 @@ function drawGrid() {
     ctx.lineTo(viewWidth, y);
     ctx.stroke();
   }
-
-  const seam = 18;
-  const seamOffset = -(((camera.y * 0.9) % (tile * 2)) + tile * 2) % (tile * 2);
-  ctx.fillStyle = "rgba(255, 255, 255, 0.025)";
-  for (let y = seamOffset; y < viewHeight + tile * 2; y += tile * 2) {
-    ctx.fillRect(0, y + tile - seam / 2, viewWidth, seam);
-  }
-
-  const floorGlow = ctx.createRadialGradient(viewWidth / 2, viewHeight * 0.44, 40, viewWidth / 2, viewHeight * 0.5, viewHeight * 0.75);
-  floorGlow.addColorStop(0, "rgba(255, 255, 255, 0.06)");
-  floorGlow.addColorStop(1, "rgba(4, 7, 10, 0.3)");
-  ctx.fillStyle = floorGlow;
-  ctx.fillRect(-80, -80, viewWidth + 160, viewHeight + 160);
   ctx.restore();
 }
 
