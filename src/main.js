@@ -1389,7 +1389,7 @@ function spawnExpressTrain() {
     width: 92 + level * 13,
     trainLength: 520 + level * 34,
     damage: 92 + level * 42,
-    push: 128 + level * 18,
+    push: 260 + level * 34,
     angle: vertical ? (direction > 0 ? Math.PI / 2 : -Math.PI / 2) : direction > 0 ? 0 : Math.PI,
     direction,
     life: 2.15,
@@ -2492,8 +2492,8 @@ function updateDamageZones(delta) {
           damageEnemy(enemy, zone.damage, zone.color);
           if (zone.push) {
             const push = zone.kind === "gate" || zone.kind === "train" ? zone.angle ?? angleTo(zone, enemy) : angleTo(zone, enemy);
-            enemy.x += Math.cos(push) * zone.push;
-            enemy.y += Math.sin(push) * zone.push;
+            enemy.x = clamp(enemy.x + Math.cos(push) * zone.push, 35, WORLD_SIZE - 35);
+            enemy.y = clamp(enemy.y + Math.sin(push) * zone.push, 35, WORLD_SIZE - 35);
           }
         }
       }
