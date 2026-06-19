@@ -227,7 +227,7 @@ button {
 .first-aid {
   left: 10px;
   right: auto;
-  bottom: max(116px, calc(env(safe-area-inset-bottom) + 116px));
+  bottom: max(92px, calc(env(safe-area-inset-bottom) + 92px));
   display: grid;
   grid-template-columns: auto auto;
   gap: 4px;
@@ -891,7 +891,7 @@ button {
   }
 
   .first-aid {
-    bottom: max(112px, calc(env(safe-area-inset-bottom) + 112px));
+    bottom: max(88px, calc(env(safe-area-inset-bottom) + 88px));
     width: 78px;
   }
 

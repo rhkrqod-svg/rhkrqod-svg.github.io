@@ -652,7 +652,6 @@ let bossIndex = 0;
 let bossBag = [];
 let nextBossAt = 20;
 let bossWarningFor = 0;
-let shake = 0;
 let bestScore = Number(localStorage.getItem(STORAGE_KEY) ?? 0);
 let leaderboardEntries = [];
 let pendingLeaderboardScore = null;
@@ -943,7 +942,6 @@ function resetGame() {
   nextBossAt = 20;
   bossWarningFor = 0;
   spawnTimer = 0;
-  shake = 0;
   pendingLeaderboardScore = null;
   leaderboardSubmitting = false;
   refs.leaderboardPanel?.classList.add("hidden");
@@ -1371,7 +1369,6 @@ function spawnExpressTrain() {
     hits: new Set(),
     kind: "train",
   });
-  shake = Math.max(shake, 4);
   playSound("train");
 }
 
@@ -1434,7 +1431,6 @@ function explodeCustomerMissile(missile) {
   });
   addParticles(missile.x, missile.y, "#80ffdb", 14 + level * 2);
   addParticles(missile.x, missile.y, "#fff3b0", 8);
-  shake = Math.max(shake, 2.5);
   playSound("explosion");
 }
 
@@ -1788,7 +1784,6 @@ function createDansoShockwave(enemy) {
     applied: false,
     kind: "dansoShock",
   });
-  shake = Math.max(shake, 4.5);
   addParticles(enemy.x, enemy.y, "#f9c74f", 18);
   addPopup("단소 충격파", enemy.x, enemy.y - 34, "#fff3b0", 0.65, 15);
 }
@@ -1817,7 +1812,6 @@ function createAirportTaunt(enemy) {
 
 function createAirportCrisis(enemy) {
   addSpeechBubble(enemy, "금융 위기 모르냐 금융위기 거지야~", 1.45);
-  shake = Math.max(shake, 3.5);
   for (let i = 0; i < 12; i += 1) {
     const angle = (TAU * i) / 12 + rand(-0.16, 0.16);
     damageZones.push({
@@ -1922,7 +1916,6 @@ function createPraiseStunWave(enemy) {
     applied: false,
     kind: "praiseWave",
   });
-  shake = Math.max(shake, 3);
 }
 
 function createGumBubble(enemy) {
@@ -2010,7 +2003,6 @@ function createDanceStamp(enemy) {
     applied: false,
     kind: "danceStamp",
   });
-  shake = Math.max(shake, 2.8);
 }
 
 function dropFakeLuggage(enemy) {
@@ -2038,7 +2030,6 @@ function hurtPlayer(amount) {
   const reducedAmount = Math.max(1, Math.round(amount * (1 - effectiveReduction)));
   player.hp = Math.max(0, player.hp - reducedAmount);
   player.invuln = 0.45;
-  shake = Math.max(shake, 9);
   playSound("playerHit");
   addPopup(`-${reducedAmount}`, player.x, player.y - 28, "#ff6b6b", 0.7, 16);
   if (player.hp <= 0) endGame(false);
@@ -2178,7 +2169,6 @@ function killEnemy(enemy) {
   if (enemy.boss) {
     playSound("bossKill");
     grantFirstAidKit(1, enemy.x, enemy.y);
-    shake = Math.max(shake, 7);
     for (let i = 0; i < 16; i += 1) dropXp(enemy.x + rand(-45, 45), enemy.y + rand(-45, 45), 12);
     nextBossAt = player.elapsed + Math.max(34, 46 - Math.min(12, bossIndex * 2));
     bossWarningFor = 0;
@@ -2412,7 +2402,6 @@ function updateDamageZones(delta) {
       const armed = zone.armedAt ? progress >= zone.armedAt : true;
       if (zone.kind === "bomb" && armed && !zone.exploded) {
         zone.exploded = true;
-        shake = Math.max(shake, 4);
         addParticles(zone.x, zone.y, "#ff6b6b", 18);
         addParticles(zone.x, zone.y, "#ffd166", 14);
         addPopup("쾅!", zone.x, zone.y - 18, "#fff3b0", 0.45, 18);
@@ -2538,7 +2527,6 @@ function updateEffects(delta) {
     bubble.life -= delta;
     if (bubble.life <= 0) speechBubbles.splice(speechBubbles.indexOf(bubble), 1);
   }
-  shake = Math.max(0, shake - delta * 34);
 }
 
 function escapeHtml(value) {
@@ -4044,9 +4032,6 @@ function render() {
   camera.y = clamp(camera.y, 0, WORLD_SIZE - height);
 
   ctx.save();
-  if (shake > 0) {
-    ctx.translate(rand(-shake, shake), rand(-shake, shake));
-  }
   if (game.zoom !== 1) {
     ctx.translate(width / 2, height / 2);
     ctx.scale(game.zoom, game.zoom);
