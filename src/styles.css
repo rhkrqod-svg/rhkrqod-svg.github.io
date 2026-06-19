@@ -497,14 +497,14 @@ button {
 .message.start-screen .title-block button {
   position: absolute;
   left: 50%;
-  bottom: max(22px, env(safe-area-inset-bottom));
-  width: min(320px, 76%);
-  min-height: 52px;
+  bottom: max(118px, calc(env(safe-area-inset-bottom) + 15dvh));
+  width: min(460px, 92%);
+  min-height: 48px;
   border: 1px solid rgba(128, 255, 219, 0.72);
   border-radius: 8px;
   background: rgba(5, 10, 16, 0.72);
   color: #b8fff3;
-  font-size: clamp(18px, 5.2vw, 26px);
+  font-size: clamp(17px, 4.8vw, 24px);
   font-weight: 1000;
   letter-spacing: 0;
   text-shadow: 0 0 12px rgba(128, 255, 219, 0.72);
