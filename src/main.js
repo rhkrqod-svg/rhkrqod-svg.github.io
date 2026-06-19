@@ -70,6 +70,8 @@ const FIXED_VIEW_SCALE = 0.88;
 const PLAYER_RADIUS = 19 * CHARACTER_SIZE_SCALE;
 const FIRST_AID_HEAL_RATIO = 0.5;
 const ENEMY_XP_REWARD_MULTIPLIER = 1.35;
+const XP_ORB_LIFETIME = 18;
+const XP_ORB_FADE_TIME = 5;
 
 const heroTypes = [
   {
@@ -2381,6 +2383,8 @@ function dropXp(x, y, amount) {
       radius: amount > 25 ? 4.2 : 3.2,
       vx: Math.cos(angle) * rand(25, 70),
       vy: Math.sin(angle) * rand(25, 70),
+      life: XP_ORB_LIFETIME,
+      maxLife: XP_ORB_LIFETIME,
     });
   }
 }
@@ -2388,11 +2392,19 @@ function dropXp(x, y, amount) {
 function updateOrbs(delta) {
   for (const orb of [...orbs]) {
     const d = Math.hypot(player.x - orb.x, player.y - orb.y);
+    if (d >= player.magnet) {
+      orb.life -= delta;
+      if (orb.life <= 0) {
+        orbs.splice(orbs.indexOf(orb), 1);
+        continue;
+      }
+    }
     if (d < player.magnet) {
       const angle = angleTo(orb, player);
       const pull = 520 + (1 - d / player.magnet) * 1320;
       orb.vx += Math.cos(angle) * pull * delta;
       orb.vy += Math.sin(angle) * pull * delta;
+      orb.life = Math.max(orb.life, XP_ORB_FADE_TIME);
     }
     orb.x += orb.vx * delta;
     orb.y += orb.vy * delta;
@@ -3441,15 +3453,16 @@ function drawProjectiles() {
 function drawOrbs() {
   for (const orb of orbs) {
     const p = worldToScreen(orb.x, orb.y);
+    const fade = clamp(orb.life / XP_ORB_FADE_TIME, 0, 1);
     ctx.save();
-    ctx.globalAlpha = 0.3;
+    ctx.globalAlpha = 0.3 * fade;
     ctx.fillStyle = "#64dfdf";
     ctx.shadowColor = "#64dfdf";
-    ctx.shadowBlur = 3;
+    ctx.shadowBlur = 3 * fade;
     ctx.beginPath();
     ctx.arc(p.x, p.y, orb.radius, 0, TAU);
     ctx.fill();
-    ctx.globalAlpha = 0.14;
+    ctx.globalAlpha = 0.14 * fade;
     ctx.strokeStyle = "#e6fffb";
     ctx.lineWidth = 1;
     ctx.stroke();
