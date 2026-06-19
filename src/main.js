@@ -12,6 +12,9 @@ const refs = {
   level: document.querySelector("#level"),
   time: document.querySelector("#time"),
   score: document.querySelector("#score"),
+  attackStat: document.querySelector("#attackStat"),
+  defenseStat: document.querySelector("#defenseStat"),
+  speedStat: document.querySelector("#speedStat"),
   xpFill: document.querySelector("#xpFill"),
   weaponList: document.querySelector("#weaponList"),
   skillTooltip: document.querySelector("#skillTooltip"),
@@ -2086,6 +2089,12 @@ function calculateIncomingDamage(amount) {
   return Math.max(1, Math.round(afterPassive));
 }
 
+function increaseLevelStats() {
+  player.attackPower *= 1.05;
+  player.defensePower *= 1.05;
+  player.speed *= 1.05;
+}
+
 function hurtPlayer(amount) {
   const reducedAmount = calculateIncomingDamage(amount);
   player.hp = Math.max(0, player.hp - reducedAmount);
@@ -2359,6 +2368,7 @@ function gainXp(amount) {
   while (player.xp >= player.nextXp) {
     player.xp -= player.nextXp;
     player.level += 1;
+    increaseLevelStats();
     player.nextXp = getNextXpRequirement(player.nextXp, player.level);
     playSound("levelUp");
     openUpgradePanel();
@@ -2813,6 +2823,9 @@ function updateHud() {
   refs.level.textContent = player.level;
   refs.time.textContent = formatTime(player.elapsed);
   refs.score.textContent = formatScore(player.score);
+  if (refs.attackStat) refs.attackStat.textContent = Math.round(player.attackPower || 100);
+  if (refs.defenseStat) refs.defenseStat.textContent = Math.round(player.defensePower || 100);
+  if (refs.speedStat) refs.speedStat.textContent = Math.round((player.speed / 205) * 100);
   refs.xpFill.style.transform = `scaleX(${clamp(player.xp / player.nextXp, 0, 1)})`;
   refs.bestScore.textContent = formatScore(bestScore);
   if (refs.firstAidCount) refs.firstAidCount.textContent = player.firstAidKits;
