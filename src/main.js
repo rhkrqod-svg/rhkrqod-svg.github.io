@@ -2721,15 +2721,7 @@ function formatTime(seconds) {
 
 function formatScore(value) {
   const score = Math.max(0, Math.round(Number(value) || 0));
-  if (score >= 10000) {
-    const compact = score / 10000;
-    return `${compact >= 10 ? Math.round(compact) : compact.toFixed(1).replace(/\.0$/, "")}M`;
-  }
-  if (score >= 1000) {
-    const compact = score / 1000;
-    return `${compact >= 10 ? Math.round(compact) : compact.toFixed(1).replace(/\.0$/, "")}k`;
-  }
-  return String(score);
+  return score.toLocaleString("ko-KR");
 }
 
 function updateHud() {
