@@ -469,24 +469,34 @@ button {
 .message.start-screen .title-block button {
   position: absolute;
   left: 50%;
-  bottom: max(28px, env(safe-area-inset-bottom));
-  width: min(360px, 78%);
-  height: min(92px, 9vh);
-  min-height: 62px;
-  border: 0;
-  background: transparent;
-  color: transparent;
+  bottom: max(22px, env(safe-area-inset-bottom));
+  width: min(320px, 76%);
+  min-height: 52px;
+  border: 1px solid rgba(128, 255, 219, 0.72);
+  border-radius: 8px;
+  background: rgba(5, 10, 16, 0.72);
+  color: #b8fff3;
+  font-size: clamp(18px, 5.2vw, 26px);
+  font-weight: 1000;
+  letter-spacing: 0;
+  text-shadow: 0 0 12px rgba(128, 255, 219, 0.72);
   transform: translateX(-50%);
+  box-shadow:
+    0 0 24px rgba(128, 255, 219, 0.34),
+    inset 0 0 18px rgba(128, 255, 219, 0.14);
+}
+
+.message.start-screen .title-block button::before {
+  content: "터치하여 시작";
 }
 
 .message.start-screen .title-block button::after {
   content: "";
   position: absolute;
-  inset: 10px 12px;
+  inset: -5px;
   border-radius: 8px;
-  box-shadow:
-    0 0 18px rgba(128, 255, 219, 0.28),
-    inset 0 0 16px rgba(128, 255, 219, 0.16);
+  border: 1px solid rgba(128, 255, 219, 0.28);
+  pointer-events: none;
   animation: startPulse 1.45s ease-in-out infinite;
 }
 
