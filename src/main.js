@@ -2169,8 +2169,9 @@ function killEnemy(enemy) {
   const index = enemies.indexOf(enemy);
   if (index >= 0) enemies.splice(index, 1);
   player.kills += 1;
-  player.score += enemy.score;
-  addPopup(`+${enemy.score}`, enemy.x, enemy.y - enemy.radius, "#ffe066", 0.75, 15);
+  const earnedScore = Math.max(1, Math.round((enemy.score ?? 0) / 10));
+  player.score += earnedScore;
+  addPopup(`+${earnedScore}`, enemy.x, enemy.y - enemy.radius, "#ffe066", 0.75, 15);
   dropXp(enemy.x, enemy.y, enemy.xp);
   dropEnergy(enemy);
   if (enemy.boss) {
