@@ -1293,18 +1293,27 @@ function spawnCard() {
 function strikeLightning() {
   if (weapons.lightning.level <= 0 || enemies.length === 0) return;
   const strikes = Math.min(5, weapons.lightning.level);
-  const targets = [...enemies]
+  const bossTarget = enemies
+    .filter((enemy) => enemy.boss)
+    .sort((a, b) => distance(player, a) - distance(player, b))[0];
+  const targets = bossTarget ? [bossTarget] : [];
+  const nearbyTargets = enemies
+    .filter((enemy) => enemy !== bossTarget)
     .sort((a, b) => distance(player, a) - distance(player, b))
-    .slice(0, strikes + 2)
-    .sort(() => Math.random() - 0.5)
-    .slice(0, strikes);
+    .slice(0, strikes + 3)
+    .sort(() => Math.random() - 0.5);
+  for (const enemy of nearbyTargets) {
+    if (targets.length >= strikes) break;
+    targets.push(enemy);
+  }
   for (const enemy of targets) {
-    damageEnemy(enemy, 34 + weapons.lightning.level * 22, "#9bf6ff");
-    addParticles(enemy.x, enemy.y, "#9bf6ff", 6);
+    const damage = 90 + weapons.lightning.level * 58;
+    damageEnemy(enemy, enemy.boss ? Math.round(damage * 1.25) : damage, "#9bf6ff");
+    addParticles(enemy.x, enemy.y, "#9bf6ff", enemy.boss ? 14 : 9);
     damageZones.push({
       x: enemy.x,
       y: enemy.y,
-      radius: 48 + weapons.lightning.level * 4,
+      radius: 58 + weapons.lightning.level * 7,
       life: 0.34,
       maxLife: 0.34,
       color: "#9bf6ff",
