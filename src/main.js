@@ -1453,7 +1453,7 @@ function spawnCustomerMissiles() {
     const target = findNearestEnemy(900 + level * 40);
     if (!target) return;
     const angle = angleTo(player, target) + (i - (count - 1) / 2) * 0.32;
-    const speed = 420 + level * 36;
+    const speed = 210 + level * 18;
     missiles.push({
       x: player.x + Math.cos(angle) * 22,
       y: player.y + Math.sin(angle) * 22,
