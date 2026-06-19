@@ -1854,7 +1854,7 @@ function createAirportCrisis(enemy) {
       y: enemy.y,
       vx: Math.cos(angle) * rand(180, 330),
       vy: Math.sin(angle) * rand(180, 330),
-      radius: 17,
+      radius: 24,
       damage: 12,
       life: 1.25,
       maxLife: 1.25,
@@ -3896,12 +3896,12 @@ function drawDamageZones() {
       ctx.globalAlpha = 0.85;
       ctx.fillStyle = "#80ffdb";
       ctx.strokeStyle = "#0b6b5e";
-      ctx.lineWidth = 2;
-      roundedRect(-18, -10, 36, 20, 4);
+      ctx.lineWidth = 3;
+      roundedRect(-28, -16, 56, 32, 6);
       ctx.fill();
       ctx.stroke();
       ctx.fillStyle = "#0b6b5e";
-      ctx.font = "900 12px system-ui";
+      ctx.font = "900 18px system-ui";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText("$", 0, 1);
