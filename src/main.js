@@ -1547,7 +1547,7 @@ function updatePlayer(delta) {
     player.fireCooldown = player.fireRate;
   }
 
-  weapons.strapOrbit.angle += delta * (3.1 + weapons.strapOrbit.level * 0.18);
+  weapons.strapOrbit.angle += delta * (5.3 + weapons.strapOrbit.level * 0.32);
   weapons.lightning.cooldown -= delta;
   if (weapons.lightning.cooldown <= 0) {
     strikeLightning();
@@ -2172,7 +2172,7 @@ function updateBlade() {
       };
       for (const enemy of [...enemies]) {
         if (Math.hypot(enemy.x - strap.x, enemy.y - strap.y) < enemy.radius + strap.radius) {
-          if (!enemy.lastStrapHit || performance.now() - enemy.lastStrapHit > 260) {
+          if (!enemy.lastStrapHit || performance.now() - enemy.lastStrapHit > 170) {
             enemy.lastStrapHit = performance.now();
             damageEnemy(enemy, strapDamage, "#ffd6a5");
           }
