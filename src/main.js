@@ -2833,6 +2833,55 @@ function drawGrid() {
   ctx.restore();
 }
 
+function drawWorldBounds() {
+  const left = -camera.x;
+  const top = -camera.y;
+  const right = WORLD_SIZE - camera.x;
+  const bottom = WORLD_SIZE - camera.y;
+  const visibleLeft = left > -48 && left < viewWidth + 48;
+  const visibleRight = right > -48 && right < viewWidth + 48;
+  const visibleTop = top > -48 && top < viewHeight + 48;
+  const visibleBottom = bottom > -48 && bottom < viewHeight + 48;
+  if (!visibleLeft && !visibleRight && !visibleTop && !visibleBottom) return;
+
+  ctx.save();
+  ctx.lineCap = "butt";
+  ctx.lineJoin = "miter";
+  ctx.strokeStyle = "rgba(255, 190, 11, 0.95)";
+  ctx.lineWidth = 10;
+  ctx.setLineDash([18, 12]);
+  if (visibleLeft) {
+    ctx.beginPath();
+    ctx.moveTo(left + 5, Math.max(top, 0) - 80);
+    ctx.lineTo(left + 5, Math.min(bottom, viewHeight) + 80);
+    ctx.stroke();
+  }
+  if (visibleRight) {
+    ctx.beginPath();
+    ctx.moveTo(right - 5, Math.max(top, 0) - 80);
+    ctx.lineTo(right - 5, Math.min(bottom, viewHeight) + 80);
+    ctx.stroke();
+  }
+  if (visibleTop) {
+    ctx.beginPath();
+    ctx.moveTo(Math.max(left, 0) - 80, top + 5);
+    ctx.lineTo(Math.min(right, viewWidth) + 80, top + 5);
+    ctx.stroke();
+  }
+  if (visibleBottom) {
+    ctx.beginPath();
+    ctx.moveTo(Math.max(left, 0) - 80, bottom - 5);
+    ctx.lineTo(Math.min(right, viewWidth) + 80, bottom - 5);
+    ctx.stroke();
+  }
+
+  ctx.setLineDash([]);
+  ctx.strokeStyle = "rgba(255, 71, 126, 0.72)";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(left, top, WORLD_SIZE, WORLD_SIZE);
+  ctx.restore();
+}
+
 function drawSubwayInteriorImage() {
   const offsetY = -(((camera.y * 0.16) % viewHeight) + viewHeight) % viewHeight;
   for (let y = offsetY - viewHeight; y < viewHeight + 1; y += viewHeight) {
@@ -4156,6 +4205,7 @@ function render() {
   ctx.scale(FIXED_VIEW_SCALE, FIXED_VIEW_SCALE);
   ctx.translate(-viewWidth / 2, -viewHeight / 2);
   drawGrid();
+  drawWorldBounds();
   drawDamageZones();
   drawOrbs();
   drawEnergyPickups();
