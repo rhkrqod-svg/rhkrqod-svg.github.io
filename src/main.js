@@ -47,6 +47,7 @@ const sound = {
 };
 
 const STORAGE_KEY = "villain-commando-best";
+const LOCAL_LEADERBOARD_KEY = "villain-commando-local-leaderboard";
 const LEADERBOARD_API = import.meta.env.VITE_LEADERBOARD_API || "/api/leaderboard";
 const LEADERBOARD_LIMIT = 10;
 const TAU = Math.PI * 2;
@@ -2587,6 +2588,31 @@ function normalizeLeaderboard(entries) {
     .slice(0, LEADERBOARD_LIMIT);
 }
 
+function readLocalLeaderboard() {
+  try {
+    return normalizeLeaderboard(JSON.parse(localStorage.getItem(LOCAL_LEADERBOARD_KEY) || "[]"));
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalLeaderboard(entries) {
+  const normalized = normalizeLeaderboard(entries);
+  localStorage.setItem(LOCAL_LEADERBOARD_KEY, JSON.stringify(normalized));
+  return normalized;
+}
+
+function applyLeaderboard(entries) {
+  leaderboardEntries = normalizeLeaderboard(entries);
+  if (leaderboardEntries[0]) {
+    bestScore = Math.max(bestScore, leaderboardEntries[0].score);
+    localStorage.setItem(STORAGE_KEY, String(bestScore));
+  }
+  renderLeaderboard();
+  updateHud();
+  return leaderboardEntries;
+}
+
 function isTopTenScore(score) {
   if (score <= 0) return false;
   if (leaderboardEntries.length < LEADERBOARD_LIMIT) return true;
@@ -2612,32 +2638,23 @@ function renderLeaderboard() {
 }
 
 async function loadLeaderboard() {
-  const response = await fetch(LEADERBOARD_API, { cache: "no-store" });
-  if (!response.ok) throw new Error("leaderboard_load_failed");
-  const data = await response.json();
-  leaderboardEntries = normalizeLeaderboard(data.entries);
-  if (leaderboardEntries[0]) {
-    bestScore = Math.max(bestScore, leaderboardEntries[0].score);
-    localStorage.setItem(STORAGE_KEY, String(bestScore));
+  try {
+    const response = await fetch(LEADERBOARD_API, { cache: "no-store" });
+    if (!response.ok) throw new Error("leaderboard_load_failed");
+    const data = await response.json();
+    return applyLeaderboard(data.entries);
+  } catch {
+    return applyLeaderboard(readLocalLeaderboard());
   }
-  renderLeaderboard();
-  updateHud();
-  return leaderboardEntries;
 }
 
 async function prepareLeaderboardEntry() {
   if (!refs.leaderboardPanel) return;
   refs.leaderboardPanel.classList.remove("hidden");
   refs.rankForm?.classList.add("hidden");
-  if (refs.rankHint) refs.rankHint.textContent = "서버 랭킹 확인 중";
+  if (refs.rankHint) refs.rankHint.textContent = "랭킹 확인 중";
 
-  try {
-    await loadLeaderboard();
-  } catch {
-    if (refs.rankHint) refs.rankHint.textContent = "서버 연결이 필요합니다";
-    renderLeaderboard();
-    return;
-  }
+  await loadLeaderboard();
 
   if (isTopTenScore(player.score)) {
     pendingLeaderboardScore = {
@@ -2671,10 +2688,15 @@ async function submitLeaderboardEntry(event) {
     leaderboardEntries = normalizeLeaderboard(data.entries);
     pendingLeaderboardScore = null;
     refs.rankForm?.classList.add("hidden");
-    if (refs.rankHint) refs.rankHint.textContent = "랭킹 등록 완료";
+    if (refs.rankHint) refs.rankHint.textContent = "서버 랭킹 등록 완료";
     renderLeaderboard();
   } catch {
-    if (refs.rankHint) refs.rankHint.textContent = "등록 실패, 다시 시도하세요";
+    leaderboardEntries = saveLocalLeaderboard([...leaderboardEntries, { ...pendingLeaderboardScore, name }]);
+    pendingLeaderboardScore = null;
+    refs.rankForm?.classList.add("hidden");
+    if (refs.rankHint) refs.rankHint.textContent = "기기 랭킹에 등록 완료";
+    renderLeaderboard();
+    updateHud();
   } finally {
     leaderboardSubmitting = false;
     if (refs.submitScoreButton) refs.submitScoreButton.disabled = false;
