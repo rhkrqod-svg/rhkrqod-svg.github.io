@@ -1356,15 +1356,20 @@ function spawnExpressTrain() {
   const level = weapons.expressTrain.level;
   if (level <= 0) return;
   const vertical = Math.random() < 0.5;
+  const direction = Math.random() < 0.5 ? -1 : 1;
   const target = pickClusterTarget(1300);
   damageZones.push({
     x: target ? target.x : player.x,
     y: target ? target.y : player.y,
     vertical,
     width: 92 + level * 13,
+    trainLength: 520 + level * 34,
     damage: 92 + level * 42,
-    life: 0.58,
-    maxLife: 0.58,
+    push: 128 + level * 18,
+    angle: vertical ? (direction > 0 ? Math.PI / 2 : -Math.PI / 2) : direction > 0 ? 0 : Math.PI,
+    direction,
+    life: 1.18,
+    maxLife: 1.18,
     color: "#f7d64a",
     hits: new Set(),
     kind: "train",
@@ -2411,7 +2416,15 @@ function updateDamageZones(delta) {
           if (zone.hits?.has(enemy)) continue;
           let hit = false;
           if (zone.kind === "train") {
-            hit = zone.vertical ? Math.abs(enemy.x - zone.x) < zone.width / 2 + enemy.radius : Math.abs(enemy.y - zone.y) < zone.width / 2 + enemy.radius;
+            const trainLength = zone.trainLength ?? 520;
+            const travel = zone.vertical ? height + trainLength * 1.35 : width + trainLength * 1.35;
+            const moveProgress = clamp((progress - 0.04) / 0.92, 0, 1);
+            const offset = -trainLength * 0.68 + travel * moveProgress;
+            const centerX = zone.vertical ? zone.x : camera.x + (zone.direction > 0 ? offset : width - offset);
+            const centerY = zone.vertical ? camera.y + (zone.direction > 0 ? offset : height - offset) : zone.y;
+            hit = zone.vertical
+              ? Math.abs(enemy.x - centerX) < zone.width / 2 + enemy.radius && Math.abs(enemy.y - centerY) < trainLength / 2 + enemy.radius
+              : Math.abs(enemy.y - centerY) < zone.width / 2 + enemy.radius && Math.abs(enemy.x - centerX) < trainLength / 2 + enemy.radius;
           } else if (zone.kind === "lowKick") {
             const distanceToEnemy = Math.hypot(enemy.x - zone.x, enemy.y - zone.y);
             const kickAngle = angleTo(zone, enemy);
@@ -2444,7 +2457,7 @@ function updateDamageZones(delta) {
           zone.hits?.add(enemy);
           damageEnemy(enemy, zone.damage, zone.color);
           if (zone.push) {
-            const push = zone.kind === "gate" ? zone.angle ?? angleTo(zone, enemy) : angleTo(zone, enemy);
+            const push = zone.kind === "gate" || zone.kind === "train" ? zone.angle ?? angleTo(zone, enemy) : angleTo(zone, enemy);
             enemy.x += Math.cos(push) * zone.push;
             enemy.y += Math.sin(push) * zone.push;
           }
@@ -3278,26 +3291,73 @@ function drawDamageZones() {
     const progress = 1 - zone.life / zone.maxLife;
     ctx.save();
     if (zone.kind === "train") {
-      const active = zone.kind === "train" ? 0.34 + Math.sin(progress * Math.PI) * 0.28 : 0.22 + Math.sin(progress * Math.PI) * 0.34;
-      ctx.globalAlpha = active;
-      ctx.fillStyle = zone.color;
+      const trainLength = zone.trainLength ?? 520;
+      const trainWidth = zone.width;
+      const travel = zone.vertical ? height + trainLength * 1.35 : width + trainLength * 1.35;
+      const moveProgress = clamp((progress - 0.04) / 0.92, 0, 1);
+      const offset = -trainLength * 0.68 + travel * moveProgress;
+      const centerX = zone.vertical ? p.x : zone.direction > 0 ? offset : width - offset;
+      const centerY = zone.vertical ? (zone.direction > 0 ? offset : height - offset) : p.y;
+      const fade = Math.min(clamp(progress / 0.18, 0, 1), clamp((1 - progress) / 0.16, 0, 1));
+
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = 0.1 * fade;
+      ctx.fillStyle = "#f7d64a";
       if (zone.vertical) {
-        ctx.fillRect(p.x - zone.width / 2, -20, zone.width, height + 40);
+        ctx.fillRect(centerX - trainWidth * 0.82, -20, trainWidth * 1.64, height + 40);
       } else {
-        ctx.fillRect(-20, p.y - zone.width / 2, width + 40, zone.width);
+        ctx.fillRect(-20, centerY - trainWidth * 0.82, width + 40, trainWidth * 1.64);
       }
-      ctx.globalAlpha = Math.min(1, active + 0.22);
-      ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = zone.kind === "train" ? 5 : 2;
-      ctx.beginPath();
-      if (zone.vertical) {
-        ctx.moveTo(p.x, -20);
-        ctx.lineTo(p.x, height + 20);
-      } else {
-        ctx.moveTo(-20, p.y);
-        ctx.lineTo(width + 20, p.y);
-      }
+
+      ctx.globalCompositeOperation = "source-over";
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.rotate(zone.vertical ? Math.PI / 2 : 0);
+      if (zone.direction < 0) ctx.rotate(Math.PI);
+      ctx.globalAlpha = 0.96 * fade;
+      ctx.shadowColor = "#f7d64a";
+      ctx.shadowBlur = 18;
+
+      const carX = -trainLength / 2;
+      const carY = -trainWidth / 2;
+      ctx.fillStyle = "#dfe7ec";
+      ctx.strokeStyle = "#0b2c45";
+      ctx.lineWidth = 4;
+      roundedRect(carX, carY, trainLength, trainWidth, 18);
+      ctx.fill();
       ctx.stroke();
+
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "#0052a4";
+      ctx.fillRect(carX + 14, carY + trainWidth * 0.58, trainLength - 28, trainWidth * 0.12);
+      ctx.fillStyle = "#f7d64a";
+      ctx.fillRect(carX + 14, carY + trainWidth * 0.72, trainLength - 28, trainWidth * 0.05);
+
+      const cabinWidth = trainWidth * 0.5;
+      ctx.fillStyle = "#142533";
+      roundedRect(carX + 22, carY + 13, cabinWidth, trainWidth - 26, 10);
+      ctx.fill();
+      ctx.fillStyle = "#1e3b52";
+      const windowCount = Math.max(5, Math.floor(trainLength / 86));
+      const gap = (trainLength - cabinWidth - 72) / windowCount;
+      for (let i = 0; i < windowCount; i += 1) {
+        const wx = carX + cabinWidth + 38 + i * gap;
+        roundedRect(wx, carY + 14, Math.max(26, gap * 0.58), trainWidth * 0.34, 7);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = "#fff3b0";
+      ctx.font = `900 ${Math.max(12, trainWidth * 0.16)}px system-ui`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("EXPRESS", carX + trainLength * 0.52, carY + trainWidth * 0.52);
+
+      ctx.fillStyle = "#ff477e";
+      ctx.beginPath();
+      ctx.arc(carX + trainLength - 26, carY + trainWidth * 0.3, 5, 0, TAU);
+      ctx.arc(carX + trainLength - 26, carY + trainWidth * 0.7, 5, 0, TAU);
+      ctx.fill();
+      ctx.restore();
       ctx.restore();
       continue;
     }
