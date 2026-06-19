@@ -23,6 +23,7 @@ const refs = {
   heroChoices: document.querySelector("#heroChoices"),
   upgradePanel: document.querySelector("#upgradePanel"),
   upgradeTitle: document.querySelector("#upgradeTitle"),
+  upgradePauseButton: document.querySelector("#upgradePauseButton"),
   upgradeChoices: document.querySelector("#upgradeChoices"),
   leaderboardPanel: document.querySelector("#leaderboardPanel"),
   leaderboardList: document.querySelector("#leaderboardList"),
@@ -1056,6 +1057,24 @@ function togglePause() {
   resetFloatingStickMove();
   playSound("ui");
   updateHud();
+}
+
+function toggleUpgradePause() {
+  if (game.state !== "playing" || refs.upgradePanel.classList.contains("hidden") || game.pendingStarterChoices > 0) return;
+  game.manualPaused = !game.manualPaused;
+  game.paused = game.manualPaused;
+  resetFloatingStickMove();
+  playSound("ui");
+  updateUpgradePauseButton();
+  updateHud();
+}
+
+function updateUpgradePauseButton() {
+  if (!refs.upgradePauseButton) return;
+  const starterPicking = game.pendingStarterChoices > 0;
+  refs.upgradePauseButton.disabled = starterPicking;
+  refs.upgradePauseButton.textContent = starterPicking ? "정지 중" : game.manualPaused ? "계속하기" : "일시정지";
+  refs.upgradePauseButton.classList.toggle("active", game.manualPaused || starterPicking);
 }
 
 function weightedPick(types, minute) {
@@ -2313,10 +2332,12 @@ function gainXp(amount) {
 
 function openUpgradePanel() {
   game.paused = game.pendingStarterChoices > 0;
+  if (game.pendingStarterChoices > 0) game.manualPaused = false;
   if (refs.upgradeTitle) {
     refs.upgradeTitle.textContent =
       game.pendingStarterChoices > 0 ? `기본 스킬 선택 ${4 - game.pendingStarterChoices}/3` : "레벨 업";
   }
+  updateUpgradePauseButton();
   const starterPool = upgradePool.filter((choice) => choice && weaponUpgradeIds.has(choice.id));
   const choicePool = game.pendingStarterChoices > 0 ? starterPool : upgradePool;
   const choices = pickUpgradeChoices(choicePool, 3, game.pendingStarterChoices <= 0).sort((a, b) => {
@@ -2346,6 +2367,7 @@ function openUpgradePanel() {
       if (refs.upgradeTitle) refs.upgradeTitle.textContent = "레벨 업";
       game.manualPaused = false;
       game.paused = game.manualPaused;
+      updateUpgradePauseButton();
       updateHud();
     });
     refs.upgradeChoices.append(button);
@@ -4241,6 +4263,7 @@ window.addEventListener("keyup", (event) => keys.delete(event.code));
 refs.startButton.addEventListener("click", resetGame);
 refs.firstAidButton?.addEventListener("click", useFirstAidKit);
 refs.pauseButton?.addEventListener("click", togglePause);
+refs.upgradePauseButton?.addEventListener("click", toggleUpgradePause);
 refs.rankForm?.addEventListener("submit", submitLeaderboardEntry);
 
 refs.app.addEventListener("pointerdown", (event) => {

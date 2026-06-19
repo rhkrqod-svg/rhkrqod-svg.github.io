@@ -707,6 +707,33 @@ button {
   text-align: center;
 }
 
+.upgrade-pause-button {
+  display: block;
+  width: min(132px, 44%);
+  margin: 0 auto 8px;
+  border: 1px solid rgba(255, 243, 176, 0.34);
+  border-radius: 8px;
+  background: rgba(12, 18, 24, 0.62);
+  color: #fff3b0;
+  cursor: pointer;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 1000;
+  text-align: center;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+}
+
+.upgrade-pause-button.active {
+  border-color: rgba(128, 255, 219, 0.56);
+  background: rgba(18, 48, 50, 0.72);
+  color: #80ffdb;
+}
+
+.upgrade-pause-button:disabled {
+  cursor: default;
+  opacity: 0.86;
+}
+
 .hero-choices {
   display: grid;
   grid-template-columns: 1fr 1fr;
