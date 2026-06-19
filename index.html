@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <title>지하철 빌런 특공대</title>
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="game"></canvas>
+
+      <div class="hud hp-bar" aria-label="체력">
+        <div class="hp-row">
+          <span>체력</span>
+          <strong id="health">100 / 100</strong>
+        </div>
+        <div class="hp-track">
+          <div id="healthFill" class="hp-fill"></div>
+        </div>
+      </div>
+
+      <section class="hud top-hud" aria-label="게임 상태">
+        <div class="stat">
+          <span>레벨</span>
+          <strong id="level">1</strong>
+        </div>
+        <div class="stat">
+          <span>시간</span>
+          <strong id="time">0:00</strong>
+        </div>
+        <div class="stat">
+          <span>점수</span>
+          <strong id="score">0</strong>
+        </div>
+      </section>
+
+      <div class="xp-bar" aria-hidden="true">
+        <div id="xpFill" class="xp-fill"></div>
+      </div>
+
+      <aside class="hud loadout" aria-label="무기">
+        <strong>무기</strong>
+        <div id="weaponList"></div>
+      </aside>
+
+      <aside class="hud best">
+        <span>최고 점수</span>
+        <strong id="bestScore">0</strong>
+      </aside>
+
+      <button id="firstAidButton" class="hud first-aid" type="button" aria-label="역무원 구급팩 사용">
+        <span>구급팩</span>
+        <strong id="firstAidCount">1</strong>
+      </button>
+
+      <button id="pauseButton" class="hud pause-button" type="button" aria-label="일시정지">Ⅱ</button>
+
+      <aside class="hud codex" aria-label="빌런 도감">
+        <strong>출몰 빌런</strong>
+        <div id="codexList"></div>
+      </aside>
+
+      <div id="bossBanner" class="boss-banner" aria-live="polite"></div>
+
+      <div id="heroPanel" class="hero-panel hidden" role="dialog" aria-modal="true">
+        <div class="hero-shell">
+          <h2>주인공 선택</h2>
+          <div id="heroChoices" class="hero-choices"></div>
+        </div>
+      </div>
+
+      <div id="upgradePanel" class="upgrade-panel hidden" role="dialog" aria-modal="true">
+        <div class="upgrade-shell">
+          <h2 id="upgradeTitle">레벨 업</h2>
+          <div id="upgradeChoices" class="upgrade-choices"></div>
+        </div>
+      </div>
+
+      <div id="message" class="message start-screen">
+        <div class="title-block">
+          <img class="start-poster" src="/assets/images/start-screen.png" alt="지하철 빌런 특공대 시작 화면" />
+          <span>민폐 퇴치 서바이버</span>
+          <h1 id="messageTitle">지하철 빌런 특공대</h1>
+          <p id="messageText">
+            비식별 처리된 매운맛 빌런들이 몰려옵니다. 20분 동안 버티고 민폐 에너지를 정화하세요.
+          </p>
+          <section id="leaderboardPanel" class="leaderboard-panel hidden" aria-label="랭킹">
+            <div class="leaderboard-head">
+              <strong>랭킹 TOP 10</strong>
+              <span id="rankHint">서버 랭킹을 불러오는 중</span>
+            </div>
+            <form id="rankForm" class="rank-form hidden">
+              <input id="playerNameInput" name="name" type="text" maxlength="12" autocomplete="name" placeholder="이름 입력" />
+              <button id="submitScoreButton" type="submit">등록</button>
+            </form>
+            <ol id="leaderboardList" class="leaderboard-list"></ol>
+          </section>
+          <button id="startButton" type="button" aria-label="터치하여 시작"></button>
+        </div>
+      </div>
+
+      <div class="mobile-controls" aria-hidden="true">
+        <div id="moveStick" class="move-stick">
+          <div id="moveStickThumb" class="move-stick-thumb"></div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

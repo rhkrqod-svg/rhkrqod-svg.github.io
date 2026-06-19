@@ -1,0 +1,11 @@
+node_modules/
+dist/
+data/*.json
+tmp/
+output/
+tools/
+*.log
+*.err.log
+*.zip
+.vercel/
+.netlify/

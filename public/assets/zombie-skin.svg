@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <filter id="noise">
+      <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="5" seed="17"/>
+      <feColorMatrix type="matrix" values="0.45 0 0 0 0.08 0 0.75 0 0 0.18 0 0 0.35 0 0.08 0 0 0 1 0"/>
+      <feBlend in2="SourceGraphic" mode="multiply"/>
+    </filter>
+    <radialGradient id="bruise" cx="50%" cy="45%" r="55%">
+      <stop offset="0" stop-color="#6d2c4c" stop-opacity="0.75"/>
+      <stop offset="0.58" stop-color="#314924" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#182213"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="#24331d"/>
+  <rect width="512" height="512" fill="url(#bruise)" filter="url(#noise)"/>
+  <g opacity="0.72" stroke-linecap="round">
+    <path d="M48 120 C120 98 151 180 226 136 S344 75 454 124" fill="none" stroke="#b9c192" stroke-width="7"/>
+    <path d="M86 384 C168 330 245 438 342 354 C395 307 426 335 468 298" fill="none" stroke="#10170f" stroke-width="11"/>
+    <path d="M116 234 l58 -36 m-28 9 l-7 49 m146 -17 l91 -68 m-42 21 l19 55" stroke="#d5c197" stroke-width="5"/>
+    <path d="M64 62 l78 42 m72 318 l112 31 m-52 -355 l86 -35" stroke="#4d1722" stroke-width="9" opacity="0.7"/>
+  </g>
+  <g fill="#d4c49c" opacity="0.55">
+    <ellipse cx="108" cy="170" rx="18" ry="8" transform="rotate(-22 108 170)"/>
+    <ellipse cx="402" cy="214" rx="26" ry="10" transform="rotate(28 402 214)"/>
+    <ellipse cx="238" cy="304" rx="20" ry="9" transform="rotate(8 238 304)"/>
+  </g>
+</svg>
