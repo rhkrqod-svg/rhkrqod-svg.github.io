@@ -1400,7 +1400,7 @@ function spawnTransferGate() {
   if (level <= 0 || enemies.length === 0) return;
   const target = pickClusterTarget(1000);
   if (!target) return;
-  const crowdCount = Math.min(8, 3 + level * 2);
+  const crowdCount = Math.min(18, 9 + level * 3);
   const screenMargin = 68;
   const diagonalFlip = Math.random() < 0.5;
   const startScreen = diagonalFlip ? { x: -screenMargin, y: -screenMargin } : { x: width + screenMargin, y: -screenMargin };
@@ -1420,18 +1420,18 @@ function spawnTransferGate() {
     pathLength,
     damage: 22 + level * 18,
     push: 128 + level * 18,
-    life: 2.55,
-    maxLife: 2.55,
+    life: 3.45,
+    maxLife: 3.45,
     color: "#b197fc",
     armedAt: 0.04,
     angle,
     commuters: Array.from({ length: crowdCount }, (_, index) => ({
-      delay: index * 0.055 + rand(0, 0.045),
-      duration: rand(0.54, 0.68),
-      lane: rand(-1, 1),
-      coat: ["#f8f9fa", "#8fc7ff", "#fff3b0", "#ffb3c6", "#b8ffe4"][index % 5],
+      delay: index * 0.045 + rand(0, 0.06),
+      duration: rand(1.18, 1.55),
+      lane: rand(-1.45, 1.45),
+      coat: ["#f8f9fa", "#8fc7ff", "#fff3b0", "#ffb3c6", "#b8ffe4", "#cdb4db", "#adb5bd"][index % 7],
       bag: ["#7b2cbf", "#2d6a4f", "#704214", "#1d3557"][index % 4],
-      size: rand(22, 29),
+      size: rand(24, 33),
     })),
     hits: new Set(),
     kind: "gate",
@@ -3556,8 +3556,8 @@ function drawDamageZones() {
     if (zone.kind === "gate") {
       const angle = zone.angle ?? 0;
       const sideAngle = angle + Math.PI / 2;
-      const openProgress = Math.min(clamp(progress / 0.62, 0, 1), clamp((1 - progress) / 0.26, 0, 1));
-      const flash = Math.sin(Math.min(1, progress / 0.62) * Math.PI);
+      const openProgress = Math.min(clamp(progress / 0.84, 0, 1), clamp((1 - progress) / 0.32, 0, 1));
+      const flash = Math.sin(Math.min(1, progress / 0.84) * Math.PI);
       const doorWidth = zone.radius * 1.28;
       const doorHeight = zone.radius * 1.5;
       const panelWidth = doorWidth * 0.5;
@@ -3582,6 +3582,18 @@ function drawDamageZones() {
       ctx.moveTo(startP.x, startP.y);
       ctx.lineTo(endP.x, endP.y);
       ctx.stroke();
+      ctx.globalAlpha = 0.18 + flash * 0.18;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([18, 16]);
+      for (const lane of [-1.25, -0.65, 0, 0.65, 1.25]) {
+        const laneOffset = lane * zone.radius * 0.86;
+        ctx.beginPath();
+        ctx.moveTo(startP.x + Math.cos(sideAngle) * laneOffset, startP.y + Math.sin(sideAngle) * laneOffset);
+        ctx.lineTo(endP.x + Math.cos(sideAngle) * laneOffset, endP.y + Math.sin(sideAngle) * laneOffset);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
 
       ctx.save();
       ctx.translate(startP.x, startP.y);
@@ -3656,12 +3668,23 @@ function drawDamageZones() {
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
 
-        ctx.strokeStyle = "rgba(128, 255, 219, 0.34)";
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgba(128, 255, 219, 0.26)";
+        ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.moveTo(-size * 1.65, size * 0.18);
+        ctx.moveTo(-size * 2.1, size * 0.18);
         ctx.lineTo(-size * 0.72, size * 0.18);
+        ctx.moveTo(-size * 2.35, -size * 0.28);
+        ctx.lineTo(-size * 1.02, -size * 0.28);
+        ctx.moveTo(-size * 1.85, size * 0.62);
+        ctx.lineTo(-size * 0.88, size * 0.62);
         ctx.stroke();
+
+        ctx.globalAlpha = fade * 0.18;
+        ctx.fillStyle = commuter.coat ?? "#f8f9fa";
+        ctx.beginPath();
+        ctx.ellipse(-size * 0.25, size * 0.12, size * 0.86, size * 1.32, 0, 0, TAU);
+        ctx.fill();
+        ctx.globalAlpha = fade * 0.92;
 
         ctx.shadowColor = "#80ffdb";
         ctx.shadowBlur = 12;
