@@ -2197,7 +2197,6 @@ function killEnemy(enemy) {
     for (let i = 0; i < 16; i += 1) dropXp(enemy.x + rand(-45, 45), enemy.y + rand(-45, 45), 12);
     nextBossAt = player.elapsed + Math.max(34, 46 - Math.min(12, bossIndex * 2));
     bossWarningFor = 0;
-    showBossBanner("다음 보스 대기");
   } else {
     playSound("kill");
   }
