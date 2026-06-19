@@ -2162,7 +2162,7 @@ function calculateIncomingDamage(amount) {
 function increaseLevelStats() {
   player.attackPower *= 1.05;
   player.defensePower *= 1.05;
-  player.speed *= 1.05;
+  player.speed *= 1.025;
 }
 
 function hurtPlayer(amount) {
