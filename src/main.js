@@ -1382,8 +1382,8 @@ function spawnTransferGate() {
   if (level <= 0 || enemies.length === 0) return;
   const target = pickClusterTarget(1000);
   if (!target) return;
-  const crowdCount = Math.min(10, 4 + level * 2);
-  const screenMargin = 46;
+  const crowdCount = Math.min(8, 3 + level * 2);
+  const screenMargin = 68;
   const diagonalFlip = Math.random() < 0.5;
   const startScreen = diagonalFlip ? { x: -screenMargin, y: -screenMargin } : { x: width + screenMargin, y: -screenMargin };
   const endScreen = diagonalFlip ? { x: width + screenMargin, y: height + screenMargin } : { x: -screenMargin, y: height + screenMargin };
@@ -1394,24 +1394,26 @@ function spawnTransferGate() {
   damageZones.push({
     x: target.x,
     y: target.y,
-    radius: 92 + level * 18,
+    radius: 112 + level * 20,
     startX: startWorld.x,
     startY: startWorld.y,
     endX: endWorld.x,
     endY: endWorld.y,
     pathLength,
     damage: 22 + level * 18,
-    push: 72 + level * 12,
-    life: 1.7,
-    maxLife: 1.7,
+    push: 128 + level * 18,
+    life: 2.55,
+    maxLife: 2.55,
     color: "#b197fc",
     armedAt: 0.04,
     angle,
     commuters: Array.from({ length: crowdCount }, (_, index) => ({
-      delay: index * 0.045 + rand(0, 0.08),
+      delay: index * 0.055 + rand(0, 0.045),
+      duration: rand(0.54, 0.68),
       lane: rand(-1, 1),
-      speed: rand(0.68, 0.88),
-      size: rand(15, 21),
+      coat: ["#f8f9fa", "#8fc7ff", "#fff3b0", "#ffb3c6", "#b8ffe4"][index % 5],
+      bag: ["#7b2cbf", "#2d6a4f", "#704214", "#1d3557"][index % 4],
+      size: rand(22, 29),
     })),
     hits: new Set(),
     kind: "gate",
@@ -2440,12 +2442,13 @@ function updateDamageZones(delta) {
             const sideAngle = angle + Math.PI / 2;
             const pathLength = zone.pathLength ?? zone.radius * 2.65;
             for (const commuter of zone.commuters ?? []) {
-              const t = clamp((progress - commuter.delay) / 1.12 * commuter.speed, 0, 1);
+              const t = clamp((progress - commuter.delay) / (commuter.duration ?? 0.62), 0, 1);
               if (t <= 0 || t >= 1) continue;
+              const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
               const lane = commuter.lane * zone.radius * 0.95;
-              const commuterX = zone.startX + Math.cos(angle) * pathLength * t + Math.cos(sideAngle) * lane;
-              const commuterY = zone.startY + Math.sin(angle) * pathLength * t + Math.sin(sideAngle) * lane;
-              if (Math.hypot(enemy.x - commuterX, enemy.y - commuterY) < enemy.radius + commuter.size * 1.35) {
+              const commuterX = zone.startX + Math.cos(angle) * pathLength * ease + Math.cos(sideAngle) * lane;
+              const commuterY = zone.startY + Math.sin(angle) * pathLength * ease + Math.sin(sideAngle) * lane;
+              if (Math.hypot(enemy.x - commuterX, enemy.y - commuterY) < enemy.radius + commuter.size * 1.62) {
                 hit = true;
                 break;
               }
@@ -3474,8 +3477,8 @@ function drawDamageZones() {
     if (zone.kind === "gate") {
       const angle = zone.angle ?? 0;
       const sideAngle = angle + Math.PI / 2;
-      const openProgress = Math.min(clamp(progress / 0.34, 0, 1), clamp((1 - progress) / 0.24, 0, 1));
-      const flash = Math.sin(Math.min(1, progress / 0.48) * Math.PI);
+      const openProgress = Math.min(clamp(progress / 0.62, 0, 1), clamp((1 - progress) / 0.26, 0, 1));
+      const flash = Math.sin(Math.min(1, progress / 0.62) * Math.PI);
       const doorWidth = zone.radius * 1.28;
       const doorHeight = zone.radius * 1.5;
       const panelWidth = doorWidth * 0.5;
@@ -3485,17 +3488,17 @@ function drawDamageZones() {
       const pathLength = zone.pathLength ?? Math.hypot(endP.x - startP.x, endP.y - startP.y);
 
       ctx.globalCompositeOperation = "lighter";
-      ctx.globalAlpha = 0.14 + flash * 0.16;
+      ctx.globalAlpha = 0.18 + flash * 0.2;
       ctx.strokeStyle = "#b197fc";
-      ctx.lineWidth = zone.radius * 1.25;
+      ctx.lineWidth = zone.radius * 1.35;
       ctx.lineCap = "round";
       ctx.beginPath();
       ctx.moveTo(startP.x, startP.y);
       ctx.lineTo(endP.x, endP.y);
       ctx.stroke();
-      ctx.globalAlpha = 0.52;
+      ctx.globalAlpha = 0.64;
       ctx.strokeStyle = "#80ffdb";
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 6;
       ctx.beginPath();
       ctx.moveTo(startP.x, startP.y);
       ctx.lineTo(endP.x, endP.y);
@@ -3505,23 +3508,37 @@ function drawDamageZones() {
       ctx.translate(startP.x, startP.y);
       ctx.rotate(angle);
 
-      ctx.globalAlpha = 0.72 + flash * 0.2;
+      ctx.globalAlpha = 0.82 + flash * 0.16;
       ctx.shadowColor = "#80ffdb";
-      ctx.shadowBlur = 16;
-      ctx.fillStyle = "rgba(128, 255, 219, 0.2)";
-      roundedRect(-doorWidth / 2, -doorHeight / 2, doorWidth, doorHeight, 12);
+      ctx.shadowBlur = 22;
+      ctx.fillStyle = "rgba(8, 18, 24, 0.86)";
+      roundedRect(-doorWidth / 2, -doorHeight / 2, doorWidth, doorHeight, 14);
+      ctx.fill();
+      ctx.fillStyle = "rgba(128, 255, 219, 0.18)";
+      roundedRect(-doorWidth / 2 + 7, -doorHeight / 2 + 7, doorWidth - 14, doorHeight - 14, 10);
       ctx.fill();
       ctx.shadowBlur = 0;
 
       ctx.strokeStyle = "#80ffdb";
-      ctx.lineWidth = 6;
-      roundedRect(-doorWidth / 2, -doorHeight / 2, doorWidth, doorHeight, 12);
+      ctx.lineWidth = 7;
+      roundedRect(-doorWidth / 2, -doorHeight / 2, doorWidth, doorHeight, 14);
       ctx.stroke();
+
+      ctx.fillStyle = "#fff3b0";
+      ctx.font = `900 ${Math.max(11, zone.radius * 0.15)}px system-ui`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("TRANSFER", 0, -doorHeight * 0.42);
+      ctx.fillStyle = openProgress > 0.62 ? "#36d399" : "#ff477e";
+      ctx.beginPath();
+      ctx.arc(-doorWidth * 0.34, -doorHeight * 0.31, 5, 0, TAU);
+      ctx.arc(doorWidth * 0.34, -doorHeight * 0.31, 5, 0, TAU);
+      ctx.fill();
 
       ctx.globalAlpha = 0.9;
       ctx.fillStyle = "rgba(11, 20, 26, 0.88)";
       ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 3;
       roundedRect(-doorWidth / 2 - panelGap, -doorHeight / 2 + 7, panelWidth, doorHeight - 14, 8);
       ctx.fill();
       ctx.stroke();
@@ -3529,11 +3546,11 @@ function drawDamageZones() {
       ctx.fill();
       ctx.stroke();
 
-      ctx.globalAlpha = 0.5 + openProgress * 0.38;
+      ctx.globalAlpha = 0.42 + openProgress * 0.42;
       ctx.fillStyle = "rgba(255, 243, 176, 0.28)";
       ctx.fillRect(-panelGap, -doorHeight * 0.42, panelGap * 2, doorHeight * 0.84);
 
-      ctx.globalAlpha = 0.45;
+      ctx.globalAlpha = 0.55;
       ctx.strokeStyle = "rgba(255, 255, 255, 0.75)";
       ctx.lineWidth = 2;
       for (const lane of [-0.62, -0.25, 0.12, 0.49]) {
@@ -3545,28 +3562,68 @@ function drawDamageZones() {
       ctx.restore();
 
       for (const commuter of zone.commuters ?? []) {
-        const t = clamp((progress - commuter.delay) / 1.12 * commuter.speed, 0, 1);
+        const t = clamp((progress - commuter.delay) / (commuter.duration ?? 0.62), 0, 1);
         if (t <= 0 || t >= 1) continue;
         const fade = Math.sin(t * Math.PI);
         const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
         const lane = commuter.lane * zone.radius * 0.95;
         const x = startP.x + Math.cos(angle) * pathLength * ease + Math.cos(sideAngle) * lane;
         const y = startP.y + Math.sin(angle) * pathLength * ease + Math.sin(sideAngle) * lane;
+        const size = commuter.size ?? 24;
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(angle);
-        ctx.globalAlpha = fade * 0.88;
-        ctx.fillStyle = "#f8f9fa";
-        ctx.shadowColor = "#b197fc";
-        ctx.shadowBlur = 10;
+        ctx.globalAlpha = fade * 0.92;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+
+        ctx.strokeStyle = "rgba(128, 255, 219, 0.34)";
+        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(0, -commuter.size * 0.9, commuter.size * 0.46, 0, TAU);
+        ctx.moveTo(-size * 1.65, size * 0.18);
+        ctx.lineTo(-size * 0.72, size * 0.18);
+        ctx.stroke();
+
+        ctx.shadowColor = "#80ffdb";
+        ctx.shadowBlur = 12;
+        ctx.fillStyle = "#ffd6a5";
+        ctx.beginPath();
+        ctx.arc(0, -size * 0.96, size * 0.38, 0, TAU);
         ctx.fill();
-        roundedRect(-commuter.size * 0.42, -commuter.size * 0.32, commuter.size * 0.84, commuter.size * 1.25, commuter.size * 0.25);
+
+        ctx.shadowBlur = 7;
+        ctx.fillStyle = commuter.coat ?? "#f8f9fa";
+        roundedRect(-size * 0.44, -size * 0.58, size * 0.88, size * 1.28, size * 0.22);
         ctx.fill();
-        ctx.fillStyle = "#b197fc";
-        ctx.fillRect(-commuter.size * 0.26, commuter.size * 0.82, commuter.size * 0.2, commuter.size * 0.75);
-        ctx.fillRect(commuter.size * 0.06, commuter.size * 0.82, commuter.size * 0.2, commuter.size * 0.75);
+        ctx.strokeStyle = "rgba(5, 8, 12, 0.66)";
+        ctx.lineWidth = 1.8;
+        roundedRect(-size * 0.44, -size * 0.58, size * 0.88, size * 1.28, size * 0.22);
+        ctx.stroke();
+
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = "#1d3557";
+        ctx.lineWidth = Math.max(3, size * 0.15);
+        ctx.beginPath();
+        ctx.moveTo(-size * 0.2, size * 0.66);
+        ctx.lineTo(-size * 0.42, size * 1.34);
+        ctx.moveTo(size * 0.16, size * 0.66);
+        ctx.lineTo(size * 0.43, size * 1.34);
+        ctx.stroke();
+
+        ctx.fillStyle = commuter.bag ?? "#7b2cbf";
+        roundedRect(size * 0.32, -size * 0.2, size * 0.42, size * 0.62, size * 0.12);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.48)";
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.arc(size * 0.32, -size * 0.1, size * 0.24, -Math.PI / 2, Math.PI / 2);
+        ctx.stroke();
+
+        ctx.fillStyle = "rgba(5, 8, 12, 0.86)";
+        ctx.beginPath();
+        ctx.arc(-size * 0.13, -size * 1.04, size * 0.045, 0, TAU);
+        ctx.arc(size * 0.13, -size * 1.04, size * 0.045, 0, TAU);
+        ctx.fill();
         ctx.restore();
       }
       ctx.restore();
