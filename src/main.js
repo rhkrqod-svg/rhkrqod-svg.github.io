@@ -111,7 +111,7 @@ const monsterTypes = [
     hp: 160,
     speed: 45,
     damage: 14,
-    radius: 62 * 0.52,
+    radius: 62 * 0.364,
     bodySize: 0.65,
     xp: 15,
     score: 42,
@@ -129,7 +129,7 @@ const monsterTypes = [
     hp: 80,
     speed: 80,
     damage: 8,
-    radius: 62 * 0.42,
+    radius: 62 * 0.294,
     bodySize: 0.42,
     xp: 9,
     score: 26,
@@ -147,7 +147,7 @@ const monsterTypes = [
     hp: 120,
     speed: 105,
     damage: 10,
-    radius: 62 * 0.4,
+    radius: 62 * 0.28,
     bodySize: 0.5,
     xp: 13,
     score: 38,
@@ -165,7 +165,7 @@ const monsterTypes = [
     hp: 220,
     speed: 30,
     damage: 10,
-    radius: 62 * 0.6,
+    radius: 62 * 0.42,
     bodySize: 0.75,
     xp: 19,
     score: 55,
@@ -183,7 +183,7 @@ const monsterTypes = [
     hp: 110,
     speed: 90,
     damage: 15,
-    radius: 62 * 0.46,
+    radius: 62 * 0.322,
     bodySize: 0.58,
     xp: 14,
     score: 46,
@@ -201,7 +201,7 @@ const monsterTypes = [
     hp: 140,
     speed: 60,
     damage: 12,
-    radius: 62 * 0.42,
+    radius: 62 * 0.294,
     bodySize: 0.52,
     xp: 15,
     score: 44,
@@ -431,20 +431,6 @@ const bossTypes = [
     score: 690,
     special: "boss-gum",
   },
-  {
-    id: "dance-woman",
-    name: "캐시워크녀",
-    image: "/assets/bosses/dance-woman.png",
-    color: "#3c096c",
-    trim: "#c77dff",
-    hp: 2380,
-    speed: 88,
-    damage: 26,
-    radius: 48,
-    xp: 155,
-    score: 700,
-    special: "boss-dance",
-  },
 ];
 
 const bossImages = new Map();
@@ -575,12 +561,12 @@ const upgradePool = [
     },
   },
   {
-    id: "callBell",
-    name: "분노의 호출벨",
-    desc: "호출벨 투사체가 날아가 적을 관통 공격",
+    id: "laser",
+    name: "개찰구 관통 레이저",
+    desc: "가장 가까운 방향으로 긴 레이저를 쏘아 적을 관통",
     apply: () => {
-      weapons.callBell.level += 1;
-      weapons.callBell.cooldown = Math.min(weapons.callBell.cooldown, 0.8);
+      weapons.laser.level += 1;
+      weapons.laser.cooldown = Math.min(weapons.laser.cooldown, 0.65);
     },
   },
   {
@@ -654,7 +640,7 @@ const weaponUpgradeIds = new Set([
   "expressTrain",
   "transferGate",
   "customerMissile",
-  "callBell",
+  "laser",
 ]);
 
 let width = 1;
@@ -683,7 +669,6 @@ const popups = [];
 const speechBubbles = [];
 const cards = [];
 const missiles = [];
-const callBells = [];
 
 const input = {
   x: 0,
@@ -691,6 +676,9 @@ const input = {
   touchId: null,
   originX: 0,
   originY: 0,
+  pointers: new Map(),
+  pinchDistance: 0,
+  pinchZoom: 1,
 };
 
 const camera = { x: 0, y: 0 };
@@ -741,7 +729,7 @@ const weapons = {
   expressTrain: { level: 0, cooldown: 8.2 },
   transferGate: { level: 0, cooldown: 6.2 },
   customerMissile: { level: 0, cooldown: 0.45 },
-  callBell: { level: 0, cooldown: 3.4 },
+  laser: { level: 0, cooldown: 2.8 },
 };
 
 const game = {
@@ -750,6 +738,7 @@ const game = {
   manualPaused: false,
   pendingHeroChoice: false,
   pendingStarterChoices: 0,
+  zoom: 1,
 };
 
 function resize() {
@@ -949,7 +938,6 @@ function resetGame() {
   speechBubbles.length = 0;
   cards.length = 0;
   missiles.length = 0;
-  callBells.length = 0;
   bossIndex = 0;
   bossBag = [];
   nextBossAt = 20;
@@ -1005,12 +993,16 @@ function resetGame() {
   Object.assign(weapons.expressTrain, { level: 0, cooldown: 8.2 });
   Object.assign(weapons.transferGate, { level: 0, cooldown: 6.2 });
   Object.assign(weapons.customerMissile, { level: 0, cooldown: 0.45 });
-  Object.assign(weapons.callBell, { level: 0, cooldown: 3.4 });
+  Object.assign(weapons.laser, { level: 0, cooldown: 2.8 });
   game.state = "playing";
   game.paused = true;
   game.manualPaused = false;
   game.pendingHeroChoice = true;
   game.pendingStarterChoices = 0;
+  game.zoom = 1;
+  input.pointers.clear();
+  input.pinchDistance = 0;
+  input.pinchZoom = 1;
   refs.message.classList.remove("start-screen");
   refs.message.classList.add("hidden");
   refs.heroPanel.classList.remove("hidden");
@@ -1117,16 +1109,17 @@ function spawnEnemy(type = null, boss = false) {
   const spawnDistance = Math.max(width, height) * 0.62 + 90;
   const x = clamp(player.x + Math.cos(angle) * spawnDistance, 50, WORLD_SIZE - 50);
   const y = clamp(player.y + Math.sin(angle) * spawnDistance, 50, WORLD_SIZE - 50);
-  const normalScale = boss ? 1 + minute * 0.11 : 1;
+  const normalScale = boss ? 1 + minute * 0.11 : 1 + Math.min(1.35, minute * 0.08);
   const enemy = {
     ...chosen,
     x,
     y,
     hp: chosen.hp * normalScale,
     maxHp: chosen.hp * normalScale,
-    speed: chosen.speed * (boss ? 1.3 : 1),
+    speed: chosen.speed * (boss ? 1.42 : 1),
     damage: chosen.damage * (boss ? 1 : 1),
     radius: chosen.radius * (boss ? BOSS_SIZE_SCALE : MONSTER_SIZE_SCALE),
+    xp: Math.round(chosen.xp * normalScale),
     boss,
     angleOffset: Math.random() * TAU,
     cooldown: rand(0.3, 1.1),
@@ -1167,12 +1160,12 @@ function spawnBoss() {
   const base = drawBossType();
   const boss = spawnEnemy({ ...base, weight: () => 0 }, true);
   const cycle = Math.floor(bossIndex / bossTypes.length);
-  const multiplier = 0.55 + bossIndex * 0.24 + cycle * 0.35;
+  const multiplier = 0.68 + bossIndex * 0.27 + cycle * 0.4;
   boss.hp *= multiplier;
   boss.maxHp = boss.hp;
   boss.damage *= 0.82 + bossIndex * 0.06;
   boss.score = Math.round(base.score * (1 + bossIndex * 0.25));
-  boss.xp = Math.round(base.xp * (1 + bossIndex * 0.18));
+  boss.xp = Math.round(base.xp * multiplier);
   boss.radius = (base.radius + Math.min(14, bossIndex * 2)) * BOSS_SIZE_SCALE;
   bossIndex += 1;
   showBossBanner(base.name);
@@ -1332,7 +1325,7 @@ function spawnLowKick() {
     arc: 2.12,
     radius: 232 + level * 44,
     damage: 30 + level * 22,
-    push: 76 + level * 18,
+    push: 150 + level * 32,
     life: 0.42,
     maxLife: 0.42,
     color: "#ffb703",
@@ -1378,7 +1371,7 @@ function spawnExpressTrain() {
     hits: new Set(),
     kind: "train",
   });
-  shake = Math.max(shake, 8);
+  shake = Math.max(shake, 4);
   playSound("train");
 }
 
@@ -1441,7 +1434,7 @@ function explodeCustomerMissile(missile) {
   });
   addParticles(missile.x, missile.y, "#80ffdb", 14 + level * 2);
   addParticles(missile.x, missile.y, "#fff3b0", 8);
-  shake = Math.max(shake, 5);
+  shake = Math.max(shake, 2.5);
   playSound("explosion");
 }
 
@@ -1473,33 +1466,28 @@ function spawnCustomerMissiles() {
   playSound("missile");
 }
 
-function spawnCallBell() {
-  const level = weapons.callBell.level;
+function spawnLaser() {
+  const level = weapons.laser.level;
   if (level <= 0 || enemies.length === 0) return;
-  const target = findNearestEnemy(900 + level * 60);
+  const target = findNearestEnemy(920 + level * 80);
   if (!target) return;
-  const count = Math.min(3, 1 + Math.floor((level - 1) / 3));
-  const baseAngle = angleTo(player, target);
-  const spread = count === 1 ? 0 : 0.28;
-  for (let i = 0; i < count; i += 1) {
-    const angle = baseAngle + (count === 1 ? 0 : -spread / 2 + (spread * i) / (count - 1));
-    const speed = 500 + level * 28;
-    callBells.push({
-      x: player.x + Math.cos(angle) * 24,
-      y: player.y + Math.sin(angle) * 24,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
-      damage: 28 + level * 16,
-      radius: 14 + level * 0.6,
-      pierce: 2 + Math.floor(level * 0.75),
-      life: 1.35,
-      rotation: Math.random() * TAU,
-      hits: new Set(),
-      trail: [],
-    });
-  }
-  addParticles(player.x + Math.cos(baseAngle) * 42, player.y + Math.sin(baseAngle) * 42, "#ff6b6b", 8);
-  playSound("bell");
+  const angle = angleTo(player, target);
+  damageZones.push({
+    x: player.x,
+    y: player.y,
+    angle,
+    length: 720 + level * 90,
+    width: 26 + level * 5,
+    radius: 720 + level * 90,
+    damage: 42 + level * 25,
+    life: 0.28,
+    maxLife: 0.28,
+    color: "#64dfdf",
+    hits: new Set(),
+    kind: "laser",
+  });
+  addParticles(player.x + Math.cos(angle) * 46, player.y + Math.sin(angle) * 46, "#64dfdf", 10);
+  playSound("lightning");
 }
 
 function updatePlayer(delta) {
@@ -1574,10 +1562,10 @@ function updatePlayer(delta) {
     weapons.customerMissile.cooldown = Math.max(0.28, 0.55 - weapons.customerMissile.level * 0.04);
   }
 
-  weapons.callBell.cooldown -= delta;
-  if (weapons.callBell.level > 0 && weapons.callBell.cooldown <= 0) {
-    spawnCallBell();
-    weapons.callBell.cooldown = Math.max(0.9, 3.5 - weapons.callBell.level * 0.22);
+  weapons.laser.cooldown -= delta;
+  if (weapons.laser.level > 0 && weapons.laser.cooldown <= 0) {
+    spawnLaser();
+    weapons.laser.cooldown = Math.max(1.35, 3.15 - weapons.laser.level * 0.24);
   }
 
 }
@@ -1585,9 +1573,9 @@ function updatePlayer(delta) {
 function updateEnemies(delta) {
   const minute = player.elapsed / 60;
   spawnTimer -= delta;
-  const spawnGap = Math.max(0.09, 0.62 - minute * 0.075);
+  const spawnGap = Math.max(0.16, 0.68 - minute * 0.038);
   if (spawnTimer <= 0) {
-    const pack = 2 + Math.floor(minute * 1.2) + (Math.random() < 0.25 + minute * 0.1 ? 1 : 0);
+    const pack = 1 + Math.floor(minute * 0.55) + (Math.random() < 0.28 + minute * 0.035 ? 1 : 0);
     for (let i = 0; i < pack; i += 1) spawnEnemy();
     spawnTimer = spawnGap;
   }
@@ -1800,7 +1788,7 @@ function createDansoShockwave(enemy) {
     applied: false,
     kind: "dansoShock",
   });
-  shake = Math.max(shake, 10);
+  shake = Math.max(shake, 4.5);
   addParticles(enemy.x, enemy.y, "#f9c74f", 18);
   addPopup("단소 충격파", enemy.x, enemy.y - 34, "#fff3b0", 0.65, 15);
 }
@@ -1829,7 +1817,7 @@ function createAirportTaunt(enemy) {
 
 function createAirportCrisis(enemy) {
   addSpeechBubble(enemy, "금융 위기 모르냐 금융위기 거지야~", 1.45);
-  shake = Math.max(shake, 8);
+  shake = Math.max(shake, 3.5);
   for (let i = 0; i < 12; i += 1) {
     const angle = (TAU * i) / 12 + rand(-0.16, 0.16);
     damageZones.push({
@@ -1934,7 +1922,7 @@ function createPraiseStunWave(enemy) {
     applied: false,
     kind: "praiseWave",
   });
-  shake = Math.max(shake, 7);
+  shake = Math.max(shake, 3);
 }
 
 function createGumBubble(enemy) {
@@ -2022,7 +2010,7 @@ function createDanceStamp(enemy) {
     applied: false,
     kind: "danceStamp",
   });
-  shake = Math.max(shake, 6);
+  shake = Math.max(shake, 2.8);
 }
 
 function dropFakeLuggage(enemy) {
@@ -2141,29 +2129,6 @@ function updateProjectiles(delta) {
     }
   }
 
-  for (const bell of [...callBells]) {
-    bell.trail.push({ x: bell.x, y: bell.y, life: 0.24 });
-    if (bell.trail.length > 10) bell.trail.shift();
-    for (const point of bell.trail) point.life -= delta;
-    bell.trail = bell.trail.filter((point) => point.life > 0);
-    bell.x += bell.vx * delta;
-    bell.y += bell.vy * delta;
-    bell.rotation += delta * 13;
-    bell.life -= delta;
-
-    for (const enemy of [...enemies]) {
-      if (bell.hits.has(enemy)) continue;
-      if (Math.hypot(enemy.x - bell.x, enemy.y - bell.y) < enemy.radius + bell.radius) {
-        bell.hits.add(enemy);
-        damageEnemy(enemy, bell.damage, "#ff6b6b");
-        addParticles(enemy.x, enemy.y, "#ff6b6b", 7);
-        bell.pierce -= 1;
-        if (bell.pierce < 0) bell.life = 0;
-      }
-    }
-    if (bell.life <= 0) callBells.splice(callBells.indexOf(bell), 1);
-  }
-
   updateBlade(delta);
 }
 
@@ -2213,7 +2178,7 @@ function killEnemy(enemy) {
   if (enemy.boss) {
     playSound("bossKill");
     grantFirstAidKit(1, enemy.x, enemy.y);
-    shake = Math.max(shake, 18);
+    shake = Math.max(shake, 7);
     for (let i = 0; i < 16; i += 1) dropXp(enemy.x + rand(-45, 45), enemy.y + rand(-45, 45), 12);
     nextBossAt = player.elapsed + Math.max(34, 46 - Math.min(12, bossIndex * 2));
     bossWarningFor = 0;
@@ -2232,20 +2197,18 @@ function grantFirstAidKit(count = 1, x = player.x, y = player.y) {
 }
 
 function dropEnergy(enemy) {
-  const guaranteed = enemy.boss;
-  const dropChance = enemy.boss ? 1 : 1 / 500;
-  if (!guaranteed && Math.random() > dropChance) return;
+  if (!enemy.boss) return;
 
   const count = 1;
-  const heal = enemy.boss ? Math.round(player.maxHp * 0.2) : Math.round(rand(14, 23));
+  const heal = Math.round(player.maxHp * 0.2);
   for (let i = 0; i < count; i += 1) {
     const angle = Math.random() * TAU;
-    const distance = enemy.boss ? rand(12, 54) : rand(6, 20);
+    const distance = rand(12, 54);
     energyPickups.push({
       x: enemy.x + Math.cos(angle) * distance,
       y: enemy.y + Math.sin(angle) * distance,
       heal: count > 1 ? Math.round(heal / count) : heal,
-      radius: enemy.boss ? 13 : 10,
+      radius: 13,
       boss: enemy.boss,
       pulse: Math.random() * TAU,
       vx: Math.cos(angle) * rand(22, 68),
@@ -2354,18 +2317,23 @@ function gainXp(amount) {
 }
 
 function openUpgradePanel() {
-  game.paused = true;
+  game.paused = game.pendingStarterChoices > 0;
   if (refs.upgradeTitle) {
     refs.upgradeTitle.textContent =
       game.pendingStarterChoices > 0 ? `기본 스킬 선택 ${4 - game.pendingStarterChoices}/3` : "레벨 업";
   }
   const starterPool = upgradePool.filter((choice) => choice && weaponUpgradeIds.has(choice.id));
   const choicePool = game.pendingStarterChoices > 0 ? starterPool : upgradePool;
-  const choices = pickUpgradeChoices(choicePool, 3, game.pendingStarterChoices <= 0);
+  const choices = pickUpgradeChoices(choicePool, 3, game.pendingStarterChoices <= 0).sort((a, b) => {
+    const aRank = weaponUpgradeIds.has(a.id) ? 0 : passiveUpgradeIds.has(a.id) ? 1 : 2;
+    const bRank = weaponUpgradeIds.has(b.id) ? 0 : passiveUpgradeIds.has(b.id) ? 1 : 2;
+    return aRank - bRank;
+  });
   refs.upgradeChoices.innerHTML = "";
   for (const choice of choices) {
     const button = document.createElement("button");
-    button.className = "upgrade-card";
+    const upgradeType = weaponUpgradeIds.has(choice.id) ? "attack" : passiveUpgradeIds.has(choice.id) ? "passive" : "basic";
+    button.className = `upgrade-card ${upgradeType}`;
     button.type = "button";
     button.innerHTML = `<strong>${choice.name}</strong><span>${choice.desc}</span>`;
     button.addEventListener("click", () => {
@@ -2382,7 +2350,7 @@ function openUpgradePanel() {
       refs.upgradePanel.classList.add("hidden");
       if (refs.upgradeTitle) refs.upgradeTitle.textContent = "레벨 업";
       game.manualPaused = false;
-      game.paused = false;
+      game.paused = game.manualPaused;
       updateHud();
     });
     refs.upgradeChoices.append(button);
@@ -2444,7 +2412,7 @@ function updateDamageZones(delta) {
       const armed = zone.armedAt ? progress >= zone.armedAt : true;
       if (zone.kind === "bomb" && armed && !zone.exploded) {
         zone.exploded = true;
-        shake = Math.max(shake, 10);
+        shake = Math.max(shake, 4);
         addParticles(zone.x, zone.y, "#ff6b6b", 18);
         addParticles(zone.x, zone.y, "#ffd166", 14);
         addPopup("쾅!", zone.x, zone.y - 18, "#fff3b0", 0.45, 18);
@@ -2459,6 +2427,12 @@ function updateDamageZones(delta) {
             const distanceToEnemy = Math.hypot(enemy.x - zone.x, enemy.y - zone.y);
             const kickAngle = angleTo(zone, enemy);
             hit = distanceToEnemy < zone.radius + enemy.radius && Math.abs(angleDelta(kickAngle, zone.angle)) < zone.arc / 2;
+          } else if (zone.kind === "laser") {
+            const dx = enemy.x - zone.x;
+            const dy = enemy.y - zone.y;
+            const forward = Math.cos(zone.angle) * dx + Math.sin(zone.angle) * dy;
+            const side = Math.abs(-Math.sin(zone.angle) * dx + Math.cos(zone.angle) * dy);
+            hit = forward > 0 && forward < zone.length + enemy.radius && side < zone.width / 2 + enemy.radius;
           } else if (zone.kind === "gate") {
             const angle = zone.angle ?? 0;
             const sideAngle = angle + Math.PI / 2;
@@ -2564,7 +2538,7 @@ function updateEffects(delta) {
     bubble.life -= delta;
     if (bubble.life <= 0) speechBubbles.splice(speechBubbles.indexOf(bubble), 1);
   }
-  shake = Math.max(0, shake - delta * 24);
+  shake = Math.max(0, shake - delta * 34);
 }
 
 function escapeHtml(value) {
@@ -2629,7 +2603,7 @@ function renderLeaderboard() {
               <li>
                 <strong>${index + 1}</strong>
                 <span>${escapeHtml(entry.name)}</span>
-                <span>${entry.score}점</span>
+                <span>${formatScore(entry.score)}점</span>
               </li>
             `,
           )
@@ -2726,8 +2700,8 @@ function endGame(won) {
   localStorage.setItem(STORAGE_KEY, String(bestScore));
   refs.messageTitle.textContent = won ? "작전 성공" : "작전 종료";
   refs.messageText.textContent = won
-    ? `20분을 버텼습니다. 최종 점수 ${player.score}점.`
-    : `최종 점수 ${player.score}점. 다시 출동할 수 있습니다.`;
+    ? `20분을 버텼습니다. 최종 점수 ${formatScore(player.score)}점.`
+    : `최종 점수 ${formatScore(player.score)}점. 다시 출동할 수 있습니다.`;
   refs.startButton.textContent = "다시 출동";
   refs.message.classList.remove("start-screen");
   refs.message.classList.remove("hidden");
@@ -2741,14 +2715,27 @@ function formatTime(seconds) {
   return `${min}:${sec}`;
 }
 
+function formatScore(value) {
+  const score = Math.max(0, Math.round(Number(value) || 0));
+  if (score >= 10000) {
+    const compact = score / 10000;
+    return `${compact >= 10 ? Math.round(compact) : compact.toFixed(1).replace(/\.0$/, "")}M`;
+  }
+  if (score >= 1000) {
+    const compact = score / 1000;
+    return `${compact >= 10 ? Math.round(compact) : compact.toFixed(1).replace(/\.0$/, "")}k`;
+  }
+  return String(score);
+}
+
 function updateHud() {
   refs.hp.textContent = `${Math.ceil(player.hp)} / ${player.maxHp}`;
   refs.hpFill.style.transform = `scaleX(${clamp(player.hp / player.maxHp, 0, 1)})`;
   refs.level.textContent = player.level;
   refs.time.textContent = formatTime(player.elapsed);
-  refs.score.textContent = player.score;
+  refs.score.textContent = formatScore(player.score);
   refs.xpFill.style.transform = `scaleX(${clamp(player.xp / player.nextXp, 0, 1)})`;
-  refs.bestScore.textContent = bestScore;
+  refs.bestScore.textContent = formatScore(bestScore);
   if (refs.firstAidCount) refs.firstAidCount.textContent = player.firstAidKits;
   if (refs.firstAidButton) refs.firstAidButton.disabled = player.firstAidKits <= 0 || player.hp >= player.maxHp || game.state !== "playing" || game.paused;
   if (refs.pauseButton) {
@@ -2756,25 +2743,25 @@ function updateHud() {
     refs.pauseButton.textContent = game.manualPaused ? "▶" : "Ⅱ";
     refs.pauseButton.classList.toggle("active", game.manualPaused);
   }
-  refs.weaponList.innerHTML = [
-    `탄환 x${player.shots}`,
-    weapons.card.level > 0 ? `교통카드 Lv.${weapons.card.level}` : null,
-    weapons.lightning.level > 0 ? `번개 Lv.${weapons.lightning.level}` : null,
-    weapons.lowKick.level > 0 ? `로우킥 Lv.${weapons.lowKick.level}` : null,
-    weapons.strapOrbit.level > 0 ? `손잡이 Lv.${weapons.strapOrbit.level}` : null,
-    weapons.announcement.level > 0 ? `방송파 Lv.${weapons.announcement.level}` : null,
-    weapons.expressTrain.level > 0 ? `급행 Lv.${weapons.expressTrain.level}` : null,
-    weapons.transferGate.level > 0 ? `환승 Lv.${weapons.transferGate.level}` : null,
-    weapons.customerMissile.level > 0 ? `유도탄 Lv.${weapons.customerMissile.level}` : null,
-    weapons.callBell.level > 0 ? `호출벨 Lv.${weapons.callBell.level}` : null,
-    player.defenseBreakTimer > 0 ? `방어저하 ${Math.ceil(player.defenseBreakTimer)}초` : null,
-    player.stunTimer > 0 ? `경직 ${Math.ceil(player.stunTimer)}초` : null,
-    player.slowTimer > 0 ? `둔화 ${Math.ceil(player.slowTimer)}초` : null,
-    player.damageReduction > 0 ? `내성 ${Math.round(player.damageReduction * 100)}%` : null,
-    player.regenLevel > 0 ? `회복 Lv.${player.regenLevel}` : null,
-  ]
-    .filter(Boolean)
-    .map((item) => `<span>${item}</span>`)
+  const loadoutItems = [
+    { label: `탄환 x${player.shots}`, type: "attack" },
+    weapons.card.level > 0 ? { label: `교통카드 Lv.${weapons.card.level}`, type: "attack" } : null,
+    weapons.lightning.level > 0 ? { label: `번개 Lv.${weapons.lightning.level}`, type: "attack" } : null,
+    weapons.lowKick.level > 0 ? { label: `로우킥 Lv.${weapons.lowKick.level}`, type: "attack" } : null,
+    weapons.strapOrbit.level > 0 ? { label: `손잡이 Lv.${weapons.strapOrbit.level}`, type: "attack" } : null,
+    weapons.announcement.level > 0 ? { label: `방송파 Lv.${weapons.announcement.level}`, type: "attack" } : null,
+    weapons.expressTrain.level > 0 ? { label: `급행 Lv.${weapons.expressTrain.level}`, type: "attack" } : null,
+    weapons.transferGate.level > 0 ? { label: `환승 Lv.${weapons.transferGate.level}`, type: "attack" } : null,
+    weapons.customerMissile.level > 0 ? { label: `유도탄 Lv.${weapons.customerMissile.level}`, type: "attack" } : null,
+    weapons.laser.level > 0 ? { label: `레이저 Lv.${weapons.laser.level}`, type: "attack" } : null,
+    player.defenseBreakTimer > 0 ? { label: `방어저하 ${Math.ceil(player.defenseBreakTimer)}초`, type: "status" } : null,
+    player.stunTimer > 0 ? { label: `경직 ${Math.ceil(player.stunTimer)}초`, type: "status" } : null,
+    player.slowTimer > 0 ? { label: `둔화 ${Math.ceil(player.slowTimer)}초`, type: "status" } : null,
+    player.damageReduction > 0 ? { label: `내성 ${Math.round(player.damageReduction * 100)}%`, type: "passive" } : null,
+    player.regenLevel > 0 ? { label: `회복 Lv.${player.regenLevel}`, type: "passive" } : null,
+  ].filter(Boolean);
+  refs.weaponList.innerHTML = loadoutItems
+    .map((item) => `<span class="${item.type}">${item.label}</span>`)
     .join("");
 }
 
@@ -3136,21 +3123,6 @@ function drawEnemy(enemy) {
     ctx.fillRect(bar.x - barWidth / 2, bar.y, barWidth * clamp(enemy.hp / enemy.maxHp, 0, 1), 6);
   }
 
-  if (enemy.boss) {
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const label = worldToScreen(enemy.x, enemy.y + visualBottom + 24);
-    ctx.fillStyle = "#fff3b0";
-    ctx.font = "900 15px system-ui";
-    ctx.textAlign = "center";
-    ctx.fillText(enemy.name, label.x, label.y);
-  } else {
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const label = worldToScreen(enemy.x, enemy.y + enemy.radius + 18);
-    ctx.fillStyle = "rgba(248,249,250,0.74)";
-    ctx.font = "900 11px system-ui";
-    ctx.textAlign = "center";
-    ctx.fillText(enemy.shortName, label.x, label.y);
-  }
   ctx.restore();
 }
 
@@ -3240,44 +3212,6 @@ function drawProjectiles() {
     ctx.stroke();
     ctx.fillStyle = "#ff6b6b";
     ctx.fillRect(-14, -4, 5, 8);
-    ctx.restore();
-  }
-
-  for (const bell of callBells) {
-    for (const point of bell.trail) {
-      const trailPoint = worldToScreen(point.x, point.y);
-      ctx.globalAlpha = clamp(point.life / 0.24, 0, 1) * 0.46;
-      ctx.fillStyle = "#ff6b6b";
-      ctx.beginPath();
-      ctx.arc(trailPoint.x, trailPoint.y, Math.max(4, bell.radius * 0.45), 0, TAU);
-      ctx.fill();
-      ctx.globalAlpha = 1;
-    }
-    const p = worldToScreen(bell.x, bell.y);
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.rotate(bell.rotation);
-    ctx.shadowColor = "#ff6b6b";
-    ctx.shadowBlur = 14;
-    ctx.fillStyle = "#fff3b0";
-    ctx.strokeStyle = "#7a1f24";
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.arc(0, -2, bell.radius * 0.72, Math.PI, TAU);
-    ctx.lineTo(bell.radius * 0.9, bell.radius * 0.55);
-    ctx.lineTo(-bell.radius * 0.9, bell.radius * 0.55);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = "#ff6b6b";
-    ctx.beginPath();
-    ctx.arc(0, bell.radius * 0.58, bell.radius * 0.25, 0, TAU);
-    ctx.fill();
-    ctx.fillStyle = "#7a1f24";
-    ctx.font = "900 8px system-ui";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("CALL", 0, 1);
     ctx.restore();
   }
 
@@ -3374,6 +3308,37 @@ function drawDamageZones() {
         ctx.moveTo(-20, p.y);
         ctx.lineTo(width + 20, p.y);
       }
+      ctx.stroke();
+      ctx.restore();
+      continue;
+    }
+
+    if (zone.kind === "laser") {
+      const flash = Math.sin(progress * Math.PI);
+      const endX = p.x + Math.cos(zone.angle) * zone.length;
+      const endY = p.y + Math.sin(zone.angle) * zone.length;
+      ctx.globalCompositeOperation = "lighter";
+      ctx.lineCap = "round";
+      ctx.globalAlpha = 0.16 + flash * 0.24;
+      ctx.strokeStyle = "#64dfdf";
+      ctx.lineWidth = zone.width * 2.1;
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+      ctx.globalAlpha = 0.42 + flash * 0.38;
+      ctx.strokeStyle = "#80ffdb";
+      ctx.lineWidth = zone.width;
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+      ctx.globalAlpha = 0.9;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = Math.max(3, zone.width * 0.22);
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(endX, endY);
       ctx.stroke();
       ctx.restore();
       continue;
@@ -4082,6 +4047,11 @@ function render() {
   if (shake > 0) {
     ctx.translate(rand(-shake, shake), rand(-shake, shake));
   }
+  if (game.zoom !== 1) {
+    ctx.translate(width / 2, height / 2);
+    ctx.scale(game.zoom, game.zoom);
+    ctx.translate(-width / 2, -height / 2);
+  }
   drawGrid();
   drawDamageZones();
   drawOrbs();
@@ -4108,7 +4078,8 @@ function frame(now) {
 }
 
 function shouldIgnoreMovePointer(event) {
-  if (game.state !== "playing" || game.paused || input.touchId !== null) return true;
+  if (game.state !== "playing" || game.paused) return true;
+  if (input.touchId !== null && input.pointers.size < 1) return true;
   return Boolean(event.target?.closest?.("button, input, form, .message, .hero-panel, .upgrade-panel, .leaderboard-panel"));
 }
 
@@ -4159,6 +4130,21 @@ function resetFloatingStickMove() {
   refs.moveStick?.classList.remove("active");
 }
 
+function getPinchDistance() {
+  const points = [...input.pointers.values()];
+  if (points.length < 2) return 0;
+  return Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+}
+
+function updatePinchZoom() {
+  if (input.pointers.size < 2 || input.pinchDistance <= 0) return;
+  game.zoom = clamp(input.pinchZoom * (getPinchDistance() / input.pinchDistance), 0.82, 1.35);
+}
+
+function rememberPointer(event) {
+  input.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+}
+
 window.addEventListener("resize", resize);
 new ResizeObserver(resize).observe(refs.app);
 window.addEventListener("keydown", (event) => {
@@ -4178,6 +4164,13 @@ refs.rankForm?.addEventListener("submit", submitLeaderboardEntry);
 refs.app.addEventListener("pointerdown", (event) => {
   if (shouldIgnoreMovePointer(event)) return;
   event.preventDefault();
+  rememberPointer(event);
+  if (input.pointers.size >= 2) {
+    resetFloatingStickMove();
+    input.pinchDistance = getPinchDistance();
+    input.pinchZoom = game.zoom;
+    return;
+  }
   input.touchId = event.pointerId;
   refs.app.setPointerCapture?.(event.pointerId);
   positionFloatingStick(event.clientX, event.clientY);
@@ -4185,6 +4178,14 @@ refs.app.addEventListener("pointerdown", (event) => {
 });
 
 refs.app.addEventListener("pointermove", (event) => {
+  if (input.pointers.has(event.pointerId)) {
+    rememberPointer(event);
+    if (input.pointers.size >= 2) {
+      event.preventDefault();
+      updatePinchZoom();
+      return;
+    }
+  }
   if (input.touchId !== event.pointerId) return;
   event.preventDefault();
   setFloatingStickMove(event.clientX, event.clientY);
@@ -4192,11 +4193,25 @@ refs.app.addEventListener("pointermove", (event) => {
 
 refs.app.addEventListener("pointerup", (event) => {
   if (input.touchId === event.pointerId) resetFloatingStickMove();
+  input.pointers.delete(event.pointerId);
+  if (input.pointers.size < 2) input.pinchDistance = 0;
 });
 
 refs.app.addEventListener("pointercancel", (event) => {
   if (input.touchId === event.pointerId) resetFloatingStickMove();
+  input.pointers.delete(event.pointerId);
+  if (input.pointers.size < 2) input.pinchDistance = 0;
 });
+
+refs.app.addEventListener(
+  "wheel",
+  (event) => {
+    if (game.state !== "playing") return;
+    event.preventDefault();
+    game.zoom = clamp(game.zoom + (event.deltaY < 0 ? 0.08 : -0.08), 0.82, 1.35);
+  },
+  { passive: false },
+);
 
 resize();
 renderCodex();
