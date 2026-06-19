@@ -1123,6 +1123,22 @@ function calculateEnemyXp(type, hpScale) {
   return Math.max(1, Math.round(baseXp * hpScale * ENEMY_XP_REWARD_MULTIPLIER));
 }
 
+function getEnemyLevelBonus() {
+  return Math.max(0, player.level - 1);
+}
+
+function getBossHpLevelScale() {
+  return 1 + getEnemyLevelBonus() * 0.14;
+}
+
+function getBossAttackLevelScale() {
+  return 1 + getEnemyLevelBonus() * 0.08;
+}
+
+function scaleBossDamage(enemy, damage) {
+  return Math.round(damage * (enemy.attackScale ?? 1));
+}
+
 function spawnEnemy(type = null, boss = false) {
   const minute = player.elapsed / 60;
   const chosen = type ?? weightedPick(monsterTypes, minute);
@@ -1131,8 +1147,9 @@ function spawnEnemy(type = null, boss = false) {
   const x = clamp(player.x + Math.cos(angle) * spawnDistance, 50, WORLD_SIZE - 50);
   const y = clamp(player.y + Math.sin(angle) * spawnDistance, 50, WORLD_SIZE - 50);
   const normalScale = boss ? 1 + minute * 0.11 : 1 + Math.min(1.35, minute * 0.08);
-  const levelHpScale = 1 + Math.max(0, player.level - 1) * 0.1;
+  const levelHpScale = boss ? getBossHpLevelScale() : 1 + getEnemyLevelBonus() * 0.1;
   const hpScale = normalScale * levelHpScale;
+  const attackScale = boss ? getBossAttackLevelScale() : 1;
   const enemy = {
     ...chosen,
     x,
@@ -1140,7 +1157,8 @@ function spawnEnemy(type = null, boss = false) {
     hp: chosen.hp * hpScale,
     maxHp: chosen.hp * hpScale,
     speed: chosen.speed * (boss ? 1.42 : 1),
-    damage: chosen.damage * (boss ? 1 : 1),
+    damage: chosen.damage * attackScale,
+    attackScale,
     radius: chosen.radius * (boss ? BOSS_SIZE_SCALE : MONSTER_SIZE_SCALE),
     xp: calculateEnemyXp(chosen, hpScale),
     boss,
@@ -1186,9 +1204,11 @@ function spawnBoss() {
   const boss = spawnEnemy({ ...base, weight: () => 0 }, true);
   const cycle = Math.floor(bossIndex / bossTypes.length);
   const multiplier = 0.68 + bossIndex * 0.27 + cycle * 0.4;
+  const damageMultiplier = 0.82 + bossIndex * 0.06;
   boss.hp *= multiplier;
   boss.maxHp = boss.hp;
-  boss.damage *= 0.82 + bossIndex * 0.06;
+  boss.damage *= damageMultiplier;
+  boss.attackScale *= damageMultiplier;
   boss.score = Math.round(base.score * (1 + bossIndex * 0.25));
   boss.xp = Math.round(base.xp * multiplier);
   boss.radius = (base.radius + Math.min(14, bossIndex * 2)) * BOSS_SIZE_SCALE;
@@ -1796,7 +1816,7 @@ function createPulse(enemy, radius, damage) {
     x: enemy.x,
     y: enemy.y,
     radius,
-    damage,
+    damage: scaleBossDamage(enemy, damage),
     life: 0.52,
     maxLife: 0.52,
     color: enemy.boss ? "#ff477e" : "#ffd166",
@@ -1814,7 +1834,7 @@ function createDansoSwing(enemy) {
     angle,
     arc: 1.55,
     radius: 142,
-    damage: 18,
+    damage: scaleBossDamage(enemy, 18),
     push: 42,
     life: 0.34,
     maxLife: 0.34,
@@ -1832,7 +1852,7 @@ function createDansoShockwave(enemy) {
     x: enemy.x,
     y: enemy.y,
     radius: 178,
-    damage: 22,
+    damage: scaleBossDamage(enemy, 22),
     push: 64,
     life: 0.72,
     maxLife: 0.72,
@@ -1854,7 +1874,7 @@ function createDansoSoundwave(enemy) {
     vx: Math.cos(angle) * 310,
     vy: Math.sin(angle) * 310,
     radius: 42,
-    damage: 19,
+    damage: scaleBossDamage(enemy, 19),
     push: 48,
     life: 1.25,
     maxLife: 1.25,
@@ -1877,7 +1897,7 @@ function createAirportTaunt(enemy) {
     length: 210,
     width: 56,
     radius: 210,
-    damage: 20,
+    damage: scaleBossDamage(enemy, 20),
     push: 70,
     life: 0.34,
     maxLife: 0.34,
@@ -1899,7 +1919,7 @@ function createAirportCrisis(enemy) {
       vx: Math.cos(angle) * rand(180, 330),
       vy: Math.sin(angle) * rand(180, 330),
       radius: 24,
-      damage: 12,
+      damage: scaleBossDamage(enemy, 12),
       life: 1.25,
       maxLife: 1.25,
       color: "#80ffdb",
@@ -1947,7 +1967,7 @@ function createJarvanSpear(enemy) {
     length: 238,
     width: 58,
     radius: 238,
-    damage: 24,
+    damage: scaleBossDamage(enemy, 24),
     push: 86,
     stun: 0.46,
     life: 0.44,
@@ -1969,7 +1989,7 @@ function createPraiseThumb(enemy) {
     vx: Math.cos(angle) * 420,
     vy: Math.sin(angle) * 420,
     radius: 24,
-    damage: 18,
+    damage: scaleBossDamage(enemy, 18),
     life: 1.25,
     maxLife: 1.25,
     color: "#c77dff",
@@ -1986,7 +2006,7 @@ function createPraiseStunWave(enemy) {
     x: enemy.x,
     y: enemy.y,
     radius: 230,
-    damage: 12,
+    damage: scaleBossDamage(enemy, 12),
     stun: 3,
     life: 0.78,
     maxLife: 0.78,
@@ -2006,7 +2026,7 @@ function createGumBubble(enemy) {
     vx: Math.cos(angle) * 310,
     vy: Math.sin(angle) * 310,
     radius: 25,
-    damage: 15,
+    damage: scaleBossDamage(enemy, 15),
     slow: 10,
     slowMultiplier: 0.55,
     life: 1.6,
@@ -2031,7 +2051,7 @@ function createGumMissiles(enemy) {
       vx: Math.cos(angle) * 260,
       vy: Math.sin(angle) * 260,
       radius: 30,
-      damage: 19,
+      damage: scaleBossDamage(enemy, 19),
       slow: 10,
       slowMultiplier: 0.5,
       life: 2.0,
@@ -2054,7 +2074,7 @@ function createGiantGumBubble(enemy) {
     vx: Math.cos(angle) * 185,
     vy: Math.sin(angle) * 185,
     radius: 68,
-    damage: 34,
+    damage: scaleBossDamage(enemy, 34),
     push: 46,
     slow: 12,
     slowMultiplier: 0.42,
@@ -2078,7 +2098,7 @@ function createDanceKick(enemy) {
     angle,
     arc: 1.25,
     radius: 120,
-    damage: 21,
+    damage: scaleBossDamage(enemy, 21),
     push: 72,
     life: 0.32,
     maxLife: 0.32,
@@ -2096,7 +2116,7 @@ function createDanceStamp(enemy) {
     x: player.x,
     y: player.y,
     radius: 118,
-    damage: 26,
+    damage: scaleBossDamage(enemy, 26),
     push: 54,
     life: 0.86,
     maxLife: 0.86,
@@ -2117,7 +2137,7 @@ function dropFakeLuggage(enemy) {
       x: enemy.x + Math.cos(angle) * rand(40, 115),
       y: enemy.y + Math.sin(angle) * rand(40, 115),
       radius: enemy.boss ? 42 : 30,
-      damage: enemy.boss ? 14 : 8,
+      damage: enemy.boss ? scaleBossDamage(enemy, 14) : 8,
       life: 2.3,
       maxLife: 2.3,
       color: "#74c0fc",
