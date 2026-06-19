@@ -1296,18 +1296,20 @@ function spawnCard() {
   if (!target) return;
   const angle = angleTo(player, target);
   const level = weapons.card.level;
+  const speed = 620 + level * 42;
   cards.push({
     x: player.x,
     y: player.y,
-    vx: Math.cos(angle) * (650 + level * 34),
-    vy: Math.sin(angle) * (650 + level * 34),
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
     damage: 46 + level * 32,
-    life: 2.15,
-    maxLife: 2.15,
+    life: 7.5 + level * 0.35,
+    maxLife: 7.5 + level * 0.35,
     radius: 24 + level * 3,
     rotation: 0,
-    returning: false,
-    hits: new Set(),
+    bounces: 0,
+    maxBounces: 5,
+    hitTimers: new Map(),
     trail: [],
   });
   playSound("card");
@@ -2196,28 +2198,50 @@ function updateProjectiles(delta) {
     if (card.trail.length > 12) card.trail.shift();
     for (const point of card.trail) point.life -= delta;
     card.trail = card.trail.filter((point) => point.life > 0);
+    for (const [enemy, cooldown] of [...card.hitTimers.entries()]) {
+      const nextCooldown = cooldown - delta;
+      if (nextCooldown <= 0 || !enemies.includes(enemy)) card.hitTimers.delete(enemy);
+      else card.hitTimers.set(enemy, nextCooldown);
+    }
 
     card.x += card.vx * delta;
     card.y += card.vy * delta;
     card.rotation += delta * (12 + weapons.card.level * 1.8);
     card.life -= delta;
-    const traveled = Math.hypot(card.x - player.x, card.y - player.y);
-    if (!card.returning && (card.life < card.maxLife * 0.5 || traveled > 520 + weapons.card.level * 42)) {
-      card.returning = true;
+    const bounds = {
+      left: Math.max(24, camera.x + card.radius),
+      right: Math.min(WORLD_SIZE - 24, camera.x + viewWidth - card.radius),
+      top: Math.max(24, camera.y + card.radius),
+      bottom: Math.min(WORLD_SIZE - 24, camera.y + viewHeight - card.radius),
+    };
+    let bounced = false;
+    if (card.x <= bounds.left || card.x >= bounds.right) {
+      card.x = clamp(card.x, bounds.left, bounds.right);
+      card.vx *= -1;
+      bounced = true;
     }
-    if (card.returning) {
-      const angle = angleTo(card, player);
-      const returnSpeed = 720 + weapons.card.level * 34;
-      card.vx = Math.cos(angle) * returnSpeed;
-      card.vy = Math.sin(angle) * returnSpeed;
+    if (card.y <= bounds.top || card.y >= bounds.bottom) {
+      card.y = clamp(card.y, bounds.top, bounds.bottom);
+      card.vy *= -1;
+      bounced = true;
+    }
+    if (bounced) {
+      card.bounces += 1;
+      addParticles(card.x, card.y, "#80ffdb", 10);
+      playSound("card");
+      if (card.bounces >= card.maxBounces) {
+        addParticles(card.x, card.y, "#dffdf5", 16);
+        cards.splice(cards.indexOf(card), 1);
+        continue;
+      }
     }
     for (const enemy of [...enemies]) {
-      if (!card.hits.has(enemy) && Math.hypot(enemy.x - card.x, enemy.y - card.y) < enemy.radius + card.radius) {
-        card.hits.add(enemy);
+      if (!card.hitTimers.has(enemy) && Math.hypot(enemy.x - card.x, enemy.y - card.y) < enemy.radius + card.radius) {
+        card.hitTimers.set(enemy, 0.28);
         damageEnemy(enemy, card.damage, "#80ffdb");
       }
     }
-    if (card.life <= 0 || (card.returning && Math.hypot(card.x - player.x, card.y - player.y) < 26)) {
+    if (card.life <= 0) {
       cards.splice(cards.indexOf(card), 1);
     }
   }
@@ -2909,7 +2933,7 @@ function updateHud() {
   const chipPower = (level) => clamp((Number(level) || 1) / 7, 0.16, 1);
   const loadoutItems = [
     { label: `탄환 x${player.shots}`, type: "attack", power: chipPower(player.shots), desc: `가장 가까운 적에게 기본 탄환을 발사합니다. 현재 ${player.shots}발씩 발사.` },
-    weapons.card.level > 0 ? { label: `교통카드 Lv.${weapons.card.level}`, type: "attack", power: chipPower(weapons.card.level), desc: "교통카드를 던져 적을 관통하고 돌아오며 왕복 피해를 줍니다." } : null,
+    weapons.card.level > 0 ? { label: `교통카드 Lv.${weapons.card.level}`, type: "attack", power: chipPower(weapons.card.level), desc: "교통카드가 화면 벽에 최대 5번 튕기며 적을 관통 공격합니다." } : null,
     weapons.lightning.level > 0 ? { label: `번개 Lv.${weapons.lightning.level}`, type: "attack", power: chipPower(weapons.lightning.level), desc: "가까운 적 주변에 민원 번개를 내려 범위 피해를 줍니다." } : null,
     weapons.lowKick.level > 0 ? { label: `로우킥 Lv.${weapons.lowKick.level}`, type: "attack", power: chipPower(weapons.lowKick.level), desc: "전방을 크게 휘두르는 로우킥으로 적을 밀쳐내며 피해를 줍니다." } : null,
     weapons.strapOrbit.level > 0 ? { label: `손잡이 Lv.${weapons.strapOrbit.level}`, type: "attack", power: chipPower(weapons.strapOrbit.level), desc: "지하철 손잡이가 주위를 회전하며 닿은 적을 계속 공격합니다." } : null,
