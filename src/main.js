@@ -503,10 +503,10 @@ const upgradePool = [
   {
     id: "boomerang",
     name: "교통카드 투척",
-    desc: "교통카드를 던져 적을 관통 공격",
+    desc: "강화 교통카드를 던져 적을 강하게 관통 공격",
     apply: () => {
       weapons.card.level += 1;
-      weapons.card.cooldown = Math.min(weapons.card.cooldown, 0.45);
+      weapons.card.cooldown = Math.min(weapons.card.cooldown, 0.25);
     },
   },
   {
@@ -1268,12 +1268,12 @@ function spawnCard() {
   cards.push({
     x: player.x,
     y: player.y,
-    vx: Math.cos(angle) * (500 + level * 18),
-    vy: Math.sin(angle) * (500 + level * 18),
-    damage: 20 + level * 18,
-    life: 1.9,
-    maxLife: 1.9,
-    radius: 18 + level * 2,
+    vx: Math.cos(angle) * (650 + level * 34),
+    vy: Math.sin(angle) * (650 + level * 34),
+    damage: 46 + level * 32,
+    life: 2.15,
+    maxLife: 2.15,
+    radius: 24 + level * 3,
     rotation: 0,
     returning: false,
     hits: new Set(),
@@ -1549,7 +1549,7 @@ function updatePlayer(delta) {
   weapons.card.cooldown -= delta;
   if (weapons.card.level > 0 && weapons.card.cooldown <= 0) {
     spawnCard();
-    weapons.card.cooldown = Math.max(0.42, 1.45 - weapons.card.level * 0.13);
+    weapons.card.cooldown = Math.max(0.32, 1.05 - weapons.card.level * 0.11);
   }
 
   weapons.lowKick.cooldown -= delta;
@@ -2087,12 +2087,12 @@ function updateProjectiles(delta) {
     card.rotation += delta * (12 + weapons.card.level * 1.8);
     card.life -= delta;
     const traveled = Math.hypot(card.x - player.x, card.y - player.y);
-    if (!card.returning && (card.life < card.maxLife * 0.54 || traveled > 360 + weapons.card.level * 30)) {
+    if (!card.returning && (card.life < card.maxLife * 0.5 || traveled > 520 + weapons.card.level * 42)) {
       card.returning = true;
     }
     if (card.returning) {
       const angle = angleTo(card, player);
-      const returnSpeed = 560 + weapons.card.level * 24;
+      const returnSpeed = 720 + weapons.card.level * 34;
       card.vx = Math.cos(angle) * returnSpeed;
       card.vy = Math.sin(angle) * returnSpeed;
     }
