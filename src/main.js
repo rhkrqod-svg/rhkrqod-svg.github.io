@@ -14,6 +14,7 @@ const refs = {
   score: document.querySelector("#score"),
   xpFill: document.querySelector("#xpFill"),
   weaponList: document.querySelector("#weaponList"),
+  skillTooltip: document.querySelector("#skillTooltip"),
   codexList: document.querySelector("#codexList"),
   message: document.querySelector("#message"),
   messageTitle: document.querySelector("#messageTitle"),
@@ -659,6 +660,7 @@ let bossWarningFor = 0;
 let bestScore = Number(localStorage.getItem(STORAGE_KEY) ?? 0);
 let leaderboardEntries = [];
 let pendingLeaderboardScore = null;
+let skillTooltipTimer = 0;
 let leaderboardSubmitting = false;
 
 const keys = new Set();
@@ -2744,6 +2746,33 @@ function formatScore(value) {
   return score.toLocaleString("ko-KR");
 }
 
+function showSkillTooltip(item) {
+  if (!refs.skillTooltip || !item?.desc) return;
+  window.clearTimeout(skillTooltipTimer);
+  refs.skillTooltip.textContent = item.desc;
+  refs.skillTooltip.classList.add("active");
+  skillTooltipTimer = window.setTimeout(() => {
+    refs.skillTooltip?.classList.remove("active");
+  }, 2600);
+}
+
+function renderLoadoutItems(items) {
+  if (!refs.weaponList) return;
+  refs.weaponList.innerHTML = "";
+  for (const item of items) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = item.type;
+    button.style.setProperty("--power", item.power ?? 0.25);
+    button.textContent = item.label;
+    button.addEventListener("click", () => {
+      playSound("ui");
+      showSkillTooltip(item);
+    });
+    refs.weaponList.append(button);
+  }
+}
+
 function updateHud() {
   refs.hp.textContent = `${Math.ceil(player.hp)} / ${player.maxHp}`;
   refs.hpFill.style.transform = `scaleX(${clamp(player.hp / player.maxHp, 0, 1)})`;
@@ -2761,25 +2790,23 @@ function updateHud() {
   }
   const chipPower = (level) => clamp((Number(level) || 1) / 7, 0.16, 1);
   const loadoutItems = [
-    { label: `탄환 x${player.shots}`, type: "attack", power: chipPower(player.shots) },
-    weapons.card.level > 0 ? { label: `교통카드 Lv.${weapons.card.level}`, type: "attack", power: chipPower(weapons.card.level) } : null,
-    weapons.lightning.level > 0 ? { label: `번개 Lv.${weapons.lightning.level}`, type: "attack", power: chipPower(weapons.lightning.level) } : null,
-    weapons.lowKick.level > 0 ? { label: `로우킥 Lv.${weapons.lowKick.level}`, type: "attack", power: chipPower(weapons.lowKick.level) } : null,
-    weapons.strapOrbit.level > 0 ? { label: `손잡이 Lv.${weapons.strapOrbit.level}`, type: "attack", power: chipPower(weapons.strapOrbit.level) } : null,
-    weapons.announcement.level > 0 ? { label: `방송파 Lv.${weapons.announcement.level}`, type: "attack", power: chipPower(weapons.announcement.level) } : null,
-    weapons.expressTrain.level > 0 ? { label: `급행 Lv.${weapons.expressTrain.level}`, type: "attack", power: chipPower(weapons.expressTrain.level) } : null,
-    weapons.transferGate.level > 0 ? { label: `환승 Lv.${weapons.transferGate.level}`, type: "attack", power: chipPower(weapons.transferGate.level) } : null,
-    weapons.customerMissile.level > 0 ? { label: `유도탄 Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level) } : null,
-    weapons.laser.level > 0 ? { label: `레이저 Lv.${weapons.laser.level}`, type: "attack", power: chipPower(weapons.laser.level) } : null,
-    player.defenseBreakTimer > 0 ? { label: `방어저하 ${Math.ceil(player.defenseBreakTimer)}초`, type: "status" } : null,
-    player.stunTimer > 0 ? { label: `경직 ${Math.ceil(player.stunTimer)}초`, type: "status" } : null,
-    player.slowTimer > 0 ? { label: `둔화 ${Math.ceil(player.slowTimer)}초`, type: "status" } : null,
-    player.damageReduction > 0 ? { label: `내성 ${Math.round(player.damageReduction * 100)}%`, type: "passive", power: chipPower(Math.round(player.damageReduction / 0.08)) } : null,
-    player.regenLevel > 0 ? { label: `회복 Lv.${player.regenLevel}`, type: "passive", power: chipPower(player.regenLevel) } : null,
+    { label: `탄환 x${player.shots}`, type: "attack", power: chipPower(player.shots), desc: `가장 가까운 적에게 기본 탄환을 발사합니다. 현재 ${player.shots}발씩 발사.` },
+    weapons.card.level > 0 ? { label: `교통카드 Lv.${weapons.card.level}`, type: "attack", power: chipPower(weapons.card.level), desc: "교통카드를 던져 적을 관통하고 돌아오며 왕복 피해를 줍니다." } : null,
+    weapons.lightning.level > 0 ? { label: `번개 Lv.${weapons.lightning.level}`, type: "attack", power: chipPower(weapons.lightning.level), desc: "가까운 적 주변에 민원 번개를 내려 범위 피해를 줍니다." } : null,
+    weapons.lowKick.level > 0 ? { label: `로우킥 Lv.${weapons.lowKick.level}`, type: "attack", power: chipPower(weapons.lowKick.level), desc: "전방을 크게 휘두르는 로우킥으로 적을 밀쳐내며 피해를 줍니다." } : null,
+    weapons.strapOrbit.level > 0 ? { label: `손잡이 Lv.${weapons.strapOrbit.level}`, type: "attack", power: chipPower(weapons.strapOrbit.level), desc: "지하철 손잡이가 주위를 회전하며 닿은 적을 계속 공격합니다." } : null,
+    weapons.announcement.level > 0 ? { label: `방송파 Lv.${weapons.announcement.level}`, type: "attack", power: chipPower(weapons.announcement.level), desc: "주변 적을 밀쳐내는 방송파를 주기적으로 발생시킵니다." } : null,
+    weapons.expressTrain.level > 0 ? { label: `급행 Lv.${weapons.expressTrain.level}`, type: "attack", power: chipPower(weapons.expressTrain.level), desc: "급행열차가 지나가며 직선 경로의 적에게 피해와 넉백을 줍니다." } : null,
+    weapons.transferGate.level > 0 ? { label: `환승 Lv.${weapons.transferGate.level}`, type: "attack", power: chipPower(weapons.transferGate.level), desc: "환승 게이트가 열리고 사람들이 지나가며 적을 밀어냅니다." } : null,
+    weapons.customerMissile.level > 0 ? { label: `유도탄 Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level), desc: "고객센터 유도탄이 가까운 적을 추적해 폭발 피해를 줍니다." } : null,
+    weapons.laser.level > 0 ? { label: `레이저 Lv.${weapons.laser.level}`, type: "attack", power: chipPower(weapons.laser.level), desc: "개찰구 레이저가 전방을 관통하며 일정 시간 피해를 줍니다." } : null,
+    player.defenseBreakTimer > 0 ? { label: `방어저하 ${Math.ceil(player.defenseBreakTimer)}초`, type: "status", desc: "현재 방어력이 감소한 상태입니다." } : null,
+    player.stunTimer > 0 ? { label: `경직 ${Math.ceil(player.stunTimer)}초`, type: "status", desc: "잠시 움직일 수 없는 상태입니다." } : null,
+    player.slowTimer > 0 ? { label: `둔화 ${Math.ceil(player.slowTimer)}초`, type: "status", desc: "이동 속도가 느려진 상태입니다." } : null,
+    player.damageReduction > 0 ? { label: `내성 ${Math.round(player.damageReduction * 100)}%`, type: "passive", power: chipPower(Math.round(player.damageReduction / 0.08)), desc: "받는 피해가 감소합니다." } : null,
+    player.regenLevel > 0 ? { label: `회복 Lv.${player.regenLevel}`, type: "passive", power: chipPower(player.regenLevel), desc: "일정 시간마다 체력을 조금씩 회복합니다." } : null,
   ].filter(Boolean);
-  refs.weaponList.innerHTML = loadoutItems
-    .map((item) => `<span class="${item.type}" style="--power:${item.power ?? 0.25}">${item.label}</span>`)
-    .join("");
+  renderLoadoutItems(loadoutItems);
 }
 
 function renderCodex() {

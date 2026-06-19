@@ -180,9 +180,35 @@ button {
   width: min(390px, calc(100% - 104px));
   padding: 2px 5px;
   transform: translateX(-50%);
+  pointer-events: auto;
 }
 
-.loadout div {
+.skill-tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 5px);
+  width: min(300px, 92vw);
+  padding: 6px 8px;
+  border: 1px solid rgba(128, 255, 219, 0.38);
+  border-radius: 8px;
+  background: rgba(5, 9, 13, 0.76);
+  color: #eafffb;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.32;
+  text-align: center;
+  transform: translateX(-50%) translateY(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.skill-tooltip.active {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.loadout #weaponList {
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
@@ -192,7 +218,7 @@ button {
   overflow: hidden;
 }
 
-.loadout span {
+.loadout button {
   --power: 0.2;
   --chip-alpha: calc(0.12 + var(--power) * 0.34);
   --chip-border-alpha: calc(0.16 + var(--power) * 0.42);
@@ -204,18 +230,19 @@ button {
   border: 1px solid rgba(255, 112, 112, var(--chip-border-alpha));
   background: rgba(176, 42, 48, var(--chip-alpha));
   color: hsl(0 70% calc(76% - var(--power) * 16%));
+  cursor: pointer;
   font-size: 6.5px;
   font-weight: 900;
   line-height: 1;
 }
 
-.loadout span.passive {
+.loadout button.passive {
   border-color: rgba(94, 174, 255, var(--chip-border-alpha));
   background: rgba(37, 91, 168, var(--chip-alpha));
   color: hsl(210 78% calc(78% - var(--power) * 14%));
 }
 
-.loadout span.status {
+.loadout button.status {
   background: rgba(255, 107, 107, 0.14);
   color: #ffb3c6;
 }
