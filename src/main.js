@@ -1584,9 +1584,9 @@ function updatePlayer(delta) {
 function updateEnemies(delta) {
   const minute = player.elapsed / 60;
   spawnTimer -= delta;
-  const spawnGap = Math.max(0.09, 0.42 - minute * 0.055);
+  const spawnGap = Math.max(0.09, 0.62 - minute * 0.075);
   if (spawnTimer <= 0) {
-    const pack = 3 + Math.floor(minute * 1.1) + (Math.random() < 0.45 + minute * 0.08 ? 1 : 0);
+    const pack = 2 + Math.floor(minute * 1.2) + (Math.random() < 0.25 + minute * 0.1 ? 1 : 0);
     for (let i = 0; i < pack; i += 1) spawnEnemy();
     spawnTimer = spawnGap;
   }
