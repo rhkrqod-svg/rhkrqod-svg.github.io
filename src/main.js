@@ -66,6 +66,7 @@ const BOSS_SIZE_SCALE = 0.3;
 const FIXED_VIEW_SCALE = 0.88;
 const PLAYER_RADIUS = 19 * CHARACTER_SIZE_SCALE;
 const FIRST_AID_HEAL_RATIO = 0.5;
+const ENEMY_XP_REWARD_MULTIPLIER = 1.35;
 
 const heroTypes = [
   {
@@ -1118,6 +1119,11 @@ function pickUpgradeChoices(pool, count = 3, boostBulletCount = false) {
   return choices;
 }
 
+function calculateEnemyXp(type, hpScale) {
+  const baseXp = type.xp ?? Math.max(1, Math.round((type.hp ?? 10) / 12));
+  return Math.max(1, Math.round(baseXp * hpScale * ENEMY_XP_REWARD_MULTIPLIER));
+}
+
 function spawnEnemy(type = null, boss = false) {
   const minute = player.elapsed / 60;
   const chosen = type ?? weightedPick(monsterTypes, minute);
@@ -1135,7 +1141,7 @@ function spawnEnemy(type = null, boss = false) {
     speed: chosen.speed * (boss ? 1.42 : 1),
     damage: chosen.damage * (boss ? 1 : 1),
     radius: chosen.radius * (boss ? BOSS_SIZE_SCALE : MONSTER_SIZE_SCALE),
-    xp: Math.round(chosen.xp * normalScale),
+    xp: calculateEnemyXp(chosen, normalScale),
     boss,
     angleOffset: Math.random() * TAU,
     cooldown: rand(0.3, 1.1),
