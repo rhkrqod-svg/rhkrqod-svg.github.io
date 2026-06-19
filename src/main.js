@@ -1128,7 +1128,7 @@ function getEnemyLevelBonus() {
 }
 
 function getBossHpLevelScale() {
-  return 1 + getEnemyLevelBonus() * 0.14;
+  return 1 + getEnemyLevelBonus() * 0.22;
 }
 
 function getBossAttackLevelScale() {
