@@ -3520,6 +3520,7 @@ function drawDamageZones() {
         ctx.stroke();
       }
       ctx.restore();
+      ctx.restore();
       continue;
     }
 
@@ -4036,6 +4037,7 @@ function drawDamageZones() {
       ctx.fill();
       ctx.stroke();
       ctx.restore();
+      ctx.restore();
       continue;
     }
 
@@ -4106,6 +4108,7 @@ function drawDamageZones() {
       ctx.beginPath();
       ctx.arc(p.x, p.y, zone.radius * (0.72 + progress * 0.62), 0, TAU);
       ctx.stroke();
+      ctx.restore();
       ctx.restore();
       continue;
     }
@@ -4191,6 +4194,13 @@ function drawEffects() {
 }
 
 function render() {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = "source-over";
+  ctx.shadowBlur = 0;
+  ctx.setLineDash([]);
+  ctx.clearRect(0, 0, width, height);
+
   viewWidth = width / FIXED_VIEW_SCALE;
   viewHeight = height / FIXED_VIEW_SCALE;
   const targetCameraX = player.x - viewWidth / 2;
