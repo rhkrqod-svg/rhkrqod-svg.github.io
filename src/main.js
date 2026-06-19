@@ -1491,16 +1491,17 @@ function spawnLaser() {
   const target = findNearestEnemy(920 + level * 80);
   if (!target) return;
   const angle = angleTo(player, target);
+  const laserWidth = Math.round(26 * Math.pow(1.5, level - 1));
   damageZones.push({
     x: player.x,
     y: player.y,
     angle,
     length: 720 + level * 90,
-    width: 26 + level * 5,
+    width: laserWidth,
     radius: 720 + level * 90,
     damage: 42 + level * 25,
-    life: 0.28,
-    maxLife: 0.28,
+    life: 0.42,
+    maxLife: 0.42,
     color: "#64dfdf",
     hits: new Set(),
     kind: "laser",
