@@ -2169,7 +2169,7 @@ function updateProjectiles(delta) {
 function updateBlade() {
   if (weapons.strapOrbit.level > 0) {
     const strapCount = Math.min(7, weapons.strapOrbit.level + 2);
-    const strapRadius = 82 + weapons.strapOrbit.level * 8;
+    const strapRadius = 58 + weapons.strapOrbit.level * 6;
     const strapDamage = 10 + weapons.strapOrbit.level * 8;
     for (let i = 0; i < strapCount; i += 1) {
       const strapAngle = weapons.strapOrbit.angle + (TAU * i) / strapCount;
@@ -2989,14 +2989,8 @@ function drawPlayer() {
 function drawBlades() {
   if (weapons.strapOrbit.level > 0) {
     const strapCount = Math.min(7, weapons.strapOrbit.level + 2);
-    const strapRadius = 82 + weapons.strapOrbit.level * 8;
+    const strapRadius = 58 + weapons.strapOrbit.level * 6;
     ctx.save();
-    ctx.strokeStyle = "rgba(255, 214, 165, 0.22)";
-    ctx.lineWidth = 2;
-    const center = worldToScreen(player.x, player.y);
-    ctx.beginPath();
-    ctx.arc(center.x, center.y, strapRadius, 0, TAU);
-    ctx.stroke();
     for (let i = 0; i < strapCount; i += 1) {
       const strapAngle = weapons.strapOrbit.angle + (TAU * i) / strapCount;
       const p = worldToScreen(player.x + Math.cos(strapAngle) * strapRadius, player.y + Math.sin(strapAngle) * strapRadius);
