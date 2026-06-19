@@ -47,7 +47,7 @@ const sound = {
 };
 
 const STORAGE_KEY = "villain-commando-best";
-const LEADERBOARD_API = "/api/leaderboard";
+const LEADERBOARD_API = import.meta.env.VITE_LEADERBOARD_API || "/api/leaderboard";
 const LEADERBOARD_LIMIT = 10;
 const TAU = Math.PI * 2;
 const WORLD_SIZE = 2800;
