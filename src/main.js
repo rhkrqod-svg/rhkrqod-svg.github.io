@@ -705,6 +705,8 @@ const player = {
   score: 0,
   elapsed: 0,
   damage: 34,
+  attackPower: 100,
+  defensePower: 100,
   fireRate: 0.183,
   fireCooldown: 0,
   shots: 1,
@@ -969,6 +971,8 @@ function resetGame() {
     score: 0,
     elapsed: 0,
     damage: 34,
+    attackPower: 100,
+    defensePower: 100,
     fireRate: 0.183,
     fireCooldown: 0.07,
     shots: 1,
@@ -1042,9 +1046,11 @@ function selectHero(heroId) {
   player.heroAccent = hero.accent;
   player.maxHp = hero.maxHp;
   player.hp = hero.maxHp;
-  player.damage = 34 * (hero.atk / 100);
+  player.damage = 34;
+  player.attackPower = hero.atk;
+  player.defensePower = hero.def;
   player.speed = 205 * (hero.spd / 100);
-  player.damageReduction = clamp((hero.def - 100) / 250, -0.08, 0.12);
+  player.damageReduction = 0;
   refs.heroPanel.classList.add("hidden");
   game.pendingHeroChoice = false;
   game.pendingStarterChoices = 3;
@@ -2069,9 +2075,19 @@ function dropFakeLuggage(enemy) {
   }
 }
 
+function applyPlayerAttack(amount) {
+  return amount * ((player.attackPower || 100) / 100);
+}
+
+function calculateIncomingDamage(amount) {
+  const effectiveDefense = Math.max(20, (player.defensePower || 100) * (1 - player.defenseBreakPower));
+  const afterDefense = amount * (100 / effectiveDefense);
+  const afterPassive = afterDefense * (1 - clamp(player.damageReduction, 0, 0.6));
+  return Math.max(1, Math.round(afterPassive));
+}
+
 function hurtPlayer(amount) {
-  const effectiveReduction = clamp(player.damageReduction - player.defenseBreakPower, -0.5, 0.6);
-  const reducedAmount = Math.max(1, Math.round(amount * (1 - effectiveReduction)));
+  const reducedAmount = calculateIncomingDamage(amount);
   player.hp = Math.max(0, player.hp - reducedAmount);
   player.invuln = 0.45;
   playSound("playerHit");
@@ -2193,7 +2209,7 @@ function updateBlade() {
 
 function damageEnemy(enemy, amount, color = "#fff2a8") {
   const guarded = enemy.defenseBoostTimer > 0 ? enemy.defenseBoostPower ?? 0 : 0;
-  const finalAmount = Math.max(1, Math.round(amount * (1 - guarded)));
+  const finalAmount = Math.max(1, Math.round(applyPlayerAttack(amount) * (1 - guarded)));
   enemy.hp -= finalAmount;
   enemy.hitFlash = 0.08;
   playSound("hit");
