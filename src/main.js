@@ -1361,11 +1361,11 @@ function spawnAnnouncementWave() {
     radius: 104 + level * 45,
     damage: 18 + level * 18,
     push: 70 + level * 22,
-    life: 0.62,
-    maxLife: 0.62,
-    color: "#fff3b0",
+    life: 0.78,
+    maxLife: 0.78,
+    color: "#80ffdb",
     hits: new Set(),
-    kind: "wave",
+    kind: "announcementWave",
   });
   playSound("announcement");
 }
@@ -4137,6 +4137,88 @@ function drawDamageZones() {
       ctx.beginPath();
       ctx.arc(p.x, p.y, zone.radius * (0.72 + progress * 0.62), 0, TAU);
       ctx.stroke();
+      ctx.restore();
+      ctx.restore();
+      continue;
+    }
+
+    if (zone.kind === "announcementWave") {
+      const pulse = Math.sin(progress * Math.PI);
+      const fade = Math.max(0, 1 - progress);
+      const baseRadius = zone.radius * (0.28 + progress * 0.82);
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.translate(p.x, p.y);
+
+      ctx.globalAlpha = 0.1 + pulse * 0.2;
+      const glow = ctx.createRadialGradient(0, 0, zone.radius * 0.08, 0, 0, zone.radius * 0.92);
+      glow.addColorStop(0, "rgba(128, 255, 219, 0.34)");
+      glow.addColorStop(0.48, "rgba(67, 170, 255, 0.16)");
+      glow.addColorStop(1, "rgba(67, 170, 255, 0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(0, 0, zone.radius * 0.92, 0, TAU);
+      ctx.fill();
+
+      for (let i = 0; i < 4; i += 1) {
+        const ringProgress = (progress + i * 0.16) % 1;
+        const ringRadius = zone.radius * (0.18 + ringProgress * 0.88);
+        ctx.globalAlpha = Math.max(0, 0.48 - ringProgress * 0.42);
+        ctx.strokeStyle = i % 2 === 0 ? "#80ffdb" : "#64dfdf";
+        ctx.lineWidth = Math.max(3, 9 - i * 1.4);
+        ctx.beginPath();
+        ctx.arc(0, 0, ringRadius, 0, TAU);
+        ctx.stroke();
+      }
+
+      ctx.globalAlpha = 0.5 * fade;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2.4;
+      ctx.setLineDash([12, 10]);
+      ctx.beginPath();
+      ctx.arc(0, 0, baseRadius * 1.04, 0, TAU);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.globalAlpha = 0.56 + pulse * 0.3;
+      ctx.strokeStyle = "#b8fff2";
+      ctx.lineWidth = 5;
+      ctx.lineCap = "round";
+      for (let i = 0; i < 10; i += 1) {
+        const angle = (TAU / 10) * i + progress * 0.9;
+        const inner = zone.radius * 0.3;
+        const outer = zone.radius * (0.64 + pulse * 0.16);
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+        ctx.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
+        ctx.stroke();
+      }
+
+      ctx.globalCompositeOperation = "source-over";
+      ctx.globalAlpha = 0.96;
+      ctx.fillStyle = "rgba(8, 20, 26, 0.88)";
+      ctx.strokeStyle = "#80ffdb";
+      ctx.lineWidth = 3;
+      roundedRect(-25, -19, 28, 38, 7);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#80ffdb";
+      ctx.beginPath();
+      ctx.moveTo(2, -13);
+      ctx.lineTo(28, -24);
+      ctx.lineTo(28, 24);
+      ctx.lineTo(2, 13);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 3;
+      for (let i = 0; i < 3; i += 1) {
+        ctx.globalAlpha = 0.38 + pulse * 0.22;
+        ctx.beginPath();
+        ctx.arc(26, 0, 22 + i * 14 + pulse * 5, -0.72, 0.72);
+        ctx.stroke();
+      }
+
       ctx.restore();
       ctx.restore();
       continue;
