@@ -1160,6 +1160,7 @@ function spawnEnemy(type = null, boss = false) {
     praiseStunCooldown: rand(3.2, 4.8),
     bubbleCooldown: rand(0.8, 1.5),
     gumMissileCooldown: rand(3.0, 4.5),
+    giantGumCooldown: rand(4.8, 6.4),
     danceKickCooldown: rand(0.7, 1.3),
     danceStampCooldown: rand(2.6, 4.0),
     retreatTimer: 0,
@@ -1705,6 +1706,7 @@ function updateEnemies(delta) {
     if (enemy.special === "boss-gum") {
       enemy.bubbleCooldown -= delta;
       enemy.gumMissileCooldown -= delta;
+      enemy.giantGumCooldown -= delta;
       if (enemy.bubbleCooldown <= 0) {
         createGumBubble(enemy);
         enemy.bubbleCooldown = rand(1.15, 1.8);
@@ -1712,6 +1714,10 @@ function updateEnemies(delta) {
       if (enemy.gumMissileCooldown <= 0) {
         createGumMissiles(enemy);
         enemy.gumMissileCooldown = rand(5.2, 7.0);
+      }
+      if (enemy.giantGumCooldown <= 0) {
+        createGiantGumBubble(enemy);
+        enemy.giantGumCooldown = rand(7.5, 10.0);
       }
     }
     if (enemy.special === "boss-dance") {
@@ -2037,6 +2043,30 @@ function createGumMissiles(enemy) {
       kind: "gumMissile",
     });
   }
+}
+
+function createGiantGumBubble(enemy) {
+  const angle = angleTo(enemy, player);
+  addSpeechBubble(enemy, "거대 버블팝!", 1.35);
+  damageZones.push({
+    x: enemy.x + Math.cos(angle) * 54,
+    y: enemy.y + Math.sin(angle) * 54,
+    vx: Math.cos(angle) * 185,
+    vy: Math.sin(angle) * 185,
+    radius: 68,
+    damage: 34,
+    push: 46,
+    slow: 12,
+    slowMultiplier: 0.42,
+    life: 3.1,
+    maxLife: 3.1,
+    color: "#ff8fab",
+    hostile: true,
+    consumeOnHit: true,
+    applied: false,
+    kind: "giantGumBubble",
+  });
+  addParticles(enemy.x + Math.cos(angle) * 54, enemy.y + Math.sin(angle) * 54, "#ff8fab", 18);
 }
 
 function createDanceKick(enemy) {
@@ -3994,21 +4024,40 @@ function drawDamageZones() {
       continue;
     }
 
-    if (zone.kind === "gumBubble" || zone.kind === "gumMissile") {
+    if (zone.kind === "gumBubble" || zone.kind === "gumMissile" || zone.kind === "giantGumBubble") {
+      const isGiant = zone.kind === "giantGumBubble";
       const shine = Math.sin(progress * Math.PI);
       ctx.translate(p.x, p.y);
-      ctx.globalAlpha = 0.75;
-      ctx.fillStyle = "rgba(255, 143, 171, 0.62)";
-      ctx.strokeStyle = "#ffc2d1";
-      ctx.lineWidth = 3;
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = isGiant ? 0.35 : 0.75;
+      ctx.fillStyle = isGiant ? "rgba(255, 92, 168, 0.36)" : "rgba(255, 143, 171, 0.62)";
+      ctx.strokeStyle = isGiant ? "#ff4fb3" : "#ffc2d1";
+      ctx.lineWidth = isGiant ? 7 : 3;
       ctx.beginPath();
       ctx.arc(0, 0, zone.radius * (0.9 + shine * 0.08), 0, TAU);
       ctx.fill();
       ctx.stroke();
-      ctx.globalAlpha = 0.85;
+      if (isGiant) {
+        ctx.globalAlpha = 0.22 + shine * 0.18;
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(0, 0, zone.radius * (0.56 + shine * 0.18), 0, TAU);
+        ctx.stroke();
+        ctx.globalAlpha = 0.42;
+        ctx.strokeStyle = "#ffb3d9";
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 5; i += 1) {
+          const angle = (TAU * i) / 5 + progress * 1.8;
+          ctx.beginPath();
+          ctx.arc(Math.cos(angle) * zone.radius * 0.52, Math.sin(angle) * zone.radius * 0.52, zone.radius * 0.12, 0, TAU);
+          ctx.stroke();
+        }
+      }
+      ctx.globalAlpha = isGiant ? 0.95 : 0.85;
       ctx.fillStyle = "rgba(255,255,255,0.72)";
       ctx.beginPath();
-      ctx.arc(-zone.radius * 0.28, -zone.radius * 0.28, zone.radius * 0.18, 0, TAU);
+      ctx.arc(-zone.radius * 0.28, -zone.radius * 0.28, zone.radius * (isGiant ? 0.2 : 0.18), 0, TAU);
       ctx.fill();
       ctx.restore();
       continue;
