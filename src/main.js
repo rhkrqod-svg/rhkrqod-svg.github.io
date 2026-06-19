@@ -61,6 +61,7 @@ const START_MAGNET_RANGE = 185;
 const CHARACTER_SIZE_SCALE = 0.5;
 const MONSTER_SIZE_SCALE = 0.42;
 const BOSS_SIZE_SCALE = 0.3;
+const FIXED_VIEW_SCALE = 0.88;
 const PLAYER_RADIUS = 19 * CHARACTER_SIZE_SCALE;
 const FIRST_AID_HEAL_RATIO = 0.5;
 
@@ -645,6 +646,8 @@ const weaponUpgradeIds = new Set([
 
 let width = 1;
 let height = 1;
+let viewWidth = 1;
+let viewHeight = 1;
 let dpr = 1;
 let lastFrame = 0;
 let spawnTimer = 0;
@@ -676,8 +679,6 @@ const input = {
   originX: 0,
   originY: 0,
   pointers: new Map(),
-  pinchDistance: 0,
-  pinchZoom: 1,
 };
 
 const camera = { x: 0, y: 0 };
@@ -737,7 +738,6 @@ const game = {
   manualPaused: false,
   pendingHeroChoice: false,
   pendingStarterChoices: 0,
-  zoom: 1,
 };
 
 function resize() {
@@ -997,10 +997,7 @@ function resetGame() {
   game.manualPaused = false;
   game.pendingHeroChoice = true;
   game.pendingStarterChoices = 0;
-  game.zoom = 1;
   input.pointers.clear();
-  input.pinchDistance = 0;
-  input.pinchZoom = 1;
   refs.message.classList.remove("start-screen");
   refs.message.classList.add("hidden");
   refs.heroPanel.classList.remove("hidden");
@@ -1104,7 +1101,7 @@ function spawnEnemy(type = null, boss = false) {
   const minute = player.elapsed / 60;
   const chosen = type ?? weightedPick(monsterTypes, minute);
   const angle = Math.random() * TAU;
-  const spawnDistance = Math.max(width, height) * 0.62 + 90;
+  const spawnDistance = Math.max(viewWidth, viewHeight) * 0.62 + 90;
   const x = clamp(player.x + Math.cos(angle) * spawnDistance, 50, WORLD_SIZE - 50);
   const y = clamp(player.y + Math.sin(angle) * spawnDistance, 50, WORLD_SIZE - 50);
   const normalScale = boss ? 1 + minute * 0.11 : 1 + Math.min(1.35, minute * 0.08);
@@ -1303,10 +1300,10 @@ function pickClusterTarget(maxDistance = 900) {
 }
 
 function clampPointToVisibleWorld(x, y, margin = 90) {
-  const safeMargin = Math.min(margin, width * 0.42, height * 0.42);
+  const safeMargin = Math.min(margin, viewWidth * 0.42, viewHeight * 0.42);
   return {
-    x: clamp(x, camera.x + safeMargin, camera.x + width - safeMargin),
-    y: clamp(y, camera.y + safeMargin, camera.y + height - safeMargin),
+    x: clamp(x, camera.x + safeMargin, camera.x + viewWidth - safeMargin),
+    y: clamp(y, camera.y + safeMargin, camera.y + viewHeight - safeMargin),
   };
 }
 
@@ -2790,7 +2787,7 @@ function worldToScreen(x, y) {
 function drawGrid() {
   ctx.save();
   ctx.fillStyle = "#20272c";
-  ctx.fillRect(-80, -80, width + 160, height + 160);
+  ctx.fillRect(-80, -80, viewWidth + 160, viewHeight + 160);
 
   const tile = 72;
   const offsetX = -(((camera.x * 0.74) % tile) + tile) % tile;
@@ -2798,45 +2795,45 @@ function drawGrid() {
 
   ctx.strokeStyle = "rgba(230, 236, 240, 0.095)";
   ctx.lineWidth = 1;
-  for (let x = offsetX - tile; x < width + tile * 2; x += tile) {
+  for (let x = offsetX - tile; x < viewWidth + tile * 2; x += tile) {
     ctx.beginPath();
     ctx.moveTo(x, 0);
-    ctx.lineTo(x, height);
+    ctx.lineTo(x, viewHeight);
     ctx.stroke();
   }
-  for (let y = offsetY - tile; y < height + tile * 2; y += tile) {
+  for (let y = offsetY - tile; y < viewHeight + tile * 2; y += tile) {
     ctx.beginPath();
     ctx.moveTo(0, y);
-    ctx.lineTo(width, y);
+    ctx.lineTo(viewWidth, y);
     ctx.stroke();
   }
 
   const seam = 18;
   const seamOffset = -(((camera.y * 0.9) % (tile * 2)) + tile * 2) % (tile * 2);
   ctx.fillStyle = "rgba(255, 255, 255, 0.025)";
-  for (let y = seamOffset; y < height + tile * 2; y += tile * 2) {
-    ctx.fillRect(0, y + tile - seam / 2, width, seam);
+  for (let y = seamOffset; y < viewHeight + tile * 2; y += tile * 2) {
+    ctx.fillRect(0, y + tile - seam / 2, viewWidth, seam);
   }
 
-  const floorGlow = ctx.createRadialGradient(width / 2, height * 0.44, 40, width / 2, height * 0.5, height * 0.75);
+  const floorGlow = ctx.createRadialGradient(viewWidth / 2, viewHeight * 0.44, 40, viewWidth / 2, viewHeight * 0.5, viewHeight * 0.75);
   floorGlow.addColorStop(0, "rgba(255, 255, 255, 0.06)");
   floorGlow.addColorStop(1, "rgba(4, 7, 10, 0.3)");
   ctx.fillStyle = floorGlow;
-  ctx.fillRect(-80, -80, width + 160, height + 160);
+  ctx.fillRect(-80, -80, viewWidth + 160, viewHeight + 160);
   ctx.restore();
 }
 
 function drawSubwayInteriorImage() {
-  const offsetY = -(((camera.y * 0.16) % height) + height) % height;
-  for (let y = offsetY - height; y < height + 1; y += height) {
-    ctx.drawImage(subwayInteriorBg, 0, y, width, height);
+  const offsetY = -(((camera.y * 0.16) % viewHeight) + viewHeight) % viewHeight;
+  for (let y = offsetY - viewHeight; y < viewHeight + 1; y += viewHeight) {
+    ctx.drawImage(subwayInteriorBg, 0, y, viewWidth, viewHeight);
   }
 
-  const floorGlow = ctx.createRadialGradient(width / 2, height / 2, 40, width / 2, height / 2, height * 0.72);
+  const floorGlow = ctx.createRadialGradient(viewWidth / 2, viewHeight / 2, 40, viewWidth / 2, viewHeight / 2, viewHeight * 0.72);
   floorGlow.addColorStop(0, "rgba(5, 10, 14, 0)");
   floorGlow.addColorStop(1, "rgba(5, 8, 12, 0.22)");
   ctx.fillStyle = floorGlow;
-  ctx.fillRect(0, 0, width, height);
+  ctx.fillRect(0, 0, viewWidth, viewHeight);
 }
 
 function drawLineOneStation() {
@@ -4135,19 +4132,19 @@ function drawEffects() {
 }
 
 function render() {
-  const targetCameraX = player.x - width / 2;
-  const targetCameraY = player.y - height / 2;
+  viewWidth = width / FIXED_VIEW_SCALE;
+  viewHeight = height / FIXED_VIEW_SCALE;
+  const targetCameraX = player.x - viewWidth / 2;
+  const targetCameraY = player.y - viewHeight / 2;
   camera.x += (targetCameraX - camera.x) * 0.12;
   camera.y += (targetCameraY - camera.y) * 0.12;
-  camera.x = clamp(camera.x, 0, WORLD_SIZE - width);
-  camera.y = clamp(camera.y, 0, WORLD_SIZE - height);
+  camera.x = clamp(camera.x, 0, WORLD_SIZE - viewWidth);
+  camera.y = clamp(camera.y, 0, WORLD_SIZE - viewHeight);
 
   ctx.save();
-  if (game.zoom !== 1) {
-    ctx.translate(width / 2, height / 2);
-    ctx.scale(game.zoom, game.zoom);
-    ctx.translate(-width / 2, -height / 2);
-  }
+  ctx.translate(width / 2, height / 2);
+  ctx.scale(FIXED_VIEW_SCALE, FIXED_VIEW_SCALE);
+  ctx.translate(-viewWidth / 2, -viewHeight / 2);
   drawGrid();
   drawDamageZones();
   drawOrbs();
@@ -4226,17 +4223,6 @@ function resetFloatingStickMove() {
   refs.moveStick?.classList.remove("active");
 }
 
-function getPinchDistance() {
-  const points = [...input.pointers.values()];
-  if (points.length < 2) return 0;
-  return Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
-}
-
-function updatePinchZoom() {
-  if (input.pointers.size < 2 || input.pinchDistance <= 0) return;
-  game.zoom = clamp(input.pinchZoom * (getPinchDistance() / input.pinchDistance), 0.82, 1.35);
-}
-
 function rememberPointer(event) {
   input.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
 }
@@ -4262,9 +4248,8 @@ refs.app.addEventListener("pointerdown", (event) => {
   event.preventDefault();
   rememberPointer(event);
   if (input.pointers.size >= 2) {
+    event.preventDefault();
     resetFloatingStickMove();
-    input.pinchDistance = getPinchDistance();
-    input.pinchZoom = game.zoom;
     return;
   }
   input.touchId = event.pointerId;
@@ -4278,7 +4263,6 @@ refs.app.addEventListener("pointermove", (event) => {
     rememberPointer(event);
     if (input.pointers.size >= 2) {
       event.preventDefault();
-      updatePinchZoom();
       return;
     }
   }
@@ -4290,21 +4274,17 @@ refs.app.addEventListener("pointermove", (event) => {
 refs.app.addEventListener("pointerup", (event) => {
   if (input.touchId === event.pointerId) resetFloatingStickMove();
   input.pointers.delete(event.pointerId);
-  if (input.pointers.size < 2) input.pinchDistance = 0;
 });
 
 refs.app.addEventListener("pointercancel", (event) => {
   if (input.touchId === event.pointerId) resetFloatingStickMove();
   input.pointers.delete(event.pointerId);
-  if (input.pointers.size < 2) input.pinchDistance = 0;
 });
 
 refs.app.addEventListener(
   "wheel",
   (event) => {
-    if (game.state !== "playing") return;
     event.preventDefault();
-    game.zoom = clamp(game.zoom + (event.deltaY < 0 ? 0.08 : -0.08), 0.82, 1.35);
   },
   { passive: false },
 );
