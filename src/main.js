@@ -69,6 +69,7 @@ const BOSS_SIZE_SCALE = 0.3;
 const FIXED_VIEW_SCALE = 0.88;
 const PLAYER_RADIUS = 19 * CHARACTER_SIZE_SCALE;
 const FIRST_AID_HEAL_RATIO = 0.5;
+const ENEMY_HP_GLOBAL_MULTIPLIER = 2;
 const ENEMY_XP_REWARD_MULTIPLIER = 1.35;
 const XP_ORB_LIFETIME = 18;
 const XP_ORB_FADE_TIME = 5;
@@ -1132,7 +1133,7 @@ function spawnEnemy(type = null, boss = false) {
   const y = clamp(player.y + Math.sin(angle) * spawnDistance, 50, WORLD_SIZE - 50);
   const normalScale = boss ? 1 + minute * 0.11 : 1 + Math.min(1.35, minute * 0.08);
   const levelHpScale = boss ? getBossHpLevelScale() : 1 + getEnemyLevelBonus() * 0.1;
-  const hpScale = normalScale * levelHpScale;
+  const hpScale = normalScale * levelHpScale * ENEMY_HP_GLOBAL_MULTIPLIER;
   const attackScale = boss ? getBossAttackLevelScale() : 1;
   const enemy = {
     ...chosen,
@@ -1194,7 +1195,7 @@ function spawnBoss() {
   boss.damage *= damageMultiplier;
   boss.attackScale *= damageMultiplier;
   boss.score = Math.round(base.score * (1 + bossIndex * 0.25));
-  boss.xp = Math.round(base.xp * multiplier);
+  boss.xp = Math.round(boss.xp * multiplier);
   boss.radius = (base.radius + Math.min(14, bossIndex * 2)) * BOSS_SIZE_SCALE;
   bossIndex += 1;
   showBossBanner(base.name);
