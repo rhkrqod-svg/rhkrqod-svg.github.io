@@ -517,15 +517,6 @@ const upgradePool = [
     },
   },
   {
-    id: "lowKick",
-    name: "응징 로우킥",
-    desc: "전방을 채찍처럼 휘두르는 범위 공격",
-    apply: () => {
-      weapons.lowKick.level += 1;
-      weapons.lowKick.cooldown = Math.min(weapons.lowKick.cooldown, 0.45);
-    },
-  },
-  {
     id: "strapOrbit",
     name: "손잡이 회오리",
     desc: "주변을 도는 손잡이 보호 무기",
@@ -625,7 +616,6 @@ const passiveUpgradeIds = new Set([
 const weaponUpgradeIds = new Set([
   "lightning",
   "boomerang",
-  "lowKick",
   "strapOrbit",
   "expressTrain",
   "customerMissile",
@@ -1587,12 +1577,6 @@ function updatePlayer(delta) {
   if (weapons.card.level > 0 && weapons.card.cooldown <= 0) {
     spawnCard();
     weapons.card.cooldown = Math.max(0.32, 1.05 - weapons.card.level * 0.11);
-  }
-
-  weapons.lowKick.cooldown -= delta;
-  if (weapons.lowKick.level > 0 && weapons.lowKick.cooldown <= 0) {
-    spawnLowKick();
-    weapons.lowKick.cooldown = Math.max(0.95, 2.55 - weapons.lowKick.level * 0.22);
   }
 
   weapons.expressTrain.cooldown -= delta;
@@ -2977,7 +2961,6 @@ function updateHud() {
     { label: `탄환 x${player.shots}`, type: "attack", power: chipPower(player.shots), desc: `가장 가까운 적에게 기본 탄환을 발사합니다. 현재 ${player.shots}발씩 발사.` },
     weapons.card.level > 0 ? { label: `교통카드 Lv.${weapons.card.level}`, type: "attack", power: chipPower(weapons.card.level), desc: "교통카드가 화면 벽에 최대 5번 튕기며 적을 관통 공격합니다." } : null,
     weapons.lightning.level > 0 ? { label: `번개 Lv.${weapons.lightning.level}`, type: "attack", power: chipPower(weapons.lightning.level), desc: "가까운 적 주변에 민원 번개를 내려 범위 피해를 줍니다." } : null,
-    weapons.lowKick.level > 0 ? { label: `로우킥 Lv.${weapons.lowKick.level}`, type: "attack", power: chipPower(weapons.lowKick.level), desc: "전방을 크게 휘두르는 로우킥으로 적을 밀쳐내며 피해를 줍니다." } : null,
     weapons.strapOrbit.level > 0 ? { label: `손잡이 Lv.${weapons.strapOrbit.level}`, type: "attack", power: chipPower(weapons.strapOrbit.level), desc: "지하철 손잡이가 주위를 회전하며 닿은 적을 계속 공격합니다." } : null,
     weapons.expressTrain.level > 0 ? { label: `급행 Lv.${weapons.expressTrain.level}`, type: "attack", power: chipPower(weapons.expressTrain.level), desc: "급행열차가 지나가며 직선 경로의 적에게 피해와 넉백을 줍니다." } : null,
     weapons.customerMissile.level > 0 ? { label: `유도탄 Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level), desc: "고객센터 유도탄이 가까운 적을 추적해 폭발 피해를 줍니다." } : null,
