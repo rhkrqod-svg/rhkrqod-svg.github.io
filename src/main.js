@@ -729,6 +729,7 @@ const game = {
   manualPaused: false,
   pendingHeroChoice: false,
   pendingStarterChoices: 0,
+  pendingLevelChoices: 0,
 };
 
 function resize() {
@@ -990,6 +991,7 @@ function resetGame() {
   game.manualPaused = false;
   game.pendingHeroChoice = true;
   game.pendingStarterChoices = 0;
+  game.pendingLevelChoices = 0;
   input.pointers.clear();
   refs.message.classList.remove("start-screen");
   refs.message.classList.add("hidden");
@@ -2495,7 +2497,11 @@ function gainXp(amount) {
     increaseLevelStats();
     player.nextXp = getNextXpRequirement(player.nextXp, player.level);
     playSound("levelUp");
-    openUpgradePanel();
+    if (refs.upgradePanel.classList.contains("hidden")) {
+      openUpgradePanel();
+    } else {
+      game.pendingLevelChoices += 1;
+    }
   }
   updateHud();
 }
@@ -2532,6 +2538,12 @@ function openUpgradePanel() {
           openUpgradePanel();
           return;
         }
+      }
+      if (game.pendingLevelChoices > 0) {
+        game.pendingLevelChoices -= 1;
+        updateHud();
+        openUpgradePanel();
+        return;
       }
       refs.upgradePanel.classList.add("hidden");
       if (refs.upgradeTitle) refs.upgradeTitle.textContent = "레벨 업";
