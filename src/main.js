@@ -548,7 +548,7 @@ const upgradePool = [
     desc: "가까운 적에게 유도탄을 발사하고 폭발 피해",
     apply: () => {
       weapons.customerMissile.level += 1;
-      weapons.customerMissile.cooldown = Math.min(weapons.customerMissile.cooldown, 0.28);
+      weapons.customerMissile.cooldown = Math.min(weapons.customerMissile.cooldown, 0.4);
     },
   },
   {
@@ -1502,7 +1502,7 @@ function spawnCustomerMissiles() {
     const target = findNearestEnemy(900 + level * 40);
     if (!target) return;
     const angle = angleTo(player, target) + (i - (count - 1) / 2) * 0.32;
-    const speed = 210 + level * 18;
+    const speed = 265 + level * 23;
     missiles.push({
       x: player.x + Math.cos(angle) * 22,
       y: player.y + Math.sin(angle) * 22,
@@ -1610,7 +1610,7 @@ function updatePlayer(delta) {
   weapons.customerMissile.cooldown -= delta;
   if (weapons.customerMissile.level > 0 && weapons.customerMissile.cooldown <= 0) {
     spawnCustomerMissiles();
-    weapons.customerMissile.cooldown = Math.max(0.28, 0.55 - weapons.customerMissile.level * 0.04);
+    weapons.customerMissile.cooldown = Math.max(0.4, (0.55 - weapons.customerMissile.level * 0.04) / 0.7);
   }
 
   weapons.laser.cooldown -= delta;
