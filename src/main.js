@@ -579,9 +579,9 @@ const upgradePool = [
   {
     id: "nuisanceResist",
     name: "민폐 내성",
-    desc: "받는 피해 8% 감소",
+    desc: "받는 피해 15% 감소",
     apply: () => {
-      player.damageReduction = Math.min(0.5, player.damageReduction + 0.08);
+      player.damageReduction = Math.min(0.6, player.damageReduction + 0.15);
     },
   },
   {
@@ -2985,7 +2985,7 @@ function updateHud() {
     player.defenseBreakTimer > 0 ? { label: `방어저하 ${Math.ceil(player.defenseBreakTimer)}초`, type: "status", desc: "현재 방어력이 감소한 상태입니다." } : null,
     player.stunTimer > 0 ? { label: `경직 ${Math.ceil(player.stunTimer)}초`, type: "status", desc: "잠시 움직일 수 없는 상태입니다." } : null,
     player.slowTimer > 0 ? { label: `둔화 ${Math.ceil(player.slowTimer)}초`, type: "status", desc: "이동 속도가 느려진 상태입니다." } : null,
-    player.damageReduction > 0 ? { label: `내성 ${Math.round(player.damageReduction * 100)}%`, type: "passive", power: chipPower(Math.round(player.damageReduction / 0.08)), desc: "받는 피해가 감소합니다." } : null,
+    player.damageReduction > 0 ? { label: `내성 ${Math.round(player.damageReduction * 100)}%`, type: "passive", power: chipPower(Math.round(player.damageReduction / 0.15)), desc: "받는 피해가 감소합니다." } : null,
     player.regenLevel > 0 ? { label: `회복 Lv.${player.regenLevel}`, type: "passive", power: chipPower(player.regenLevel), desc: "일정 시간마다 체력을 조금씩 회복합니다." } : null,
   ].filter(Boolean);
   renderLoadoutItems(loadoutItems);
