@@ -497,7 +497,7 @@ button {
 .message.start-screen .title-block button {
   position: absolute;
   left: 50%;
-  bottom: max(196px, calc(env(safe-area-inset-bottom) + 25dvh));
+  bottom: max(208px, calc(env(safe-area-inset-bottom) + 26dvh));
   width: auto;
   min-width: 0;
   min-height: 48px;
