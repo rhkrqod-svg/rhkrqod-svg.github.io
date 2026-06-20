@@ -534,15 +534,6 @@ const upgradePool = [
     },
   },
   {
-    id: "announcement",
-    name: "안내방송 충격파",
-    desc: "원형 음파가 퍼지며 적을 밀어냄",
-    apply: () => {
-      weapons.announcement.level += 1;
-      weapons.announcement.cooldown = Math.min(weapons.announcement.cooldown, 0.55);
-    },
-  },
-  {
     id: "expressTrain",
     name: "급행열차 돌진",
     desc: "넓은 직선 범위를 쓸어버림",
@@ -636,7 +627,6 @@ const weaponUpgradeIds = new Set([
   "boomerang",
   "lowKick",
   "strapOrbit",
-  "announcement",
   "expressTrain",
   "customerMissile",
   "laser",
@@ -695,7 +685,7 @@ const player = {
   speed: 205,
   level: 1,
   xp: 0,
-  nextXp: 35,
+  nextXp: 58,
   kills: 0,
   score: 0,
   elapsed: 0,
@@ -705,7 +695,7 @@ const player = {
   fireRate: 0.183,
   fireCooldown: 0,
   shots: 1,
-  bulletSpeed: 660,
+  bulletSpeed: 462,
   magnet: START_MAGNET_RANGE,
   damageReduction: 0,
   defenseBreakTimer: 0,
@@ -961,7 +951,7 @@ function resetGame() {
     speed: 205,
     level: 1,
     xp: 0,
-    nextXp: 35,
+    nextXp: 58,
     kills: 0,
     score: 0,
     elapsed: 0,
@@ -971,7 +961,7 @@ function resetGame() {
     fireRate: 0.183,
     fireCooldown: 0.07,
     shots: 1,
-    bulletSpeed: 660,
+    bulletSpeed: 462,
     magnet: START_MAGNET_RANGE,
     damageReduction: 0,
     defenseBreakTimer: 0,
@@ -1335,12 +1325,13 @@ function strikeLightning() {
   }
   for (const enemy of targets) {
     const damage = 90 + weapons.lightning.level * 58;
+    const strikeRadius = (58 + weapons.lightning.level * 7) * 1.3;
     damageEnemy(enemy, enemy.boss ? Math.round(damage * 1.25) : damage, "#9bf6ff");
     addParticles(enemy.x, enemy.y, "#9bf6ff", enemy.boss ? 14 : 9);
     damageZones.push({
       x: enemy.x,
       y: enemy.y,
-      radius: 58 + weapons.lightning.level * 7,
+      radius: strikeRadius,
       life: 0.34,
       maxLife: 0.34,
       color: "#9bf6ff",
@@ -1602,12 +1593,6 @@ function updatePlayer(delta) {
     weapons.lowKick.cooldown = Math.max(0.95, 2.55 - weapons.lowKick.level * 0.22);
   }
 
-  weapons.announcement.cooldown -= delta;
-  if (weapons.announcement.level > 0 && weapons.announcement.cooldown <= 0) {
-    spawnAnnouncementWave();
-    weapons.announcement.cooldown = Math.max(1.45, (6.5 - weapons.announcement.level * 0.36) / 1.5);
-  }
-
   weapons.expressTrain.cooldown -= delta;
   if (weapons.expressTrain.level > 0 && weapons.expressTrain.cooldown <= 0) {
     spawnExpressTrain();
@@ -1637,10 +1622,10 @@ function updatePlayer(delta) {
 function updateEnemies(delta) {
   const minute = player.elapsed / 60;
   spawnTimer -= delta;
-  const spawnGap = Math.max(0.16, 0.68 - minute * 0.038);
+  const spawnGap = Math.max(0.22, 0.78 - minute * 0.024);
   if (spawnTimer <= 0) {
-    const basePack = 1 + Math.floor(minute * 0.55) + (Math.random() < 0.28 + minute * 0.035 ? 1 : 0);
-    const levelSpawnMultiplier = 1 + Math.max(0, player.level - 1) * 0.1;
+    const basePack = 1 + Math.floor(minute * 0.38) + (Math.random() < 0.18 + minute * 0.022 ? 1 : 0);
+    const levelSpawnMultiplier = 1 + Math.max(0, player.level - 1) * 0.07;
     const scaledPack = basePack * levelSpawnMultiplier;
     const pack = Math.floor(scaledPack) + (Math.random() < scaledPack % 1 ? 1 : 0);
     for (let i = 0; i < pack; i += 1) spawnEnemy();
@@ -1678,9 +1663,9 @@ function updateEnemies(delta) {
       enemy.swingCooldown -= delta;
       enemy.shockCooldown -= delta;
       enemy.soundCooldown -= delta;
-      if (enemy.swingCooldown <= 0 && playerDistance < 190) {
+      if (enemy.swingCooldown <= 0 && playerDistance < 880) {
         createDansoSwing(enemy);
-        enemy.swingCooldown = rand(1.35, 2.05);
+        enemy.swingCooldown = rand(1.25, 1.85);
       }
       if (enemy.soundCooldown <= 0 && playerDistance >= 160) {
         createDansoSoundwave(enemy);
@@ -1707,12 +1692,12 @@ function updateEnemies(delta) {
       enemy.flagCooldown -= delta;
       enemy.spearCooldown -= delta;
       if (enemy.flagCooldown <= 0) {
-        createJarvanFlag(enemy);
-        enemy.flagCooldown = rand(7.4, 9.6);
+        createJarvanSpearVolley(enemy);
+        enemy.flagCooldown = rand(6.4, 8.2);
       }
       if (enemy.spearCooldown <= 0 && playerDistance < 320) {
         createJarvanSpear(enemy);
-        enemy.spearCooldown = rand(3.0, 4.4);
+        enemy.spearCooldown = rand(2.6, 3.8);
       }
     }
     if (enemy.special === "boss-praise") {
@@ -1833,21 +1818,23 @@ function createDansoSwing(enemy) {
   const angle = angleTo(enemy, player);
   addSpeechBubble(enemy, "너 누구야! who are you !! 확!", 1.35);
   damageZones.push({
-    x: enemy.x,
-    y: enemy.y,
+    x: enemy.x + Math.cos(angle) * 48,
+    y: enemy.y + Math.sin(angle) * 48,
+    vx: Math.cos(angle) * 430,
+    vy: Math.sin(angle) * 430,
     angle,
-    arc: 1.55,
-    radius: 142,
+    radius: 30,
     damage: scaleBossDamage(enemy, 18),
-    push: 42,
-    life: 0.34,
-    maxLife: 0.34,
+    push: 36,
+    life: 1.45,
+    maxLife: 1.45,
     color: "#f9c74f",
     hostile: true,
+    consumeOnHit: true,
     applied: false,
-    kind: "dansoSwing",
+    kind: "dansoThrow",
   });
-  addParticles(enemy.x + Math.cos(angle) * 62, enemy.y + Math.sin(angle) * 62, "#f9c74f", 10);
+  addParticles(enemy.x + Math.cos(angle) * 54, enemy.y + Math.sin(angle) * 54, "#f9c74f", 10);
 }
 
 function createDansoShockwave(enemy) {
@@ -1920,9 +1907,9 @@ function createAirportCrisis(enemy) {
     damageZones.push({
       x: enemy.x,
       y: enemy.y,
-      vx: Math.cos(angle) * rand(180, 330),
-      vy: Math.sin(angle) * rand(180, 330),
-      radius: 24,
+      vx: Math.cos(angle) * rand(300, 520),
+      vy: Math.sin(angle) * rand(300, 520),
+      radius: 34,
       damage: scaleBossDamage(enemy, 12),
       life: 1.25,
       maxLife: 1.25,
@@ -1963,7 +1950,7 @@ function createJarvanFlag(enemy) {
 
 function createJarvanSpear(enemy) {
   const angle = angleTo(enemy, player);
-  addSpeechBubble(enemy, "지팡이 창술!", 1.05);
+  addSpeechBubble(enemy, "창지르기!", 1.05);
   damageZones.push({
     x: enemy.x,
     y: enemy.y,
@@ -1984,14 +1971,41 @@ function createJarvanSpear(enemy) {
   addParticles(enemy.x + Math.cos(angle) * 82, enemy.y + Math.sin(angle) * 82, "#ffe066", 14);
 }
 
+function createJarvanSpearVolley(enemy) {
+  const baseAngle = angleTo(enemy, player);
+  addSpeechBubble(enemy, "창을 받아라!", 1.15);
+  for (const offset of [-0.22, 0, 0.22]) {
+    const angle = baseAngle + offset;
+    damageZones.push({
+      x: enemy.x + Math.cos(angle) * 54,
+      y: enemy.y + Math.sin(angle) * 54,
+      vx: Math.cos(angle) * 350,
+      vy: Math.sin(angle) * 350,
+      angle,
+      radius: 30,
+      damage: scaleBossDamage(enemy, 22),
+      push: 58,
+      stun: 0.35,
+      life: 1.65,
+      maxLife: 1.65,
+      color: "#ffe066",
+      hostile: true,
+      consumeOnHit: true,
+      applied: false,
+      kind: "jarvanFlyingSpear",
+    });
+  }
+  addParticles(enemy.x, enemy.y, "#ffe066", 18);
+}
+
 function createPraiseThumb(enemy) {
   const angle = angleTo(enemy, player);
   addSpeechBubble(enemy, "당신이 최고야?!", 1.1);
   damageZones.push({
     x: enemy.x + Math.cos(angle) * 42,
     y: enemy.y + Math.sin(angle) * 42,
-    vx: Math.cos(angle) * 420,
-    vy: Math.sin(angle) * 420,
+    vx: Math.cos(angle) * 620,
+    vy: Math.sin(angle) * 620,
     radius: 24,
     damage: scaleBossDamage(enemy, 18),
     life: 1.25,
@@ -2005,17 +2019,21 @@ function createPraiseThumb(enemy) {
 }
 
 function createPraiseStunWave(enemy) {
+  const angle = angleTo(enemy, player);
   addSpeechBubble(enemy, "꼼짝 못해!", 1.25);
   damageZones.push({
-    x: enemy.x,
-    y: enemy.y,
-    radius: 230,
+    x: enemy.x + Math.cos(angle) * 54,
+    y: enemy.y + Math.sin(angle) * 54,
+    vx: Math.cos(angle) * 360,
+    vy: Math.sin(angle) * 360,
+    radius: 58,
     damage: scaleBossDamage(enemy, 12),
-    stun: 3,
-    life: 0.78,
-    maxLife: 0.78,
+    stun: 2,
+    life: 1.6,
+    maxLife: 1.6,
     color: "#c77dff",
     hostile: true,
+    consumeOnHit: true,
     applied: false,
     kind: "praiseWave",
   });
@@ -2166,7 +2184,7 @@ function calculateIncomingDamage(amount) {
 function increaseLevelStats() {
   player.attackPower *= 1.05;
   player.defensePower *= 1.05;
-  player.speed *= 1.025;
+  player.speed *= 1.0125;
 }
 
 function hurtPlayer(amount) {
@@ -2319,6 +2337,7 @@ function damageEnemy(enemy, amount, color = "#fff2a8") {
   enemy.hitFlash = 0.08;
   playSound("hit");
   addParticles(enemy.x, enemy.y, guarded > 0 ? "#ffe066" : color, enemy.boss ? 14 : 7);
+  addPopup(`-${finalAmount}`, enemy.x, enemy.y - enemy.radius, color, 0.48, enemy.boss ? 17 : 13);
   if (guarded > 0 && Math.random() < 0.35) addPopup("방어", enemy.x, enemy.y - enemy.radius, "#fff3b0", 0.45, 12);
   if (enemy.hp <= 0) killEnemy(enemy);
 }
@@ -2329,7 +2348,6 @@ function killEnemy(enemy) {
   player.kills += 1;
   const earnedScore = Math.max(1, Math.round((enemy.score ?? 0) / 10));
   player.score += earnedScore;
-  addPopup(`+${earnedScore}`, enemy.x, enemy.y - enemy.radius, "#ffe066", 0.75, 15);
   dropXp(enemy.x, enemy.y, enemy.xp);
   dropEnergy(enemy);
   if (enemy.boss) {
@@ -2401,7 +2419,7 @@ function updateOrbs(delta) {
     }
     if (d < player.magnet) {
       const angle = angleTo(orb, player);
-      const pull = 520 + (1 - d / player.magnet) * 1320;
+      const pull = 1040 + (1 - d / player.magnet) * 2640;
       orb.vx += Math.cos(angle) * pull * delta;
       orb.vy += Math.sin(angle) * pull * delta;
       orb.life = Math.max(orb.life, XP_ORB_FADE_TIME);
@@ -2464,8 +2482,8 @@ function useFirstAidKit() {
 }
 
 function getNextXpRequirement(previousRequirement, level) {
-  const growth = 1.14 + Math.min(0.18, level * 0.012);
-  const levelBonus = 14 + level * 3;
+  const growth = 1.18 + Math.min(0.22, level * 0.014);
+  const levelBonus = 26 + level * 4;
   return Math.max(12, Math.round((previousRequirement * growth + levelBonus) * player.xpNeedMultiplier));
 }
 
@@ -2949,7 +2967,6 @@ function updateHud() {
     weapons.lightning.level > 0 ? { label: `번개 Lv.${weapons.lightning.level}`, type: "attack", power: chipPower(weapons.lightning.level), desc: "가까운 적 주변에 민원 번개를 내려 범위 피해를 줍니다." } : null,
     weapons.lowKick.level > 0 ? { label: `로우킥 Lv.${weapons.lowKick.level}`, type: "attack", power: chipPower(weapons.lowKick.level), desc: "전방을 크게 휘두르는 로우킥으로 적을 밀쳐내며 피해를 줍니다." } : null,
     weapons.strapOrbit.level > 0 ? { label: `손잡이 Lv.${weapons.strapOrbit.level}`, type: "attack", power: chipPower(weapons.strapOrbit.level), desc: "지하철 손잡이가 주위를 회전하며 닿은 적을 계속 공격합니다." } : null,
-    weapons.announcement.level > 0 ? { label: `방송파 Lv.${weapons.announcement.level}`, type: "attack", power: chipPower(weapons.announcement.level), desc: "주변 적을 밀쳐내는 방송파를 주기적으로 발생시킵니다." } : null,
     weapons.expressTrain.level > 0 ? { label: `급행 Lv.${weapons.expressTrain.level}`, type: "attack", power: chipPower(weapons.expressTrain.level), desc: "급행열차가 지나가며 직선 경로의 적에게 피해와 넉백을 줍니다." } : null,
     weapons.customerMissile.level > 0 ? { label: `유도탄 Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level), desc: "고객센터 유도탄이 가까운 적을 추적해 폭발 피해를 줍니다." } : null,
     weapons.laser.level > 0 ? { label: `레이저 Lv.${weapons.laser.level}`, type: "attack", power: chipPower(weapons.laser.level), desc: "개찰구 레이저가 전방을 관통하며 일정 시간 피해를 줍니다." } : null,
@@ -3455,14 +3472,14 @@ function drawOrbs() {
     const p = worldToScreen(orb.x, orb.y);
     const fade = clamp(orb.life / XP_ORB_FADE_TIME, 0, 1);
     ctx.save();
-    ctx.globalAlpha = 0.3 * fade;
+    ctx.globalAlpha = 0.2 * fade;
     ctx.fillStyle = "#64dfdf";
     ctx.shadowColor = "#64dfdf";
-    ctx.shadowBlur = 3 * fade;
+    ctx.shadowBlur = 2 * fade;
     ctx.beginPath();
     ctx.arc(p.x, p.y, orb.radius, 0, TAU);
     ctx.fill();
-    ctx.globalAlpha = 0.14 * fade;
+    ctx.globalAlpha = 0.08 * fade;
     ctx.strokeStyle = "#e6fffb";
     ctx.lineWidth = 1;
     ctx.stroke();
@@ -4008,6 +4025,33 @@ function drawDamageZones() {
       continue;
     }
 
+    if (zone.kind === "dansoThrow") {
+      ctx.translate(p.x, p.y);
+      ctx.rotate(zone.angle + progress * 10);
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = 0.22;
+      ctx.fillStyle = "rgba(249, 199, 79, 0.22)";
+      ctx.beginPath();
+      ctx.arc(0, 0, zone.radius * 1.35, 0, TAU);
+      ctx.fill();
+      ctx.globalAlpha = 0.96;
+      ctx.strokeStyle = "#8d5524";
+      ctx.lineWidth = 10;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(-34, 0);
+      ctx.lineTo(34, 0);
+      ctx.stroke();
+      ctx.strokeStyle = "#ffe066";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(-28, -4);
+      ctx.lineTo(28, -4);
+      ctx.stroke();
+      ctx.restore();
+      continue;
+    }
+
     if (zone.kind === "airportTaunt") {
       const wave = Math.sin(progress * Math.PI);
       ctx.translate(p.x, p.y);
@@ -4065,15 +4109,23 @@ function drawDamageZones() {
     if (zone.kind === "dollarBill") {
       ctx.translate(p.x, p.y);
       ctx.rotate(progress * 8);
-      ctx.globalAlpha = 0.85;
-      ctx.fillStyle = "#80ffdb";
-      ctx.strokeStyle = "#0b6b5e";
-      ctx.lineWidth = 3;
-      roundedRect(-28, -16, 56, 32, 6);
+      const billWidth = zone.radius * 2.8;
+      const billHeight = zone.radius * 1.55;
+      ctx.globalAlpha = 0.95;
+      ctx.shadowColor = "#fff3b0";
+      ctx.shadowBlur = 12;
+      ctx.fillStyle = "#7cffc7";
+      ctx.strokeStyle = "#ffe066";
+      ctx.lineWidth = 4;
+      roundedRect(-billWidth / 2, -billHeight / 2, billWidth, billHeight, 7);
       ctx.fill();
       ctx.stroke();
+      ctx.strokeStyle = "#0b6b5e";
+      ctx.lineWidth = 2;
+      roundedRect(-billWidth * 0.34, -billHeight * 0.28, billWidth * 0.68, billHeight * 0.56, 4);
+      ctx.stroke();
       ctx.fillStyle = "#0b6b5e";
-      ctx.font = "900 18px system-ui";
+      ctx.font = `1000 ${Math.round(zone.radius * 0.9)}px system-ui`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText("$", 0, 1);
@@ -4129,6 +4181,34 @@ function drawDamageZones() {
       ctx.textBaseline = "middle";
       ctx.fillStyle = "#fff3b0";
       ctx.fillText("👍", 0, 0);
+      ctx.restore();
+      continue;
+    }
+
+    if (zone.kind === "praiseWave") {
+      const wave = Math.sin(progress * Math.PI);
+      ctx.translate(p.x, p.y);
+      ctx.rotate(Math.atan2(zone.vy ?? 0, zone.vx ?? 1));
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = 0.2 + wave * 0.34;
+      ctx.fillStyle = "rgba(199, 125, 255, 0.2)";
+      ctx.beginPath();
+      ctx.ellipse(0, 0, zone.radius * 1.35, zone.radius * 0.78, 0, 0, TAU);
+      ctx.fill();
+      ctx.strokeStyle = "#e0aaff";
+      ctx.lineWidth = 5;
+      for (let i = 0; i < 3; i += 1) {
+        ctx.globalAlpha = Math.max(0.18, 0.8 - i * 0.18 - progress * 0.24);
+        ctx.beginPath();
+        ctx.arc(-zone.radius * 0.2 + i * zone.radius * 0.34, 0, zone.radius * (0.42 + i * 0.18), -0.86, 0.86);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = "#fff3b0";
+      ctx.font = `900 ${Math.round(zone.radius * 0.42)}px system-ui`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("!", zone.radius * 0.3, 0);
       ctx.restore();
       continue;
     }
@@ -4211,6 +4291,40 @@ function drawDamageZones() {
         ctx.lineTo(reach * 0.94, offset * 0.45);
         ctx.stroke();
       }
+      ctx.restore();
+      continue;
+    }
+
+    if (zone.kind === "jarvanFlyingSpear") {
+      ctx.translate(p.x, p.y);
+      ctx.rotate(zone.angle);
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = 0.2;
+      ctx.fillStyle = "rgba(255, 224, 102, 0.22)";
+      roundedRect(-36, -18, 92, 36, 16);
+      ctx.fill();
+      ctx.globalAlpha = 0.96;
+      ctx.strokeStyle = "#8d5524";
+      ctx.lineWidth = 8;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(-38, 0);
+      ctx.lineTo(34, 0);
+      ctx.stroke();
+      ctx.strokeStyle = "#fff3b0";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(-28, -4);
+      ctx.lineTo(24, -4);
+      ctx.stroke();
+      ctx.fillStyle = "#ffe066";
+      ctx.beginPath();
+      ctx.moveTo(58, 0);
+      ctx.lineTo(26, -15);
+      ctx.lineTo(34, 0);
+      ctx.lineTo(26, 15);
+      ctx.closePath();
+      ctx.fill();
       ctx.restore();
       continue;
     }
