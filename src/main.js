@@ -1038,7 +1038,7 @@ function selectHero(heroId) {
   player.damageReduction = 0;
   refs.heroPanel.classList.add("hidden");
   game.pendingHeroChoice = false;
-  game.pendingStarterChoices = 3;
+  game.pendingStarterChoices = 1;
   updateHud();
   openUpgradePanel();
 }
@@ -2505,7 +2505,7 @@ function openUpgradePanel() {
   if (game.pendingStarterChoices > 0) game.manualPaused = false;
   if (refs.upgradeTitle) {
     refs.upgradeTitle.textContent =
-      game.pendingStarterChoices > 0 ? `기본 스킬 선택 ${4 - game.pendingStarterChoices}/3` : "레벨 업";
+      game.pendingStarterChoices > 0 ? `기본 스킬 선택 ${2 - game.pendingStarterChoices}/1` : "레벨 업";
   }
   updateUpgradePauseButton();
   const starterPool = upgradePool.filter((choice) => choice && weaponUpgradeIds.has(choice.id));
