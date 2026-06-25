@@ -1144,9 +1144,9 @@ function spawnEnemy(type = null, boss = false) {
     spearCooldown: rand(1.6, 2.6),
     praiseCooldown: rand(1.0, 1.8),
     praiseStunCooldown: rand(3.2, 4.8),
-    bubbleCooldown: rand(1.2, 2.1),
-    gumMissileCooldown: rand(3.0, 4.5),
-    giantGumCooldown: rand(4.8, 6.4),
+    bubbleCooldown: rand(1.8, 3.1),
+    gumMissileCooldown: rand(4.5, 6.8),
+    giantGumCooldown: rand(7.2, 9.6),
     danceKickCooldown: rand(0.7, 1.3),
     danceStampCooldown: rand(2.6, 4.0),
     retreatTimer: 0,
@@ -1688,15 +1688,15 @@ function updateEnemies(delta) {
       enemy.giantGumCooldown -= delta;
       if (enemy.bubbleCooldown <= 0) {
         createGumBubble(enemy);
-        enemy.bubbleCooldown = rand(1.65, 2.6);
+        enemy.bubbleCooldown = rand(2.5, 3.9);
       }
       if (enemy.gumMissileCooldown <= 0) {
         createGumMissiles(enemy);
-        enemy.gumMissileCooldown = rand(5.2, 7.0);
+        enemy.gumMissileCooldown = rand(7.8, 10.5);
       }
       if (enemy.giantGumCooldown <= 0) {
         createGiantGumBubble(enemy);
-        enemy.giantGumCooldown = rand(7.5, 10.0);
+        enemy.giantGumCooldown = rand(11.2, 15.0);
       }
     }
     if (enemy.special === "boss-dance") {
