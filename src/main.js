@@ -77,7 +77,7 @@ const XP_ORB_FADE_TIME = 5;
 const heroTypes = [
   {
     id: "gae-hwanam",
-    name: "개화남",
+    name: "병우",
     image: "/assets/heroes/gae-hwanam-cutout.png",
     quote: "정의는 방향이 아니라 선택.",
     hp: 120,
@@ -90,7 +90,7 @@ const heroTypes = [
   },
   {
     id: "gae-hwani",
-    name: "개화녀",
+    name: "희빈",
     image: "/assets/heroes/gae-hwani-cutout.png",
     quote: "작은 용기로 길을 연다.",
     hp: 100,
@@ -659,7 +659,7 @@ const player = {
   speed: 205,
   level: 1,
   xp: 0,
-  nextXp: 58,
+  nextXp: 78,
   kills: 0,
   score: 0,
   elapsed: 0,
@@ -926,7 +926,7 @@ function resetGame() {
     speed: 205,
     level: 1,
     xp: 0,
-    nextXp: 58,
+    nextXp: 78,
     kills: 0,
     score: 0,
     elapsed: 0,
@@ -2457,8 +2457,8 @@ function useFirstAidKit() {
 }
 
 function getNextXpRequirement(previousRequirement, level) {
-  const growth = 1.18 + Math.min(0.22, level * 0.014);
-  const levelBonus = 26 + level * 4;
+  const growth = 1.22 + Math.min(0.24, level * 0.014);
+  const levelBonus = 34 + level * 5;
   return Math.max(12, Math.round((previousRequirement * growth + levelBonus) * player.xpNeedMultiplier));
 }
 
