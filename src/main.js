@@ -79,6 +79,7 @@ const heroTypes = [
     id: "gae-hwanam",
     name: "병우",
     image: "/assets/heroes/gae-hwanam-cutout.png",
+    cardImage: "/assets/heroes/byeongu-medium.png",
     quote: "정의는 방향이 아니라 선택.",
     hp: 120,
     maxHp: 120,
@@ -92,6 +93,7 @@ const heroTypes = [
     id: "gae-hwani",
     name: "희빈",
     image: "/assets/heroes/gae-hwani-cutout.png",
+    cardImage: "/assets/heroes/heebin-medium.png",
     quote: "작은 용기로 길을 연다.",
     hp: 100,
     maxHp: 100,
@@ -983,7 +985,7 @@ function renderHeroChoices() {
     button.className = "hero-card";
     button.type = "button";
     button.innerHTML = `
-      <img src="${hero.image}" alt="${hero.name}" />
+      <img src="${hero.cardImage ?? hero.image}" alt="${hero.name}" />
       <strong>${hero.name}</strong>
       <p>${hero.quote}</p>
       <div class="hero-stats">
