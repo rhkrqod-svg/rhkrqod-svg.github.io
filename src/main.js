@@ -666,7 +666,7 @@ const player = {
   damage: 27,
   attackPower: 100,
   defensePower: 100,
-  fireRate: 0.183,
+  fireRate: 0.238,
   fireCooldown: 0,
   shots: 1,
   bulletSpeed: 116,
@@ -933,8 +933,8 @@ function resetGame() {
     damage: 27,
     attackPower: 100,
     defensePower: 100,
-    fireRate: 0.183,
-    fireCooldown: 0.07,
+    fireRate: 0.238,
+    fireCooldown: 0.09,
     shots: 1,
     bulletSpeed: 116,
     magnet: START_MAGNET_RANGE,
@@ -1250,7 +1250,7 @@ function fireBullets() {
       vy: Math.sin(baseAngle + offset) * player.bulletSpeed,
       damage: player.damage,
       radius: 10,
-      life: 1.35,
+      life: 30,
       pierce: Math.floor(player.shots / 3),
       color: "#fff2a8",
     });
@@ -2173,6 +2173,10 @@ function updateProjectiles(delta) {
     bullet.x += bullet.vx * delta;
     bullet.y += bullet.vy * delta;
     bullet.life -= delta;
+    if (bullet.x < 0 || bullet.x > WORLD_SIZE || bullet.y < 0 || bullet.y > WORLD_SIZE) {
+      bullets.splice(bullets.indexOf(bullet), 1);
+      continue;
+    }
     for (const enemy of [...enemies]) {
       if (Math.hypot(enemy.x - bullet.x, enemy.y - bullet.y) < enemy.radius + bullet.radius) {
         damageEnemy(enemy, bullet.damage);
@@ -2476,8 +2480,9 @@ function gainXp(amount) {
 }
 
 function openUpgradePanel() {
-  game.paused = game.pendingStarterChoices > 0;
-  if (game.pendingStarterChoices > 0) game.manualPaused = false;
+  const starterPicking = game.pendingStarterChoices > 0;
+  game.manualPaused = !starterPicking;
+  game.paused = true;
   if (refs.upgradeTitle) {
     refs.upgradeTitle.textContent =
       game.pendingStarterChoices > 0 ? `기본 스킬 선택 ${3 - game.pendingStarterChoices}/2` : "레벨 업";
