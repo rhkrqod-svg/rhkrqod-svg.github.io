@@ -484,14 +484,6 @@ const upgradePool = [
     },
   },
   {
-    id: "speed",
-    name: "칼퇴 스텝",
-    desc: "이동 속도 +12%",
-    apply: () => {
-      player.speed *= 1.12;
-    },
-  },
-  {
     id: "maxhp",
     name: "멘탈 강화",
     desc: "최대 체력 +25, 즉시 회복",
@@ -553,14 +545,6 @@ const upgradePool = [
     },
   },
   {
-    id: "rushAdapt",
-    name: "러시아워 적응력",
-    desc: "이동 속도 +10%",
-    apply: () => {
-      player.speed *= 1.1;
-    },
-  },
-  {
     id: "transferMaster",
     name: "환승 고수",
     desc: "경험치 흡수 범위 +30%",
@@ -606,7 +590,6 @@ const upgradePool = [
 ];
 
 const passiveUpgradeIds = new Set([
-  "rushAdapt",
   "transferMaster",
   "nuisanceResist",
   "mentalRegen",
