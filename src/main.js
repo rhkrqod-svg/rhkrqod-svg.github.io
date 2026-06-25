@@ -66,7 +66,7 @@ const START_MAGNET_RANGE = 185;
 const CHARACTER_SIZE_SCALE = 0.5;
 const MONSTER_SIZE_SCALE = 0.42;
 const BOSS_SIZE_SCALE = 0.3;
-const FIXED_VIEW_SCALE = 0.88;
+const FIXED_VIEW_SCALE = 0.704;
 const PLAYER_RADIUS = 19 * CHARACTER_SIZE_SCALE;
 const FIRST_AID_HEAL_RATIO = 0.5;
 const ENEMY_HP_GLOBAL_MULTIPLIER = 1.6;
@@ -79,7 +79,7 @@ const heroTypes = [
     id: "gae-hwanam",
     name: "병우",
     image: "/assets/heroes/gae-hwanam-cutout.png",
-    cardImage: "/assets/heroes/byeongu-medium.png",
+    cardImage: "/assets/heroes/gae-hwanam-cutout.png",
     quote: "정의는 방향이 아니라 선택.",
     hp: 120,
     maxHp: 120,
@@ -93,7 +93,7 @@ const heroTypes = [
     id: "gae-hwani",
     name: "희빈",
     image: "/assets/heroes/gae-hwani-cutout.png",
-    cardImage: "/assets/heroes/heebin-medium.png",
+    cardImage: "/assets/heroes/gae-hwani-cutout.png",
     quote: "작은 용기로 길을 연다.",
     hp: 100,
     maxHp: 100,
@@ -456,9 +456,9 @@ const upgradePool = [
   {
     id: "rapid",
     name: "따발총 모드",
-    desc: "자동 사격 속도 +18%",
+    desc: "자동 사격 속도 +20%",
     apply: () => {
-      player.fireRate *= 0.82;
+      player.fireRate *= 0.8;
     },
   },
   {
@@ -668,7 +668,7 @@ const player = {
   damage: 27,
   attackPower: 100,
   defensePower: 100,
-  fireRate: 0.119,
+  fireRate: 0.5,
   fireCooldown: 0,
   shots: 1,
   bulletSpeed: 174,
@@ -935,8 +935,8 @@ function resetGame() {
     damage: 27,
     attackPower: 100,
     defensePower: 100,
-    fireRate: 0.119,
-    fireCooldown: 0.045,
+    fireRate: 0.5,
+    fireCooldown: 0.18,
     shots: 1,
     bulletSpeed: 174,
     magnet: START_MAGNET_RANGE,
