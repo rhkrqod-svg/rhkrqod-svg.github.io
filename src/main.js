@@ -462,9 +462,9 @@ const upgradePool = [
   {
     id: "damage",
     name: "참교육 탄환",
-    desc: "탄환 피해 +25%",
+    desc: "탄환 피해 +20%",
     apply: () => {
-      player.damage *= 1.25;
+      player.damage *= 1.2;
     },
   },
   {
