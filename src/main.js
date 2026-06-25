@@ -1161,7 +1161,7 @@ function spawnEnemy(type = null, boss = false) {
     spearCooldown: rand(1.6, 2.6),
     praiseCooldown: rand(1.0, 1.8),
     praiseStunCooldown: rand(3.2, 4.8),
-    bubbleCooldown: rand(0.8, 1.5),
+    bubbleCooldown: rand(1.2, 2.1),
     gumMissileCooldown: rand(3.0, 4.5),
     giantGumCooldown: rand(4.8, 6.4),
     danceKickCooldown: rand(0.7, 1.3),
@@ -1682,7 +1682,7 @@ function updateEnemies(delta) {
         createJarvanSpearVolley(enemy);
         enemy.flagCooldown = rand(6.4, 8.2);
       }
-      if (enemy.spearCooldown <= 0 && playerDistance < 320) {
+      if (enemy.spearCooldown <= 0 && playerDistance < Math.hypot(viewWidth, viewHeight) * 1.1) {
         createJarvanSpear(enemy);
         enemy.spearCooldown = rand(2.6, 3.8);
       }
@@ -1705,7 +1705,7 @@ function updateEnemies(delta) {
       enemy.giantGumCooldown -= delta;
       if (enemy.bubbleCooldown <= 0) {
         createGumBubble(enemy);
-        enemy.bubbleCooldown = rand(1.15, 1.8);
+        enemy.bubbleCooldown = rand(1.65, 2.6);
       }
       if (enemy.gumMissileCooldown <= 0) {
         createGumMissiles(enemy);
@@ -1894,12 +1894,12 @@ function createAirportCrisis(enemy) {
     damageZones.push({
       x: enemy.x,
       y: enemy.y,
-      vx: Math.cos(angle) * rand(300, 520),
-      vy: Math.sin(angle) * rand(300, 520),
+      vx: Math.cos(angle) * rand(190, 330),
+      vy: Math.sin(angle) * rand(190, 330),
       radius: 34,
       damage: scaleBossDamage(enemy, 12),
-      life: 1.25,
-      maxLife: 1.25,
+      life: 1.8,
+      maxLife: 1.8,
       color: "#80ffdb",
       hostile: true,
       consumeOnHit: true,
@@ -1942,16 +1942,17 @@ function createJarvanSpear(enemy) {
     x: enemy.x,
     y: enemy.y,
     angle,
-    length: 238,
-    width: 58,
-    radius: 238,
+    length: Math.hypot(viewWidth, viewHeight) * 1.25,
+    width: 70,
+    radius: Math.hypot(viewWidth, viewHeight) * 1.25,
     damage: scaleBossDamage(enemy, 24),
     push: 86,
     stun: 0.46,
-    life: 0.44,
-    maxLife: 0.44,
+    life: 1.08,
+    maxLife: 1.08,
     color: "#ffe066",
     hostile: true,
+    armedAt: 0.46,
     applied: false,
     kind: "jarvanSpear",
   });
@@ -1969,7 +1970,7 @@ function createJarvanSpearVolley(enemy) {
       vx: Math.cos(angle) * 350,
       vy: Math.sin(angle) * 350,
       angle,
-      radius: 30,
+      radius: 42,
       damage: scaleBossDamage(enemy, 22),
       push: 58,
       stun: 0.35,
@@ -2082,7 +2083,7 @@ function createGiantGumBubble(enemy) {
     y: enemy.y + Math.sin(angle) * 54,
     vx: Math.cos(angle) * 185,
     vy: Math.sin(angle) * 185,
-    radius: 68,
+    radius: 92,
     damage: scaleBossDamage(enemy, 34),
     push: 46,
     slow: 12,
@@ -4134,31 +4135,14 @@ function drawDamageZones() {
       const shine = Math.sin(progress * Math.PI);
       ctx.translate(p.x, p.y);
       ctx.globalCompositeOperation = "lighter";
-      ctx.globalAlpha = isGiant ? 0.35 : 0.75;
-      ctx.fillStyle = isGiant ? "rgba(255, 92, 168, 0.36)" : "rgba(255, 143, 171, 0.62)";
-      ctx.strokeStyle = isGiant ? "#ff4fb3" : "#ffc2d1";
-      ctx.lineWidth = isGiant ? 7 : 3;
+      ctx.globalAlpha = 0.75;
+      ctx.fillStyle = "rgba(255, 143, 171, 0.62)";
+      ctx.strokeStyle = "#ffc2d1";
+      ctx.lineWidth = isGiant ? 5 : 3;
       ctx.beginPath();
       ctx.arc(0, 0, zone.radius * (0.9 + shine * 0.08), 0, TAU);
       ctx.fill();
       ctx.stroke();
-      if (isGiant) {
-        ctx.globalAlpha = 0.22 + shine * 0.18;
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(0, 0, zone.radius * (0.56 + shine * 0.18), 0, TAU);
-        ctx.stroke();
-        ctx.globalAlpha = 0.42;
-        ctx.strokeStyle = "#ffb3d9";
-        ctx.lineWidth = 2;
-        for (let i = 0; i < 5; i += 1) {
-          const angle = (TAU * i) / 5 + progress * 1.8;
-          ctx.beginPath();
-          ctx.arc(Math.cos(angle) * zone.radius * 0.52, Math.sin(angle) * zone.radius * 0.52, zone.radius * 0.12, 0, TAU);
-          ctx.stroke();
-        }
-      }
       ctx.globalAlpha = isGiant ? 0.95 : 0.85;
       ctx.fillStyle = "rgba(255,255,255,0.72)";
       ctx.beginPath();
@@ -4294,6 +4278,7 @@ function drawDamageZones() {
     if (zone.kind === "jarvanFlyingSpear") {
       ctx.translate(p.x, p.y);
       ctx.rotate(zone.angle);
+      ctx.scale(zone.radius / 30, zone.radius / 30);
       ctx.globalCompositeOperation = "lighter";
       ctx.globalAlpha = 0.2;
       ctx.fillStyle = "rgba(255, 224, 102, 0.22)";
