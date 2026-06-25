@@ -540,7 +540,7 @@ const upgradePool = [
     desc: "가까운 적에게 유도탄을 발사하고 폭발 피해",
     apply: () => {
       weapons.customerMissile.level += 1;
-      weapons.customerMissile.cooldown = Math.min(weapons.customerMissile.cooldown, 0.4);
+      weapons.customerMissile.cooldown = Math.min(weapons.customerMissile.cooldown, 0.32);
     },
   },
   {
@@ -1468,7 +1468,7 @@ function spawnTransferGate() {
 function explodeCustomerMissile(missile) {
   const level = weapons.customerMissile.level;
   const radius = 54 + level * 12;
-  const damage = 45 + level * 24;
+  const damage = Math.round((45 + level * 24) * 1.3);
   damageZones.push({
     x: missile.x,
     y: missile.y,
@@ -1501,7 +1501,7 @@ function spawnCustomerMissiles() {
       vy: Math.sin(angle) * speed,
       speed,
       turnRate: 7.2 + level * 0.5,
-      damage: 32 + level * 15,
+      damage: Math.round((32 + level * 15) * 1.3),
       radius: 8,
       life: 3.2,
       target,
@@ -1595,7 +1595,7 @@ function updatePlayer(delta) {
   weapons.customerMissile.cooldown -= delta;
   if (weapons.customerMissile.level > 0 && weapons.customerMissile.cooldown <= 0) {
     spawnCustomerMissiles();
-    weapons.customerMissile.cooldown = Math.max(0.4, (0.55 - weapons.customerMissile.level * 0.04) / 0.7);
+    weapons.customerMissile.cooldown = Math.max(0.32, ((0.55 - weapons.customerMissile.level * 0.04) / 0.7) * 0.8);
   }
 
   weapons.laser.cooldown -= delta;
