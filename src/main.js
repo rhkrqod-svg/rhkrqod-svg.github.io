@@ -1574,7 +1574,7 @@ function updateEnemies(delta) {
         enemy.swingCooldown = rand(1.25, 1.85);
       }
       if (enemy.soundCooldown <= 0 && playerDistance >= 160) {
-        createDansoSoundwave(enemy);
+        createDansoBoomerang(enemy);
         enemy.soundCooldown = rand(2.6, 3.8);
       }
       if (enemy.shockCooldown <= 0) {
@@ -1763,24 +1763,28 @@ function createDansoShockwave(enemy) {
   addPopup("단소 충격파", enemy.x, enemy.y - 34, "#fff3b0", 0.65, 15);
 }
 
-function createDansoSoundwave(enemy) {
+function createDansoBoomerang(enemy) {
   const angle = angleTo(enemy, player);
-  addSpeechBubble(enemy, "삐이이익!", 1.05);
+  addSpeechBubble(enemy, "단소 받아라!", 1.05);
+  const speed = 420;
   damageZones.push({
     x: enemy.x + Math.cos(angle) * 54,
     y: enemy.y + Math.sin(angle) * 54,
-    vx: Math.cos(angle) * 310,
-    vy: Math.sin(angle) * 310,
-    radius: 42,
-    damage: scaleBossDamage(enemy, 19),
-    push: 48,
-    life: 1.25,
-    maxLife: 1.25,
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    angle,
+    owner: enemy,
+    radius: 38,
+    damage: scaleBossDamage(enemy, 24),
+    push: 58,
+    stun: 0.28,
+    returnAt: 0.48,
+    life: 2.45,
+    maxLife: 2.45,
     color: "#fff3b0",
     hostile: true,
-    consumeOnHit: true,
     applied: false,
-    kind: "dansoSoundwave",
+    kind: "dansoBoomerang",
   });
   addParticles(enemy.x + Math.cos(angle) * 42, enemy.y + Math.sin(angle) * 42, "#fff3b0", 12);
 }
@@ -2472,6 +2476,17 @@ function updateDamageZones(delta) {
     zone.life -= delta;
     const progress = 1 - zone.life / zone.maxLife;
     if (zone.vx || zone.vy) {
+      if (zone.kind === "dansoBoomerang") {
+        const turnProgress = 1 - zone.life / zone.maxLife;
+        if (turnProgress >= (zone.returnAt ?? 0.5)) {
+          const owner = zone.owner ?? zone;
+          const returnAngle = angleTo(zone, owner);
+          const returnSpeed = 500;
+          zone.vx = Math.cos(returnAngle) * returnSpeed;
+          zone.vy = Math.sin(returnAngle) * returnSpeed;
+          zone.angle = returnAngle + Math.PI;
+        }
+      }
       zone.x += (zone.vx ?? 0) * delta;
       zone.y += (zone.vy ?? 0) * delta;
     }
@@ -3908,9 +3923,9 @@ function drawDamageZones() {
       continue;
     }
 
-    if (zone.kind === "dansoThrow") {
+    if (zone.kind === "dansoThrow" || zone.kind === "dansoBoomerang") {
       ctx.translate(p.x, p.y);
-      ctx.rotate(zone.angle + progress * 10);
+      ctx.rotate(zone.angle + progress * 18);
       ctx.globalCompositeOperation = "lighter";
       ctx.globalAlpha = 0.22;
       ctx.fillStyle = "rgba(249, 199, 79, 0.22)";
