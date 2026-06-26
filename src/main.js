@@ -3699,16 +3699,6 @@ function drawDamageZones() {
       const centerY = zone.vertical ? (zone.direction > 0 ? offset : height - offset) : p.y;
       const fade = Math.min(clamp(progress / 0.18, 0, 1), clamp((1 - progress) / 0.16, 0, 1));
 
-      ctx.globalCompositeOperation = "lighter";
-      ctx.globalAlpha = 0.1 * fade;
-      ctx.fillStyle = "#f7d64a";
-      if (zone.vertical) {
-        ctx.fillRect(centerX - trainWidth * 0.82, -20, trainWidth * 1.64, height + 40);
-      } else {
-        ctx.fillRect(-20, centerY - trainWidth * 0.82, width + 40, trainWidth * 1.64);
-      }
-
-      ctx.globalCompositeOperation = "source-over";
       ctx.save();
       ctx.translate(centerX, centerY);
       ctx.rotate(zone.vertical ? Math.PI / 2 : 0);
