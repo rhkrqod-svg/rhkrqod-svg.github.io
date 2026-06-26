@@ -1779,7 +1779,7 @@ function createDansoSwing(enemy) {
 }
 
 function createDansoShockwave(enemy) {
-  addSpeechBubble(enemy, "너 까불지마!! 겁대가리 없으면 저승간다", 1.45);
+  addSpeechBubble(enemy, "WHO ARE YOU!", 1.45);
   damageZones.push({
     x: enemy.x,
     y: enemy.y,
@@ -1799,7 +1799,7 @@ function createDansoShockwave(enemy) {
 
 function createDansoBoomerang(enemy) {
   const angle = angleTo(enemy, player);
-  addSpeechBubble(enemy, "단소 받아라!", 1.05);
+  addSpeechBubble(enemy, "WHO ARE YOU!", 1.05);
   const speed = 420;
   damageZones.push({
     x: enemy.x + Math.cos(angle) * 54,
