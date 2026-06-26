@@ -1310,6 +1310,20 @@ function pickClusterTarget(maxDistance = 900) {
     .sort((a, b) => b.score - a.score)[0].enemy;
 }
 
+function pickBossPriorityTarget(maxDistance = 900) {
+  let nearestBoss = null;
+  let nearestBossDistance = maxDistance;
+  for (const enemy of enemies) {
+    if (!enemy.boss) continue;
+    const currentDistance = distance(player, enemy);
+    if (currentDistance < nearestBossDistance) {
+      nearestBoss = enemy;
+      nearestBossDistance = currentDistance;
+    }
+  }
+  return nearestBoss ?? pickClusterTarget(maxDistance);
+}
+
 function clampPointToVisibleWorld(x, y, margin = 90) {
   const safeMargin = Math.min(margin, viewWidth * 0.42, viewHeight * 0.42);
   return {
@@ -1365,7 +1379,7 @@ function spawnExpressTrain() {
   if (level <= 0) return;
   const vertical = Math.random() < 0.5;
   const direction = Math.random() < 0.5 ? -1 : 1;
-  const target = pickClusterTarget(1300);
+  const target = pickBossPriorityTarget(1300);
   damageZones.push({
     x: target ? target.x : player.x,
     y: target ? target.y : player.y,
@@ -2912,7 +2926,7 @@ function updateHud() {
     weapons.card.level > 0 ? { label: `교통카드 Lv.${weapons.card.level}`, type: "attack", power: chipPower(weapons.card.level), desc: "교통카드가 화면 벽에 최대 5번 튕기며 적을 관통 공격합니다." } : null,
     weapons.lightning.level > 0 ? { label: `번개 Lv.${weapons.lightning.level}`, type: "attack", power: chipPower(weapons.lightning.level), desc: "가까운 적 주변에 민원 번개를 내려 범위 피해를 줍니다." } : null,
     weapons.strapOrbit.level > 0 ? { label: `손잡이 Lv.${weapons.strapOrbit.level}`, type: "attack", power: chipPower(weapons.strapOrbit.level), desc: "지하철 손잡이가 주위를 회전하며 닿은 적을 계속 공격합니다." } : null,
-    weapons.expressTrain.level > 0 ? { label: `급행 Lv.${weapons.expressTrain.level}`, type: "attack", power: chipPower(weapons.expressTrain.level), desc: "급행열차가 지나가며 직선 경로의 적에게 피해와 넉백을 줍니다." } : null,
+    weapons.expressTrain.level > 0 ? { label: `급행 Lv.${weapons.expressTrain.level}`, type: "attack", power: chipPower(weapons.expressTrain.level), desc: "급행열차가 보스를 우선 노려 지나가며 피해와 넉백을 줍니다." } : null,
     weapons.customerMissile.level > 0 ? { label: `유도탄 Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level), desc: "고객센터 유도탄이 보스를 우선 추적하고 폭발 피해를 줍니다." } : null,
     player.defenseBreakTimer > 0 ? { label: `방어저하 ${Math.ceil(player.defenseBreakTimer)}초`, type: "status", desc: "현재 방어력이 감소한 상태입니다." } : null,
     player.stunTimer > 0 ? { label: `경직 ${Math.ceil(player.stunTimer)}초`, type: "status", desc: "잠시 움직일 수 없는 상태입니다." } : null,
