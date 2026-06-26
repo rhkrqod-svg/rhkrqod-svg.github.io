@@ -1092,13 +1092,57 @@ function scaleBossDamage(enemy, damage) {
   return Math.round(damage * (enemy.attackScale ?? 1));
 }
 
+function getOffscreenSpawnPoint(boss = false) {
+  const margin = boss ? 260 : 170;
+  const min = 50;
+  const max = WORLD_SIZE - 50;
+  const left = camera.x;
+  const right = camera.x + viewWidth;
+  const top = camera.y;
+  const bottom = camera.y + viewHeight;
+  const candidates = [];
+
+  if (left - margin >= min) {
+    candidates.push({
+      x: left - margin,
+      y: clamp(rand(top - margin * 0.35, bottom + margin * 0.35), min, max),
+    });
+  }
+  if (right + margin <= max) {
+    candidates.push({
+      x: right + margin,
+      y: clamp(rand(top - margin * 0.35, bottom + margin * 0.35), min, max),
+    });
+  }
+  if (top - margin >= min) {
+    candidates.push({
+      x: clamp(rand(left - margin * 0.35, right + margin * 0.35), min, max),
+      y: top - margin,
+    });
+  }
+  if (bottom + margin <= max) {
+    candidates.push({
+      x: clamp(rand(left - margin * 0.35, right + margin * 0.35), min, max),
+      y: bottom + margin,
+    });
+  }
+
+  if (candidates.length > 0) return candidates[Math.floor(Math.random() * candidates.length)];
+
+  const angle = Math.random() * TAU;
+  const spawnDistance = Math.max(viewWidth, viewHeight) * 0.72 + margin;
+  return {
+    x: clamp(player.x + Math.cos(angle) * spawnDistance, min, max),
+    y: clamp(player.y + Math.sin(angle) * spawnDistance, min, max),
+  };
+}
+
 function spawnEnemy(type = null, boss = false) {
   const minute = player.elapsed / 60;
   const chosen = type ?? weightedPick(monsterTypes, minute);
-  const angle = Math.random() * TAU;
-  const spawnDistance = Math.max(viewWidth, viewHeight) * 0.62 + 90;
-  const x = clamp(player.x + Math.cos(angle) * spawnDistance, 50, WORLD_SIZE - 50);
-  const y = clamp(player.y + Math.sin(angle) * spawnDistance, 50, WORLD_SIZE - 50);
+  const spawnPoint = getOffscreenSpawnPoint(boss);
+  const x = spawnPoint.x;
+  const y = spawnPoint.y;
   const normalScale = boss ? 1 + minute * 0.11 : 1 + Math.min(1.35, minute * 0.08);
   const normalLevelScale = getNormalEnemyLevelScale();
   const levelHpScale = boss ? getBossHpLevelScale() : normalLevelScale;
