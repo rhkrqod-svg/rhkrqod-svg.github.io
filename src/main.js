@@ -579,6 +579,10 @@ const weaponUpgradeIds = new Set([
   "customerMissile",
 ]);
 
+function getTearGasRadius() {
+  return (58 + weapons.tearGas.level * 6) * 1.3 * 1.7 * 1.5;
+}
+
 let width = 1;
 let height = 1;
 let viewWidth = 1;
@@ -2496,7 +2500,7 @@ function updateBlade(delta = 0) {
 
   if (weapons.tearGas.level > 0) {
     weapons.tearGas.pulse += delta * (1.5 + weapons.tearGas.level * 0.18);
-    const gasRadius = (58 + weapons.tearGas.level * 6) * 1.3 * 1.7;
+    const gasRadius = getTearGasRadius();
     const gasDamage = 9 + (weapons.tearGas.level - 1) * 5;
     const now = performance.now();
     for (const enemy of [...enemies]) {
@@ -3658,41 +3662,61 @@ function drawPlayer() {
 
 function drawBlades() {
   if (weapons.tearGas.level > 0) {
-    const gasRadius = (58 + weapons.tearGas.level * 6) * 1.3 * 1.7;
+    const gasRadius = getTearGasRadius();
     const p = worldToScreen(player.x, player.y);
     const pulse = weapons.tearGas.pulse;
     ctx.save();
     ctx.translate(p.x, p.y);
     ctx.globalCompositeOperation = "lighter";
-    ctx.globalAlpha = 0.1 + Math.min(weapons.tearGas.level, 5) * 0.012;
+    ctx.globalAlpha = 0.16 + Math.min(weapons.tearGas.level, 5) * 0.015;
     const gradient = ctx.createRadialGradient(0, 0, gasRadius * 0.14, 0, 0, gasRadius);
-    gradient.addColorStop(0, "rgba(215, 255, 99, 0.22)");
-    gradient.addColorStop(0.48, "rgba(143, 217, 56, 0.16)");
+    gradient.addColorStop(0, "rgba(231, 255, 124, 0.32)");
+    gradient.addColorStop(0.34, "rgba(176, 229, 74, 0.22)");
+    gradient.addColorStop(0.72, "rgba(100, 169, 48, 0.13)");
     gradient.addColorStop(1, "rgba(70, 133, 38, 0)");
     ctx.fillStyle = gradient;
     ctx.beginPath();
     ctx.arc(0, 0, gasRadius, 0, TAU);
     ctx.fill();
 
-    ctx.globalAlpha = 0.22;
-    ctx.strokeStyle = "#b7ef64";
-    ctx.lineWidth = 2;
-    for (let i = 0; i < 4; i += 1) {
-      const radius = gasRadius * (0.46 + i * 0.13 + Math.sin(pulse + i) * 0.025);
+    ctx.globalAlpha = 0.18;
+    ctx.strokeStyle = "#d8ff7a";
+    ctx.lineWidth = 2.4;
+    for (let i = 0; i < 5; i += 1) {
+      const radius = gasRadius * (0.34 + i * 0.12 + Math.sin(pulse + i) * 0.026);
       ctx.beginPath();
-      ctx.arc(0, 0, radius, pulse * (0.25 + i * 0.04), TAU + pulse * (0.25 + i * 0.04));
+      ctx.arc(0, 0, radius, pulse * (0.18 + i * 0.035), TAU + pulse * (0.18 + i * 0.035));
       ctx.stroke();
     }
 
-    ctx.globalAlpha = 0.18;
-    ctx.fillStyle = "#d8ff7a";
-    for (let i = 0; i < 18; i += 1) {
-      const angle = pulse * 0.7 + (TAU * i) / 18;
-      const radius = gasRadius * (0.22 + ((i * 37) % 70) / 100);
-      const drift = Math.sin(pulse * 1.8 + i) * 7;
+    ctx.globalCompositeOperation = "source-over";
+    for (let i = 0; i < 34; i += 1) {
+      const angle = pulse * (0.26 + (i % 5) * 0.025) + (TAU * i) / 34;
+      const radius = gasRadius * (0.15 + ((i * 29) % 82) / 100);
+      const drift = Math.sin(pulse * 1.35 + i * 1.7) * (8 + (i % 4) * 2);
+      const cloudSize = gasRadius * (0.035 + (i % 4) * 0.008);
+      const x = Math.cos(angle) * (radius + drift);
+      const y = Math.sin(angle) * (radius - drift * 0.6);
+      const cloud = ctx.createRadialGradient(x, y, 0, x, y, cloudSize);
+      cloud.addColorStop(0, "rgba(228, 255, 143, 0.28)");
+      cloud.addColorStop(0.48, "rgba(173, 227, 87, 0.16)");
+      cloud.addColorStop(1, "rgba(88, 145, 52, 0)");
+      ctx.fillStyle = cloud;
       ctx.beginPath();
-      ctx.arc(Math.cos(angle) * (radius + drift), Math.sin(angle) * (radius - drift), 2.2 + (i % 3), 0, TAU);
+      ctx.arc(x, y, cloudSize, 0, TAU);
       ctx.fill();
+    }
+
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = 0.22;
+    ctx.strokeStyle = "rgba(235, 255, 151, 0.55)";
+    ctx.lineWidth = 1.4;
+    for (let i = 0; i < 10; i += 1) {
+      const angle = pulse * 0.42 + (TAU * i) / 10;
+      const radius = gasRadius * (0.28 + ((i * 17) % 55) / 100);
+      ctx.beginPath();
+      ctx.arc(Math.cos(angle) * radius, Math.sin(angle) * radius, gasRadius * 0.055, 0.4, TAU - 0.7);
+      ctx.stroke();
     }
     ctx.restore();
   }
