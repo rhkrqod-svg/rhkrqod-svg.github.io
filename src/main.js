@@ -3673,56 +3673,33 @@ function drawBlades() {
     const pulse = weapons.tearGas.pulse;
     ctx.save();
     ctx.translate(p.x, p.y);
-    ctx.globalCompositeOperation = "lighter";
-    ctx.globalAlpha = 0.16 + Math.min(weapons.tearGas.level, 5) * 0.015;
+    ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = 0.5;
     const gradient = ctx.createRadialGradient(0, 0, gasRadius * 0.14, 0, 0, gasRadius);
-    gradient.addColorStop(0, "rgba(231, 255, 124, 0.32)");
-    gradient.addColorStop(0.34, "rgba(176, 229, 74, 0.22)");
-    gradient.addColorStop(0.72, "rgba(100, 169, 48, 0.13)");
-    gradient.addColorStop(1, "rgba(70, 133, 38, 0)");
+    gradient.addColorStop(0, "rgba(190, 196, 195, 0.24)");
+    gradient.addColorStop(0.45, "rgba(135, 145, 143, 0.16)");
+    gradient.addColorStop(0.78, "rgba(92, 101, 100, 0.08)");
+    gradient.addColorStop(1, "rgba(60, 66, 66, 0)");
     ctx.fillStyle = gradient;
     ctx.beginPath();
     ctx.arc(0, 0, gasRadius, 0, TAU);
     ctx.fill();
 
-    ctx.globalAlpha = 0.18;
-    ctx.strokeStyle = "#d8ff7a";
-    ctx.lineWidth = 2.4;
-    for (let i = 0; i < 5; i += 1) {
-      const radius = gasRadius * (0.34 + i * 0.12 + Math.sin(pulse + i) * 0.026);
-      ctx.beginPath();
-      ctx.arc(0, 0, radius, pulse * (0.18 + i * 0.035), TAU + pulse * (0.18 + i * 0.035));
-      ctx.stroke();
-    }
-
-    ctx.globalCompositeOperation = "source-over";
-    for (let i = 0; i < 34; i += 1) {
-      const angle = pulse * (0.26 + (i % 5) * 0.025) + (TAU * i) / 34;
-      const radius = gasRadius * (0.15 + ((i * 29) % 82) / 100);
-      const drift = Math.sin(pulse * 1.35 + i * 1.7) * (8 + (i % 4) * 2);
-      const cloudSize = gasRadius * (0.035 + (i % 4) * 0.008);
+    for (let i = 0; i < 42; i += 1) {
+      const angle = pulse * (0.1 + (i % 6) * 0.014) + (TAU * i) / 42;
+      const radius = gasRadius * (0.1 + ((i * 31) % 86) / 100);
+      const drift = Math.sin(pulse * 0.9 + i * 1.9) * (10 + (i % 5) * 3);
+      const cloudSize = gasRadius * (0.052 + (i % 5) * 0.011);
       const x = Math.cos(angle) * (radius + drift);
       const y = Math.sin(angle) * (radius - drift * 0.6);
       const cloud = ctx.createRadialGradient(x, y, 0, x, y, cloudSize);
-      cloud.addColorStop(0, "rgba(228, 255, 143, 0.28)");
-      cloud.addColorStop(0.48, "rgba(173, 227, 87, 0.16)");
-      cloud.addColorStop(1, "rgba(88, 145, 52, 0)");
+      cloud.addColorStop(0, "rgba(224, 228, 226, 0.22)");
+      cloud.addColorStop(0.45, "rgba(150, 158, 156, 0.15)");
+      cloud.addColorStop(1, "rgba(75, 82, 82, 0)");
       ctx.fillStyle = cloud;
       ctx.beginPath();
       ctx.arc(x, y, cloudSize, 0, TAU);
       ctx.fill();
-    }
-
-    ctx.globalCompositeOperation = "lighter";
-    ctx.globalAlpha = 0.22;
-    ctx.strokeStyle = "rgba(235, 255, 151, 0.55)";
-    ctx.lineWidth = 1.4;
-    for (let i = 0; i < 10; i += 1) {
-      const angle = pulse * 0.42 + (TAU * i) / 10;
-      const radius = gasRadius * (0.28 + ((i * 17) % 55) / 100);
-      ctx.beginPath();
-      ctx.arc(Math.cos(angle) * radius, Math.sin(angle) * radius, gasRadius * 0.055, 0.4, TAU - 0.7);
-      ctx.stroke();
     }
     ctx.restore();
   }
