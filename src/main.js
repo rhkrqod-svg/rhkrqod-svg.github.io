@@ -558,15 +558,6 @@ const upgradePool = [
       player.hp = Math.min(player.maxHp, player.hp + 25);
     },
   },
-  {
-    id: "complaintProcessing",
-    name: "민원 처리 속도",
-    desc: "레벨업 필요 경험치 8% 감소",
-    apply: () => {
-      player.xpNeedMultiplier = Math.max(0.65, player.xpNeedMultiplier * 0.92);
-      player.nextXp = Math.max(12, Math.round(player.nextXp * 0.92));
-    },
-  },
 ];
 
 const passiveUpgradeIds = new Set([
@@ -574,7 +565,6 @@ const passiveUpgradeIds = new Set([
   "nuisanceResist",
   "mentalRegen",
   "commuteSurvival",
-  "complaintProcessing",
 ]);
 
 const weaponUpgradeIds = new Set([
