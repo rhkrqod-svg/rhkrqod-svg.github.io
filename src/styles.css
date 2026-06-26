@@ -614,43 +614,73 @@ button {
   bottom: max(218px, calc(env(safe-area-inset-bottom) + 27dvh));
   width: auto;
   min-width: 0;
-  min-height: 48px;
-  padding: 10px 22px;
-  border: 1px solid rgba(128, 255, 219, 0.72);
-  border-radius: 8px;
-  background: rgba(5, 10, 16, 0.72);
-  color: #b8fff3;
-  font-size: clamp(22px, 6.2vw, 31px);
+  min-height: 58px;
+  padding: 12px 30px;
+  border: 2px solid rgba(128, 255, 219, 0.94);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(16, 38, 48, 0.9), rgba(5, 10, 16, 0.82)),
+    rgba(5, 10, 16, 0.82);
+  color: #dffff8;
+  font-size: clamp(25px, 7.1vw, 37px);
   font-weight: 1000;
   letter-spacing: 0;
   white-space: nowrap;
-  text-shadow: 0 0 12px rgba(128, 255, 219, 0.72);
+  text-shadow:
+    0 0 10px rgba(128, 255, 219, 0.95),
+    0 0 22px rgba(128, 255, 219, 0.6);
   transform: translateX(-50%);
   box-shadow:
-    0 0 24px rgba(128, 255, 219, 0.34),
-    inset 0 0 18px rgba(128, 255, 219, 0.14);
+    0 0 18px rgba(128, 255, 219, 0.56),
+    0 0 42px rgba(128, 255, 219, 0.34),
+    inset 0 0 22px rgba(128, 255, 219, 0.2);
+  animation: startButtonBreath 1.28s ease-in-out infinite;
+}
+
+.message.start-screen .title-block button::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 243, 176, 0.28);
+  opacity: 0.72;
+  pointer-events: none;
 }
 
 .message.start-screen .title-block button::after {
   content: "";
   position: absolute;
-  inset: -5px;
-  border-radius: 8px;
-  border: 1px solid rgba(128, 255, 219, 0.28);
+  inset: -9px;
+  border-radius: 14px;
+  border: 2px solid rgba(128, 255, 219, 0.44);
+  box-shadow:
+    0 0 22px rgba(128, 255, 219, 0.58),
+    0 0 44px rgba(128, 255, 219, 0.25);
   pointer-events: none;
-  animation: startPulse 1.45s ease-in-out infinite;
+  animation: startPulse 1.28s ease-in-out infinite;
+}
+
+@keyframes startButtonBreath {
+  0%,
+  100% {
+    transform: translateX(-50%) scale(0.96);
+  }
+
+  50% {
+    transform: translateX(-50%) scale(1.05);
+  }
 }
 
 @keyframes startPulse {
   0%,
   100% {
-    opacity: 0.45;
-    transform: scale(0.98);
+    opacity: 0.38;
+    transform: scale(0.94);
   }
 
   50% {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1.08);
   }
 }
 
