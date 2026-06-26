@@ -1118,7 +1118,7 @@ function spawnEnemy(type = null, boss = false) {
     tauntCooldown: rand(2.4, 3.8),
     crisisCooldown: rand(5.0, 6.8),
     flagCooldown: rand(2.8, 4.2),
-    spearCooldown: rand(1.6, 2.6),
+    spearCooldown: rand(2.4, 3.9),
     praiseCooldown: rand(1.0, 1.8),
     praiseStunCooldown: rand(3.2, 4.8),
     bubbleCooldown: rand(1.8, 3.1),
@@ -1613,7 +1613,7 @@ function updateEnemies(delta) {
       }
       if (enemy.spearCooldown <= 0 && playerDistance < Math.hypot(viewWidth, viewHeight) * 1.1) {
         createJarvanSpear(enemy);
-        enemy.spearCooldown = rand(2.6, 3.8);
+        enemy.spearCooldown = rand(3.9, 5.7);
       }
     }
     if (enemy.special === "boss-praise") {
