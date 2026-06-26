@@ -1100,45 +1100,67 @@ function getOffscreenSpawnPoint(boss = false) {
   const margin = boss ? 260 : 170;
   const min = 50;
   const max = WORLD_SIZE - 50;
+  const edgeBuffer = boss ? 120 : 78;
   const left = camera.x;
   const right = camera.x + viewWidth;
   const top = camera.y;
   const bottom = camera.y + viewHeight;
   const candidates = [];
 
-  if (left - margin >= min) {
+  if (left > min) {
     candidates.push({
-      x: left - margin,
+      x: Math.max(min, left - margin),
       y: clamp(rand(top - margin * 0.35, bottom + margin * 0.35), min, max),
     });
   }
-  if (right + margin <= max) {
+  if (right < max) {
     candidates.push({
-      x: right + margin,
+      x: Math.min(max, right + margin),
       y: clamp(rand(top - margin * 0.35, bottom + margin * 0.35), min, max),
     });
   }
-  if (top - margin >= min) {
+  if (top > min) {
     candidates.push({
       x: clamp(rand(left - margin * 0.35, right + margin * 0.35), min, max),
-      y: top - margin,
+      y: Math.max(min, top - margin),
     });
   }
-  if (bottom + margin <= max) {
+  if (bottom < max) {
     candidates.push({
       x: clamp(rand(left - margin * 0.35, right + margin * 0.35), min, max),
-      y: bottom + margin,
+      y: Math.min(max, bottom + margin),
     });
   }
 
-  if (candidates.length > 0) return candidates[Math.floor(Math.random() * candidates.length)];
+  let point;
+  if (candidates.length > 0) {
+    point = candidates[Math.floor(Math.random() * candidates.length)];
+  } else {
+    point = {
+      x: player.x < WORLD_SIZE / 2 ? max : min,
+      y: clamp(player.y, min, max),
+    };
+  }
 
-  const angle = Math.random() * TAU;
-  const spawnDistance = Math.max(viewWidth, viewHeight) * 0.72 + margin;
-  return {
-    x: clamp(player.x + Math.cos(angle) * spawnDistance, min, max),
-    y: clamp(player.y + Math.sin(angle) * spawnDistance, min, max),
-  };
+  const visibleX = point.x >= left - edgeBuffer && point.x <= right + edgeBuffer;
+  const visibleY = point.y >= top - edgeBuffer && point.y <= bottom + edgeBuffer;
+  if (visibleX && visibleY) {
+    const distances = [
+      { side: "left", value: Math.abs(point.x - left), allowed: left > min },
+      { side: "right", value: Math.abs(right - point.x), allowed: right < max },
+      { side: "top", value: Math.abs(point.y - top), allowed: top > min },
+      { side: "bottom", value: Math.abs(bottom - point.y), allowed: bottom < max },
+    ]
+      .filter((side) => side.allowed)
+      .sort((a, b) => a.value - b.value);
+    const side = distances[0]?.side;
+    if (side === "left") point.x = Math.max(min, left - edgeBuffer);
+    else if (side === "right") point.x = Math.min(max, right + edgeBuffer);
+    else if (side === "top") point.y = Math.max(min, top - edgeBuffer);
+    else if (side === "bottom") point.y = Math.min(max, bottom + edgeBuffer);
+  }
+
+  return point;
 }
 
 function spawnEnemy(type = null, boss = false) {
