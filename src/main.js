@@ -333,6 +333,9 @@ for (const monster of monsterTypes) {
   image.src = monster.image;
   monsterImages.set(monster.id, image);
 }
+const commuteProtestImage = new Image();
+commuteProtestImage.src = "/assets/monsters/commute-protest-cart.png?v=20260627";
+monsterImages.set("commute-protest", commuteProtestImage);
 
 const legacyBossTypes = [
   {
@@ -1224,11 +1227,11 @@ function spawnCommuteProtestStage() {
       trim: "#fff3b0",
       hp,
       maxHp: hp,
-      speed: rand(22, 31),
+      speed: rand(31, 43),
       damage: 6 * attackScale,
       attackScale,
-      radius: 62 * 0.36 * MONSTER_SIZE_SCALE,
-      bodySize: 0.62,
+      radius: 62 * 0.68 * MONSTER_SIZE_SCALE,
+      bodySize: 0.9,
       xp: Math.round(26 * hpScale),
       score: 34,
       x: point.x,
