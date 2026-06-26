@@ -1083,7 +1083,7 @@ function spawnEnemy(type = null, boss = false) {
   const y = clamp(player.y + Math.sin(angle) * spawnDistance, 50, WORLD_SIZE - 50);
   const normalScale = boss ? 1 + minute * 0.11 : 1 + Math.min(1.35, minute * 0.08);
   const levelHpScale = boss ? getBossHpLevelScale() : 1 + getEnemyLevelBonus() * 0.1;
-  const hpScale = normalScale * levelHpScale * ENEMY_HP_GLOBAL_MULTIPLIER;
+  const hpScale = normalScale * levelHpScale * ENEMY_HP_GLOBAL_MULTIPLIER * (boss ? 1 : 1.15);
   const attackScale = boss ? getBossAttackLevelScale() : 1;
   const enemy = {
     ...chosen,
@@ -1528,7 +1528,7 @@ function updatePlayer(delta) {
 function updateEnemies(delta) {
   const minute = player.elapsed / 60;
   spawnTimer -= delta;
-  const spawnGap = Math.max(0.303, (0.78 - minute * 0.024) * 1.375);
+  const spawnGap = Math.max(0.379, (0.78 - minute * 0.024) * 1.71875);
   if (spawnTimer <= 0) {
     const basePack = 1 + Math.floor(minute * 0.38) + (Math.random() < 0.18 + minute * 0.022 ? 1 : 0);
     const levelSpawnMultiplier = 1 + Math.max(0, player.level - 1) * 0.07;
