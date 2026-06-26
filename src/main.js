@@ -580,7 +580,13 @@ const weaponUpgradeIds = new Set([
 ]);
 
 function getTearGasRadius() {
-  return (58 + weapons.tearGas.level * 6) * 1.3 * 1.7 * 1.5;
+  const level = Math.max(1, weapons.tearGas.level);
+  return (58 + level * 8) * 1.3 * 1.7 * 1.5 * (1 + (level - 1) * 0.12);
+}
+
+function getTearGasDamage() {
+  const level = Math.max(1, weapons.tearGas.level);
+  return Math.round(9 + (level - 1) * 6);
 }
 
 let width = 1;
@@ -2501,7 +2507,7 @@ function updateBlade(delta = 0) {
   if (weapons.tearGas.level > 0) {
     weapons.tearGas.pulse += delta * (1.5 + weapons.tearGas.level * 0.18);
     const gasRadius = getTearGasRadius();
-    const gasDamage = 9 + (weapons.tearGas.level - 1) * 5;
+    const gasDamage = getTearGasDamage();
     const now = performance.now();
     for (const enemy of [...enemies]) {
       if (Math.hypot(enemy.x - player.x, enemy.y - player.y) > gasRadius + enemy.radius) continue;
