@@ -52,6 +52,7 @@ const sound = {
   ctx: null,
   master: null,
   enabled: true,
+  voiceEnabled: true,
   last: new Map(),
 };
 
@@ -796,6 +797,26 @@ function playNoise({ duration = 0.14, volume = 0.22, filter = 900, when = 0 } = 
   source.start(start);
 }
 
+function speakBossLine(text) {
+  if (!sound.enabled || !sound.voiceEnabled || !("speechSynthesis" in window) || !soundAllowed("bossVoiceSpeech", 1250)) return;
+  const cleanText = String(text ?? "").replace(/[!?~]+/g, "").trim();
+  if (!cleanText || cleanText.length > 28) return;
+  if (/[�]/.test(cleanText)) return;
+  try {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = "ko-KR";
+    utterance.rate = 1.08;
+    utterance.pitch = 0.78;
+    utterance.volume = 0.68;
+    const voices = window.speechSynthesis.getVoices?.() ?? [];
+    utterance.voice = voices.find((voice) => voice.lang?.toLowerCase().startsWith("ko")) ?? null;
+    window.speechSynthesis.speak(utterance);
+  } catch {
+    sound.voiceEnabled = false;
+  }
+}
+
 function playSound(id) {
   switch (id) {
     case "ui":
@@ -809,6 +830,8 @@ function playSound(id) {
     case "card":
       if (!soundAllowed(id, 180)) return;
       playTone({ type: "sawtooth", frequency: 740, endFrequency: 980, duration: 0.1, volume: 0.16 });
+      playTone({ type: "triangle", frequency: 1120, endFrequency: 680, duration: 0.08, volume: 0.1, when: 0.045 });
+      playNoise({ duration: 0.055, volume: 0.08, filter: 2600, when: 0.02 });
       break;
     case "lightning":
       playNoise({ duration: 0.16, volume: 0.2, filter: 2200 });
@@ -823,20 +846,56 @@ function playSound(id) {
       playTone({ type: "sine", frequency: 523, endFrequency: 659, duration: 0.11, volume: 0.16, when: 0.08 });
       break;
     case "train":
-      playNoise({ duration: 0.32, volume: 0.22, filter: 520 });
-      playTone({ type: "sawtooth", frequency: 130, endFrequency: 70, duration: 0.32, volume: 0.18 });
+      if (!soundAllowed(id, 450)) return;
+      playNoise({ duration: 0.62, volume: 0.3, filter: 360 });
+      playTone({ type: "sawtooth", frequency: 110, endFrequency: 46, duration: 0.62, volume: 0.24 });
+      playTone({ type: "square", frequency: 392, endFrequency: 392, duration: 0.14, volume: 0.18, when: 0.05 });
+      playTone({ type: "square", frequency: 523, endFrequency: 440, duration: 0.2, volume: 0.14, when: 0.2 });
       break;
     case "gate":
       playTone({ type: "triangle", frequency: 520, endFrequency: 760, duration: 0.1, volume: 0.18 });
       playTone({ type: "triangle", frequency: 700, endFrequency: 420, duration: 0.16, volume: 0.16, when: 0.08 });
       break;
+    case "gas":
+      if (!soundAllowed(id, 900)) return;
+      playNoise({ duration: 0.42, volume: 0.12, filter: 680 });
+      playTone({ type: "sine", frequency: 92, endFrequency: 62, duration: 0.38, volume: 0.08 });
+      break;
+    case "strap":
+      if (!soundAllowed(id, 160)) return;
+      playTone({ type: "triangle", frequency: 560, endFrequency: 380, duration: 0.07, volume: 0.12 });
+      playNoise({ duration: 0.045, volume: 0.06, filter: 1800 });
+      break;
     case "missile":
       if (!soundAllowed(id, 90)) return;
       playTone({ type: "sawtooth", frequency: 420, endFrequency: 760, duration: 0.12, volume: 0.12 });
+      playNoise({ duration: 0.08, volume: 0.08, filter: 1600 });
       break;
     case "explosion":
       playNoise({ duration: 0.18, volume: 0.25, filter: 780 });
       playTone({ type: "triangle", frequency: 95, endFrequency: 42, duration: 0.2, volume: 0.22 });
+      break;
+    case "taser":
+      if (!soundAllowed(id, 280)) return;
+      playNoise({ duration: 0.16, volume: 0.22, filter: 3200 });
+      playTone({ type: "square", frequency: 1180, endFrequency: 280, duration: 0.18, volume: 0.18 });
+      playTone({ type: "sawtooth", frequency: 1580, endFrequency: 740, duration: 0.1, volume: 0.1, when: 0.04 });
+      break;
+    case "taserHit":
+      playNoise({ duration: 0.28, volume: 0.26, filter: 3600 });
+      playTone({ type: "square", frequency: 1320, endFrequency: 110, duration: 0.32, volume: 0.22 });
+      playTone({ type: "triangle", frequency: 720, endFrequency: 960, duration: 0.12, volume: 0.13, when: 0.08 });
+      break;
+    case "police":
+      if (!soundAllowed(id, 450)) return;
+      playTone({ type: "square", frequency: 740, endFrequency: 980, duration: 0.12, volume: 0.16 });
+      playTone({ type: "square", frequency: 980, endFrequency: 740, duration: 0.12, volume: 0.14, when: 0.14 });
+      playNoise({ duration: 0.16, volume: 0.08, filter: 2100, when: 0.06 });
+      break;
+    case "bossVoice":
+      if (!soundAllowed(id, 650)) return;
+      playTone({ type: "sawtooth", frequency: 180, endFrequency: 120, duration: 0.1, volume: 0.13 });
+      playTone({ type: "triangle", frequency: 260, endFrequency: 190, duration: 0.12, volume: 0.09, when: 0.07 });
       break;
     case "bell":
       playTone({ type: "sine", frequency: 980, endFrequency: 980, duration: 0.08, volume: 0.2 });
@@ -2385,6 +2444,7 @@ function updateProjectiles(delta) {
         addPopup("기절 5초", target.x, target.y - target.radius - 36, "#fff3b0", 1.0, 20);
         addParticles(target.x, target.y, "#fff3b0", 46);
         addParticles(target.x, target.y, "#80ffdb", 24);
+        playSound("taserHit");
       }
       taserShots.splice(taserShots.indexOf(taser), 1);
       continue;
@@ -2504,6 +2564,7 @@ function updateBlade(delta = 0) {
           if (!enemy.lastStrapHit || performance.now() - enemy.lastStrapHit > 170) {
             enemy.lastStrapHit = performance.now();
             damageEnemy(enemy, strapDamage, "#ffd6a5");
+            playSound("strap");
           }
         }
       }
@@ -2515,12 +2576,15 @@ function updateBlade(delta = 0) {
     const gasRadius = getTearGasRadius();
     const gasDamage = getTearGasDamage();
     const now = performance.now();
+    let gasHit = false;
     for (const enemy of [...enemies]) {
       if (Math.hypot(enemy.x - player.x, enemy.y - player.y) > gasRadius + enemy.radius) continue;
       if (enemy.lastTearGasHit && now - enemy.lastTearGasHit <= 360) continue;
       enemy.lastTearGasHit = now;
       damageEnemy(enemy, gasDamage, "#b7ef64");
+      gasHit = true;
     }
+    if (gasHit) playSound("gas");
   }
 }
 
@@ -2641,7 +2705,7 @@ function usePoliceCall() {
   });
   addPopup("지하철 경찰대 출동!", player.x, player.y - 72, "#b8dcff", 0.9, 18);
   addParticles(player.x, player.y, "#77beff", 26);
-  playSound("boss");
+  playSound("police");
   updateHud();
 }
 
@@ -2685,7 +2749,7 @@ function useTaserGun() {
     trail: [],
   });
   addPopup("테이저건!", player.x, player.y - 62, "#fff3b0", 0.65, 15);
-  playSound("lightning");
+  playSound("taser");
   updateHud();
 }
 
@@ -3119,6 +3183,10 @@ function addSpeechBubble(target, text, life = 1.35) {
     life,
     maxLife: life,
   });
+  if (target.boss) {
+    playSound("bossVoice");
+    speakBossLine(text);
+  }
   if (speechBubbles.length > 8) speechBubbles.shift();
 }
 
