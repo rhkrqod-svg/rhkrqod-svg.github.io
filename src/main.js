@@ -1722,25 +1722,26 @@ function createPulse(enemy, radius, damage) {
 
 function createDansoSwing(enemy) {
   const angle = angleTo(enemy, player);
-  addSpeechBubble(enemy, "너 누구야! who are you !! 확!", 1.35);
+  addSpeechBubble(enemy, "확! 팍! 확!", 1.05);
   damageZones.push({
-    x: enemy.x + Math.cos(angle) * 48,
-    y: enemy.y + Math.sin(angle) * 48,
-    vx: Math.cos(angle) * 430,
-    vy: Math.sin(angle) * 430,
+    x: enemy.x,
+    y: enemy.y,
     angle,
-    radius: 30,
-    damage: scaleBossDamage(enemy, 18),
-    push: 36,
-    life: 1.45,
-    maxLife: 1.45,
+    length: 390,
+    width: 48,
+    radius: 390,
+    damage: scaleBossDamage(enemy, 20),
+    push: 54,
+    stun: 0.22,
+    life: 0.82,
+    maxLife: 0.82,
     color: "#f9c74f",
     hostile: true,
-    consumeOnHit: true,
+    armedAt: 0.22,
     applied: false,
-    kind: "dansoThrow",
+    kind: "dansoStab",
   });
-  addParticles(enemy.x + Math.cos(angle) * 54, enemy.y + Math.sin(angle) * 54, "#f9c74f", 10);
+  addParticles(enemy.x + Math.cos(angle) * 72, enemy.y + Math.sin(angle) * 72, "#f9c74f", 12);
 }
 
 function createDansoShockwave(enemy) {
@@ -2489,7 +2490,7 @@ function updateDamageZones(delta) {
       } else if (zone.kind === "danceKick") {
         const kickAngle = angleTo(zone, player);
         hitPlayer = hitPlayer && Math.abs(angleDelta(kickAngle, zone.angle)) < zone.arc / 2;
-      } else if (zone.kind === "jarvanSpear") {
+      } else if (zone.kind === "jarvanSpear" || zone.kind === "dansoStab") {
         const dx = player.x - zone.x;
         const dy = player.y - zone.y;
         const forward = Math.cos(zone.angle) * dx + Math.sin(zone.angle) * dy;
@@ -2500,7 +2501,7 @@ function updateDamageZones(delta) {
         hurtPlayer(zone.damage);
         zone.applied = true;
         if (zone.push) {
-          const push = zone.kind === "jarvanSpear" ? zone.angle : angleTo(zone, player);
+          const push = zone.kind === "jarvanSpear" || zone.kind === "dansoStab" ? zone.angle : angleTo(zone, player);
           player.x += Math.cos(push) * zone.push;
           player.y += Math.sin(push) * zone.push;
         }
@@ -4090,38 +4091,54 @@ function drawDamageZones() {
       continue;
     }
 
-    if (zone.kind === "jarvanSpear") {
+    if (zone.kind === "jarvanSpear" || zone.kind === "dansoStab") {
+      const isDansoStab = zone.kind === "dansoStab";
       const thrust = Math.sin(progress * Math.PI);
       const reach = zone.length * clamp(progress * 1.45, 0.22, 1);
       ctx.translate(p.x, p.y);
       ctx.rotate(zone.angle);
       ctx.globalCompositeOperation = "lighter";
       ctx.globalAlpha = 0.18 + thrust * 0.35;
-      ctx.fillStyle = "rgba(255, 224, 102, 0.18)";
-      roundedRect(12, -zone.width / 2, reach, zone.width, 18);
+      ctx.fillStyle = isDansoStab ? "rgba(249, 199, 79, 0.16)" : "rgba(255, 224, 102, 0.18)";
+      roundedRect(12, -zone.width / 2, reach, zone.width, isDansoStab ? 12 : 18);
       ctx.fill();
       ctx.globalAlpha = 0.95;
-      ctx.strokeStyle = "#8d5524";
-      ctx.lineWidth = 10;
+      ctx.strokeStyle = isDansoStab ? "#c07a28" : "#8d5524";
+      ctx.lineWidth = isDansoStab ? 12 : 10;
       ctx.lineCap = "round";
       ctx.beginPath();
       ctx.moveTo(8, 0);
       ctx.lineTo(reach, 0);
       ctx.stroke();
-      ctx.strokeStyle = "#fff3b0";
-      ctx.lineWidth = 4;
+      ctx.strokeStyle = isDansoStab ? "#fff3b0" : "#fff3b0";
+      ctx.lineWidth = isDansoStab ? 3 : 4;
       ctx.beginPath();
-      ctx.moveTo(16, -5);
-      ctx.lineTo(reach - 8, -5);
+      ctx.moveTo(16, isDansoStab ? -4 : -5);
+      ctx.lineTo(reach - 8, isDansoStab ? -4 : -5);
       ctx.stroke();
-      ctx.fillStyle = "#ffe066";
-      ctx.beginPath();
-      ctx.moveTo(reach + 20, 0);
-      ctx.lineTo(reach - 8, -16);
-      ctx.lineTo(reach - 2, 0);
-      ctx.lineTo(reach - 8, 16);
-      ctx.closePath();
-      ctx.fill();
+      if (isDansoStab) {
+        ctx.fillStyle = "#3b2f1d";
+        for (let i = 0; i < 5; i += 1) {
+          ctx.beginPath();
+          ctx.arc(reach * (0.28 + i * 0.11), 0, 3.2, 0, TAU);
+          ctx.fill();
+        }
+        ctx.strokeStyle = "#ffe066";
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(reach - 18, 0);
+        ctx.lineTo(reach + 12, 0);
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = "#ffe066";
+        ctx.beginPath();
+        ctx.moveTo(reach + 20, 0);
+        ctx.lineTo(reach - 8, -16);
+        ctx.lineTo(reach - 2, 0);
+        ctx.lineTo(reach - 8, 16);
+        ctx.closePath();
+        ctx.fill();
+      }
       ctx.globalAlpha = 0.62 * thrust;
       ctx.strokeStyle = "#ffffff";
       ctx.lineWidth = 3;
