@@ -4362,38 +4362,80 @@ function drawDamageZones() {
       ctx.translate(p.x, p.y);
       ctx.rotate(zone.angle);
       ctx.globalCompositeOperation = "lighter";
-      ctx.globalAlpha = 0.18 + thrust * 0.35;
-      ctx.fillStyle = isDansoStab ? "rgba(249, 199, 79, 0.16)" : "rgba(255, 224, 102, 0.18)";
-      roundedRect(12, -zone.width / 2, reach, zone.width, isDansoStab ? 12 : 18);
-      ctx.fill();
-      ctx.globalAlpha = 0.95;
-      ctx.strokeStyle = isDansoStab ? "#c07a28" : "#8d5524";
-      ctx.lineWidth = isDansoStab ? 12 : 10;
-      ctx.lineCap = "round";
-      ctx.beginPath();
-      ctx.moveTo(8, 0);
-      ctx.lineTo(reach, 0);
-      ctx.stroke();
-      ctx.strokeStyle = isDansoStab ? "#fff3b0" : "#fff3b0";
-      ctx.lineWidth = isDansoStab ? 3 : 4;
-      ctx.beginPath();
-      ctx.moveTo(16, isDansoStab ? -4 : -5);
-      ctx.lineTo(reach - 8, isDansoStab ? -4 : -5);
-      ctx.stroke();
       if (isDansoStab) {
-        ctx.fillStyle = "#3b2f1d";
-        for (let i = 0; i < 5; i += 1) {
+        const bodyWidth = 28;
+        ctx.globalAlpha = 0.12 + thrust * 0.22;
+        ctx.fillStyle = "rgba(249, 199, 79, 0.18)";
+        roundedRect(8, -bodyWidth * 0.8, reach, bodyWidth * 1.6, 18);
+        ctx.fill();
+
+        ctx.globalCompositeOperation = "source-over";
+        ctx.globalAlpha = 0.98;
+        const grad = ctx.createLinearGradient(0, -bodyWidth / 2, 0, bodyWidth / 2);
+        grad.addColorStop(0, "#f1c56b");
+        grad.addColorStop(0.5, "#9b5f24");
+        grad.addColorStop(1, "#4f2c12");
+        ctx.fillStyle = grad;
+        roundedRect(12, -bodyWidth / 2, Math.max(24, reach - 8), bodyWidth, 14);
+        ctx.fill();
+        ctx.strokeStyle = "#2a1608";
+        ctx.lineWidth = 2.4;
+        ctx.stroke();
+
+        ctx.fillStyle = "#1b1209";
+        const holeStart = Math.max(46, reach * 0.18);
+        const holeGap = Math.max(34, Math.min(54, reach / 9));
+        for (let i = 0; i < 7; i += 1) {
+          const hx = holeStart + i * holeGap;
+          if (hx > reach - 38) break;
           ctx.beginPath();
-          ctx.arc(reach * (0.28 + i * 0.11), 0, 3.2, 0, TAU);
+          ctx.ellipse(hx, -bodyWidth * 0.12, 4.2, 5.2, 0, 0, TAU);
           ctx.fill();
         }
-        ctx.strokeStyle = "#ffe066";
-        ctx.lineWidth = 5;
+
+        ctx.strokeStyle = "#ffe6a3";
+        ctx.lineWidth = 3;
+        for (const bandX of [32, reach * 0.34, reach * 0.62, Math.max(44, reach - 24)]) {
+          ctx.beginPath();
+          ctx.moveTo(bandX, -bodyWidth * 0.42);
+          ctx.lineTo(bandX, bodyWidth * 0.42);
+          ctx.stroke();
+        }
+
+        ctx.fillStyle = "#6b3f1d";
+        roundedRect(0, -18, 26, 36, 9);
+        ctx.fill();
+        ctx.fillStyle = "#f1c9a4";
         ctx.beginPath();
-        ctx.moveTo(reach - 18, 0);
-        ctx.lineTo(reach + 12, 0);
+        ctx.arc(-10, 0, 12, 0, TAU);
+        ctx.fill();
+
+        ctx.strokeStyle = "#ffe066";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(reach - 8, -bodyWidth * 0.36);
+        ctx.lineTo(reach + 18, 0);
+        ctx.lineTo(reach - 8, bodyWidth * 0.36);
         ctx.stroke();
       } else {
+        ctx.globalAlpha = 0.18 + thrust * 0.35;
+        ctx.fillStyle = "rgba(255, 224, 102, 0.18)";
+        roundedRect(12, -zone.width / 2, reach, zone.width, 18);
+        ctx.fill();
+        ctx.globalAlpha = 0.95;
+        ctx.strokeStyle = "#8d5524";
+        ctx.lineWidth = 10;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(8, 0);
+        ctx.lineTo(reach, 0);
+        ctx.stroke();
+        ctx.strokeStyle = "#fff3b0";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(16, -5);
+        ctx.lineTo(reach - 8, -5);
+        ctx.stroke();
         ctx.fillStyle = "#ffe066";
         ctx.beginPath();
         ctx.moveTo(reach + 20, 0);
