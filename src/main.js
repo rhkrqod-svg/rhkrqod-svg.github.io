@@ -1203,6 +1203,20 @@ function findNearestEnemy(maxDistance = Infinity) {
   return nearest;
 }
 
+function findCustomerMissileTarget(maxDistance = Infinity) {
+  let nearestBoss = null;
+  let nearestBossDistance = maxDistance;
+  for (const enemy of enemies) {
+    if (!enemy.boss) continue;
+    const currentDistance = Math.hypot(enemy.x - player.x, enemy.y - player.y);
+    if (currentDistance < nearestBossDistance) {
+      nearestBoss = enemy;
+      nearestBossDistance = currentDistance;
+    }
+  }
+  return nearestBoss ?? findNearestEnemy(maxDistance);
+}
+
 function fireBullets() {
   const target = findNearestEnemy(680);
   if (!target) return;
@@ -1440,7 +1454,7 @@ function spawnCustomerMissiles() {
   if (level <= 0 || enemies.length === 0) return;
   const count = Math.min(5, 1 + Math.floor((level - 1) / 2));
   for (let i = 0; i < count; i += 1) {
-    const target = findNearestEnemy(900 + level * 40);
+    const target = findCustomerMissileTarget(900 + level * 40);
     if (!target) return;
     const angle = angleTo(player, target) + (i - (count - 1) / 2) * 0.32;
     const speed = 265 + level * 23;
@@ -2190,7 +2204,7 @@ function updateProjectiles(delta) {
     missile.trail = missile.trail.filter((point) => point.life > 0);
 
     if (missile.delay <= 0) {
-      if (!missile.target || !enemies.includes(missile.target)) missile.target = findNearestEnemy(980);
+      if (!missile.target || !enemies.includes(missile.target) || !missile.target.boss) missile.target = findCustomerMissileTarget(980);
       if (missile.target) {
         const desired = angleTo(missile, missile.target);
         const current = Math.atan2(missile.vy, missile.vx);
@@ -2899,7 +2913,7 @@ function updateHud() {
     weapons.lightning.level > 0 ? { label: `번개 Lv.${weapons.lightning.level}`, type: "attack", power: chipPower(weapons.lightning.level), desc: "가까운 적 주변에 민원 번개를 내려 범위 피해를 줍니다." } : null,
     weapons.strapOrbit.level > 0 ? { label: `손잡이 Lv.${weapons.strapOrbit.level}`, type: "attack", power: chipPower(weapons.strapOrbit.level), desc: "지하철 손잡이가 주위를 회전하며 닿은 적을 계속 공격합니다." } : null,
     weapons.expressTrain.level > 0 ? { label: `급행 Lv.${weapons.expressTrain.level}`, type: "attack", power: chipPower(weapons.expressTrain.level), desc: "급행열차가 지나가며 직선 경로의 적에게 피해와 넉백을 줍니다." } : null,
-    weapons.customerMissile.level > 0 ? { label: `유도탄 Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level), desc: "고객센터 유도탄이 가까운 적을 추적해 폭발 피해를 줍니다." } : null,
+    weapons.customerMissile.level > 0 ? { label: `유도탄 Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level), desc: "고객센터 유도탄이 보스를 우선 추적하고 폭발 피해를 줍니다." } : null,
     player.defenseBreakTimer > 0 ? { label: `방어저하 ${Math.ceil(player.defenseBreakTimer)}초`, type: "status", desc: "현재 방어력이 감소한 상태입니다." } : null,
     player.stunTimer > 0 ? { label: `경직 ${Math.ceil(player.stunTimer)}초`, type: "status", desc: "잠시 움직일 수 없는 상태입니다." } : null,
     player.slowTimer > 0 ? { label: `둔화 ${Math.ceil(player.slowTimer)}초`, type: "status", desc: "이동 속도가 느려진 상태입니다." } : null,
