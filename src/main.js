@@ -3368,6 +3368,7 @@ function drawEnemy(enemy) {
   const visualBottom = useActorImage ? imageHeight * 0.28 : enemy.radius;
   ctx.save();
   ctx.translate(p.x, p.y);
+  ctx.save();
   ctx.rotate(enemy.wobble * 0.25);
   if (enemy.boostTimer > 0) {
     const boostPulse = 0.75 + Math.sin(performance.now() * 0.018) * 0.18;
@@ -3451,14 +3452,17 @@ function drawEnemy(enemy) {
     ctx.fill();
   }
 
+  ctx.restore();
   if (enemy.boss || enemy.hp < enemy.maxHp) {
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const barWidth = enemy.boss ? 96 : 46;
-    const bar = worldToScreen(enemy.x, enemy.y - visualTop - 16);
+    const barWidth = enemy.boss ? Math.max(96, enemy.radius * 4.1) : Math.max(38, enemy.radius * 2.4);
+    const barHeight = enemy.boss ? 7 : 5;
+    const barY = -visualTop - (enemy.boss ? 18 : 11);
     ctx.fillStyle = "rgba(0,0,0,0.45)";
-    ctx.fillRect(bar.x - barWidth / 2, bar.y, barWidth, 6);
+    roundedRect(-barWidth / 2, barY, barWidth, barHeight, barHeight / 2);
+    ctx.fill();
     ctx.fillStyle = enemy.boss ? "#ff477e" : "#ffd166";
-    ctx.fillRect(bar.x - barWidth / 2, bar.y, barWidth * clamp(enemy.hp / enemy.maxHp, 0, 1), 6);
+    roundedRect(-barWidth / 2, barY, barWidth * clamp(enemy.hp / enemy.maxHp, 0, 1), barHeight, barHeight / 2);
+    ctx.fill();
   }
 
   ctx.restore();
