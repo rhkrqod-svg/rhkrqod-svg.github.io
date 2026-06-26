@@ -251,7 +251,7 @@ const legacyMonsterTypes = [
     hp: 115,
     speed: 44,
     damage: 15,
-    radius: 28,
+    radius: 42,
     xp: 16,
     score: 45,
     weight: (minute) => Math.max(0, minute - 0.4) * 4,
@@ -3552,6 +3552,7 @@ function drawPoliceSquads() {
       ctx.save();
       ctx.translate(p.x, p.y);
       ctx.rotate(officer.angle);
+      ctx.scale(1.5, 1.5);
       ctx.globalAlpha = fade;
       ctx.shadowColor = "#77beff";
       ctx.shadowBlur = 13;
