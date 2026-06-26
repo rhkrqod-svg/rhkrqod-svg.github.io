@@ -2162,7 +2162,7 @@ function createPraiseStunWave(enemy) {
     y: enemy.y + Math.sin(angle) * 54,
     vx: Math.cos(angle) * 360,
     vy: Math.sin(angle) * 360,
-    radius: 116,
+    radius: 174,
     damage: scaleBossDamage(enemy, 12),
     stun: 2,
     life: 1.6,
