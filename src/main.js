@@ -2336,30 +2336,27 @@ function getPoliceCallAngle() {
 function usePoliceCall() {
   if (game.state !== "playing" || game.paused || game.pendingHeroChoice || player.policeCalls <= 0) return;
   player.policeCalls -= 1;
-  const angle = getPoliceCallAngle();
-  const sideAngle = angle + Math.PI / 2;
   const officers = [];
-  for (let i = 0; i < 15; i += 1) {
-    const row = Math.floor(i / 5);
-    const column = i % 5 - 2;
+  for (let i = 0; i < 30; i += 1) {
+    const angle = (TAU * i) / 30 + rand(-0.035, 0.035);
+    const ring = i % 2;
     officers.push({
-      lane: column * 38,
-      back: row * 42,
+      angle,
+      startRadius: 42 + ring * 28 + rand(-6, 6),
+      speedOffset: rand(-28, 36),
       bob: Math.random() * TAU,
     });
   }
   policeSquads.push({
     x: player.x,
     y: player.y,
-    angle,
-    sideAngle,
     officers,
     distance: 0,
-    speed: 205,
+    speed: 220,
     damage: 46,
     radius: 28,
-    life: 5.2,
-    maxLife: 5.2,
+    life: 4.4,
+    maxLife: 4.4,
     hitTimers: new Map(),
   });
   addPopup("지하철 경찰대 출동!", player.x, player.y - 72, "#b8dcff", 0.9, 18);
@@ -2369,16 +2366,13 @@ function usePoliceCall() {
 }
 
 function getPoliceOfficerPosition(squad, officer) {
-  const formationBloom = Math.sin((1 - squad.life / squad.maxLife) * Math.PI) * 14;
+  const progress = 1 - squad.life / squad.maxLife;
+  const stagger = Math.sin(officer.bob + progress * TAU * 2.2) * 8;
+  const distance = officer.startRadius + squad.distance + progress * (officer.speedOffset ?? 0) + stagger;
   return {
-    x:
-      squad.x +
-      Math.cos(squad.angle) * (squad.distance - officer.back + 42) +
-      Math.cos(squad.sideAngle) * (officer.lane + Math.sin(officer.bob + squad.distance * 0.025) * formationBloom),
-    y:
-      squad.y +
-      Math.sin(squad.angle) * (squad.distance - officer.back + 42) +
-      Math.sin(squad.sideAngle) * (officer.lane + Math.sin(officer.bob + squad.distance * 0.025) * formationBloom),
+    x: squad.x + Math.cos(officer.angle) * distance,
+    y: squad.y + Math.sin(officer.angle) * distance,
+    angle: officer.angle,
   };
 }
 
@@ -2418,14 +2412,14 @@ function updatePoliceSquads(delta) {
         if (squad.hitTimers.has(enemy)) continue;
         squad.hitTimers.set(enemy, 0.22);
         damageEnemy(enemy, squad.damage, "#b8dcff");
-        const push = squad.angle;
+        const push = officer.angle;
         const pushAmount = enemy.boss ? 14 : 38;
         enemy.x = clamp(enemy.x + Math.cos(push) * pushAmount, 35, WORLD_SIZE - 35);
         enemy.y = clamp(enemy.y + Math.sin(push) * pushAmount, 35, WORLD_SIZE - 35);
         addParticles(enemy.x, enemy.y, "#b8dcff", 8);
       }
     }
-    if (squad.life <= 0 || squad.distance > Math.max(viewWidth, viewHeight) * 1.35) {
+    if (squad.life <= 0 || squad.distance > Math.max(viewWidth, viewHeight) * 0.95) {
       policeSquads.splice(policeSquads.indexOf(squad), 1);
     }
   }
@@ -3557,7 +3551,7 @@ function drawPoliceSquads() {
       const step = Math.sin(officerInfo.bob + player.elapsed * 9 + squad.distance * 0.05);
       ctx.save();
       ctx.translate(p.x, p.y);
-      ctx.rotate(squad.angle);
+      ctx.rotate(officer.angle);
       ctx.globalAlpha = fade;
       ctx.shadowColor = "#77beff";
       ctx.shadowBlur = 13;
