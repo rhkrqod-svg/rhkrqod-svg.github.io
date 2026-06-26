@@ -499,7 +499,7 @@ const upgradePool = [
     desc: "강화 교통카드를 던져 적을 강하게 관통 공격",
     apply: () => {
       weapons.card.level += 1;
-      weapons.card.cooldown = Math.min(weapons.card.cooldown, 0.23);
+      weapons.card.cooldown = Math.min(weapons.card.cooldown, 0.16);
     },
   },
   {
@@ -590,6 +590,8 @@ let bossIndex = 0;
 let bossBag = [];
 let nextBossAt = 20;
 let bossWarningFor = 0;
+let specialStageBossMarks = new Set();
+let specialStageUntil = 0;
 let bestScore = Number(localStorage.getItem(STORAGE_KEY) ?? 0);
 let leaderboardEntries = [];
 let pendingLeaderboardScore = null;
@@ -886,6 +888,8 @@ function resetGame() {
   bossBag = [];
   nextBossAt = 20;
   bossWarningFor = 0;
+  specialStageBossMarks = new Set();
+  specialStageUntil = 0;
   spawnTimer = 0;
   pendingLeaderboardScore = null;
   leaderboardSubmitting = false;
@@ -1163,6 +1167,79 @@ function getOffscreenSpawnPoint(boss = false) {
   return point;
 }
 
+function getEncircleOffscreenPoint(angle, extraDistance = 120) {
+  const dx = Math.cos(angle);
+  const dy = Math.sin(angle);
+  const margin = 96 + extraDistance;
+  const left = camera.x - margin;
+  const right = camera.x + viewWidth + margin;
+  const top = camera.y - margin;
+  const bottom = camera.y + viewHeight + margin;
+  const distances = [];
+  if (dx > 0.001) distances.push((right - player.x) / dx);
+  if (dx < -0.001) distances.push((left - player.x) / dx);
+  if (dy > 0.001) distances.push((bottom - player.y) / dy);
+  if (dy < -0.001) distances.push((top - player.y) / dy);
+  const distance = Math.max(220, Math.min(...distances.filter((value) => value > 0)) + rand(12, 76));
+  let point = {
+    x: clamp(player.x + dx * distance, 50, WORLD_SIZE - 50),
+    y: clamp(player.y + dy * distance, 50, WORLD_SIZE - 50),
+  };
+  const visible =
+    point.x > camera.x - 64 &&
+    point.x < camera.x + viewWidth + 64 &&
+    point.y > camera.y - 64 &&
+    point.y < camera.y + viewHeight + 64;
+  if (visible) point = getOffscreenSpawnPoint(false);
+  return point;
+}
+
+function spawnCommuteProtestStage() {
+  showBossBanner("출근길 시위 시작");
+  addPopup("출근길 시위 시작", player.x, player.y - 96, "#fff3b0", 2.0, 24);
+  playSound("boss");
+
+  const count = 100;
+  const hpScale = getNormalEnemyHpLevelScale() * ENEMY_HP_GLOBAL_MULTIPLIER * 1.15;
+  const attackScale = getNormalEnemyLevelScale();
+  for (let i = 0; i < count; i += 1) {
+    const angle = (TAU * i) / count + rand(-0.06, 0.06);
+    const point = getEncircleOffscreenPoint(angle, 130 + (i % 5) * 18);
+    const hp = 520 * hpScale;
+    enemies.push({
+      id: "commute-protest",
+      name: "출근길 시위대",
+      shortName: "시위대",
+      color: "#495057",
+      trim: "#fff3b0",
+      hp,
+      maxHp: hp,
+      speed: rand(22, 31),
+      damage: 6 * attackScale,
+      attackScale,
+      radius: 62 * 0.36 * MONSTER_SIZE_SCALE,
+      bodySize: 0.62,
+      xp: Math.round(26 * hpScale),
+      score: 34,
+      x: point.x,
+      y: point.y,
+      boss: false,
+      special: "commute-protest",
+      angleOffset: Math.random() * TAU,
+      cooldown: rand(1.2, 2.4),
+      hitFlash: 0,
+      dash: 0,
+      wobble: Math.random() * TAU,
+      attackSpeechCooldown: 0,
+      boostTimer: 0,
+      speedBoostMultiplier: 1,
+      defenseBoostTimer: 0,
+      defenseBoostPower: 0,
+      stunTimer: 0,
+    });
+  }
+}
+
 function spawnEnemy(type = null, boss = false) {
   const minute = player.elapsed / 60;
   const chosen = type ?? weightedPick(monsterTypes, minute);
@@ -1247,7 +1324,18 @@ function spawnBoss() {
 function updateBossSchedule() {
   if (enemies.some((enemy) => enemy.boss)) return;
 
+  if (specialStageUntil > 0 && player.elapsed < specialStageUntil) return;
+
   if (player.elapsed >= nextBossAt) {
+    if (bossIndex === 2 && !specialStageBossMarks.has(bossIndex)) {
+      specialStageBossMarks.add(bossIndex);
+      spawnCommuteProtestStage();
+      specialStageUntil = player.elapsed + 24;
+      nextBossAt = specialStageUntil;
+      bossWarningFor = 0;
+      return;
+    }
+    specialStageUntil = 0;
     spawnBoss();
     nextBossAt = player.elapsed + 55;
     bossWarningFor = 0;
@@ -1616,7 +1704,7 @@ function updatePlayer(delta) {
   weapons.card.cooldown -= delta;
   if (weapons.card.level > 0 && weapons.card.cooldown <= 0) {
     spawnCard();
-    weapons.card.cooldown = Math.max(0.29, (1.05 - weapons.card.level * 0.11) * 0.9);
+    weapons.card.cooldown = Math.max(0.2, (1.05 - weapons.card.level * 0.11) * 0.63);
   }
 
   weapons.expressTrain.cooldown -= delta;
@@ -1679,6 +1767,9 @@ function updateEnemies(delta) {
     }
     if (enemy.special === "spiral") {
       angle += Math.sin(enemy.wobble * 4.5) * 1.1;
+    }
+    if (enemy.special === "commute-protest") {
+      speed *= 0.82 + Math.sin(enemy.wobble * 2.2) * 0.08;
     }
     if (enemy.special === "boss-dance" && enemy.retreatTimer > 0) {
       angle = angleTo(player, enemy);
@@ -3693,7 +3784,36 @@ function drawEnemy(enemy) {
     ctx.fillStyle = enemy.hitFlash > 0 ? "#ffffff" : enemy.color;
     ctx.strokeStyle = enemy.trim;
     ctx.lineWidth = enemy.boss ? 2.8 : 1.8;
-    if (enemy.id === "airport-thief" || enemy.special === "boss-luggage" || enemy.special === "boss-airport") {
+    if (enemy.special === "commute-protest") {
+      ctx.save();
+      ctx.scale(1.05, 1.05);
+      ctx.fillStyle = enemy.hitFlash > 0 ? "#ffffff" : "#495057";
+      ctx.strokeStyle = "#fff3b0";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, -enemy.radius * 0.92, enemy.radius * 0.28, 0, TAU);
+      ctx.fill();
+      ctx.stroke();
+      roundedRect(-enemy.radius * 0.22, -enemy.radius * 0.62, enemy.radius * 0.58, enemy.radius * 0.78, 5);
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = "#dbe4ea";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(enemy.radius * 0.26, -enemy.radius * 0.18);
+      ctx.lineTo(enemy.radius * 0.72, enemy.radius * 0.16);
+      ctx.lineTo(enemy.radius * 0.88, enemy.radius * 0.52);
+      ctx.stroke();
+      ctx.strokeStyle = "#fff3b0";
+      ctx.lineWidth = 2.6;
+      ctx.beginPath();
+      ctx.arc(-enemy.radius * 0.22, enemy.radius * 0.42, enemy.radius * 0.44, 0, TAU);
+      ctx.arc(enemy.radius * 0.72, enemy.radius * 0.48, enemy.radius * 0.18, 0, TAU);
+      ctx.stroke();
+      ctx.fillStyle = "#fff3b0";
+      ctx.fillRect(-enemy.radius * 0.68, enemy.radius * 0.87, enemy.radius * 1.58, 3);
+      ctx.restore();
+    } else if (enemy.id === "airport-thief" || enemy.special === "boss-luggage" || enemy.special === "boss-airport") {
       roundedRect(-enemy.radius, -enemy.radius * 0.8, enemy.radius * 2, enemy.radius * 1.6, Math.max(3, enemy.radius * 0.32));
       ctx.fill();
       ctx.stroke();
