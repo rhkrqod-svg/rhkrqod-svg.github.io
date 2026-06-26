@@ -509,6 +509,14 @@ const upgradePool = [
     },
   },
   {
+    id: "tearGas",
+    name: "최류탄",
+    desc: "주인공 주변에 넓은 가스 지대를 만들어 지속 피해",
+    apply: () => {
+      weapons.tearGas.level += 1;
+    },
+  },
+  {
     id: "expressTrain",
     name: "급행열차 돌진",
     desc: "넓은 직선 범위를 쓸어버림",
@@ -564,6 +572,7 @@ const weaponUpgradeIds = new Set([
   "lightning",
   "boomerang",
   "strapOrbit",
+  "tearGas",
   "expressTrain",
   "customerMissile",
 ]);
@@ -654,6 +663,7 @@ const weapons = {
   card: { level: 0, cooldown: 0.45 },
   lowKick: { level: 0, cooldown: 2.4 },
   strapOrbit: { level: 0, angle: 0 },
+  tearGas: { level: 0, pulse: 0 },
   announcement: { level: 0, cooldown: 3.9 },
   expressTrain: { level: 0, cooldown: 8.2 },
   transferGate: { level: 0, cooldown: 6.2 },
@@ -920,6 +930,7 @@ function resetGame() {
   Object.assign(weapons.card, { level: 0, cooldown: 0.45 });
   Object.assign(weapons.lowKick, { level: 0, cooldown: 2.4 });
   Object.assign(weapons.strapOrbit, { level: 0, angle: 0 });
+  Object.assign(weapons.tearGas, { level: 0, pulse: 0 });
   Object.assign(weapons.announcement, { level: 0, cooldown: 3.9 });
   Object.assign(weapons.expressTrain, { level: 0, cooldown: 8.2 });
   Object.assign(weapons.transferGate, { level: 0, cooldown: 6.2 });
@@ -2252,7 +2263,7 @@ function updateProjectiles(delta) {
   updateBlade(delta);
 }
 
-function updateBlade() {
+function updateBlade(delta = 0) {
   if (weapons.strapOrbit.level > 0) {
     const strapCount = Math.min(7, weapons.strapOrbit.level + 2);
     const strapRadius = (58 + weapons.strapOrbit.level * 6) * 1.3;
@@ -2272,6 +2283,19 @@ function updateBlade() {
           }
         }
       }
+    }
+  }
+
+  if (weapons.tearGas.level > 0) {
+    weapons.tearGas.pulse += delta * (1.5 + weapons.tearGas.level * 0.18);
+    const gasRadius = (58 + weapons.tearGas.level * 6) * 1.3 * 1.7;
+    const gasDamage = 9 + (weapons.tearGas.level - 1) * 5;
+    const now = performance.now();
+    for (const enemy of [...enemies]) {
+      if (Math.hypot(enemy.x - player.x, enemy.y - player.y) > gasRadius + enemy.radius) continue;
+      if (enemy.lastTearGasHit && now - enemy.lastTearGasHit <= 360) continue;
+      enemy.lastTearGasHit = now;
+      damageEnemy(enemy, gasDamage, "#b7ef64");
     }
   }
 }
@@ -3062,6 +3086,7 @@ function updateHud() {
     weapons.card.level > 0 ? { label: `교통카드 Lv.${weapons.card.level}`, type: "attack", power: chipPower(weapons.card.level), desc: "교통카드가 화면 벽에 최대 5번 튕기며 적을 관통 공격합니다." } : null,
     weapons.lightning.level > 0 ? { label: `번개 Lv.${weapons.lightning.level}`, type: "attack", power: chipPower(weapons.lightning.level), desc: "가까운 적 주변에 민원 번개를 내려 범위 피해를 줍니다." } : null,
     weapons.strapOrbit.level > 0 ? { label: `손잡이 Lv.${weapons.strapOrbit.level}`, type: "attack", power: chipPower(weapons.strapOrbit.level), desc: "지하철 손잡이가 주위를 회전하며 닿은 적을 계속 공격합니다." } : null,
+    weapons.tearGas.level > 0 ? { label: `최류탄 Lv.${weapons.tearGas.level}`, type: "attack", power: chipPower(weapons.tearGas.level), desc: "주인공 주변에 손잡이보다 넓은 가스 지대를 만들고 안에 들어온 적에게 지속 피해를 줍니다." } : null,
     weapons.expressTrain.level > 0 ? { label: `급행 Lv.${weapons.expressTrain.level}`, type: "attack", power: chipPower(weapons.expressTrain.level), desc: "급행열차가 보스를 우선 노려 지나가며 피해와 넉백을 줍니다." } : null,
     weapons.customerMissile.level > 0 ? { label: `유도탄 Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level), desc: "고객센터 유도탄이 보스를 우선 추적하고 폭발 피해를 줍니다." } : null,
     player.defenseBreakTimer > 0 ? { label: `방어저하 ${Math.ceil(player.defenseBreakTimer)}초`, type: "status", desc: "현재 방어력이 감소한 상태입니다." } : null,
@@ -3340,6 +3365,46 @@ function drawPlayer() {
 }
 
 function drawBlades() {
+  if (weapons.tearGas.level > 0) {
+    const gasRadius = (58 + weapons.tearGas.level * 6) * 1.3 * 1.7;
+    const p = worldToScreen(player.x, player.y);
+    const pulse = weapons.tearGas.pulse;
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = 0.1 + Math.min(weapons.tearGas.level, 5) * 0.012;
+    const gradient = ctx.createRadialGradient(0, 0, gasRadius * 0.14, 0, 0, gasRadius);
+    gradient.addColorStop(0, "rgba(215, 255, 99, 0.22)");
+    gradient.addColorStop(0.48, "rgba(143, 217, 56, 0.16)");
+    gradient.addColorStop(1, "rgba(70, 133, 38, 0)");
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(0, 0, gasRadius, 0, TAU);
+    ctx.fill();
+
+    ctx.globalAlpha = 0.22;
+    ctx.strokeStyle = "#b7ef64";
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 4; i += 1) {
+      const radius = gasRadius * (0.46 + i * 0.13 + Math.sin(pulse + i) * 0.025);
+      ctx.beginPath();
+      ctx.arc(0, 0, radius, pulse * (0.25 + i * 0.04), TAU + pulse * (0.25 + i * 0.04));
+      ctx.stroke();
+    }
+
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = "#d8ff7a";
+    for (let i = 0; i < 18; i += 1) {
+      const angle = pulse * 0.7 + (TAU * i) / 18;
+      const radius = gasRadius * (0.22 + ((i * 37) % 70) / 100);
+      const drift = Math.sin(pulse * 1.8 + i) * 7;
+      ctx.beginPath();
+      ctx.arc(Math.cos(angle) * (radius + drift), Math.sin(angle) * (radius - drift), 2.2 + (i % 3), 0, TAU);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
   if (weapons.strapOrbit.level > 0) {
     const strapCount = Math.min(7, weapons.strapOrbit.level + 2);
     const strapRadius = (58 + weapons.strapOrbit.level * 6) * 1.3;
