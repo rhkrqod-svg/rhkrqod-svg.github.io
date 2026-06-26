@@ -332,19 +332,6 @@ for (const monster of monsterTypes) {
 
 const legacyBossTypes = [
   {
-    id: "rush-hour",
-    name: "1호선 최종 혼잡왕",
-    color: "#d7263d",
-    trim: "#fff3b0",
-    hp: 850,
-    speed: 48,
-    damage: 20,
-    radius: 46,
-    xp: 90,
-    score: 260,
-    special: "boss-pulse",
-  },
-  {
     id: "lost-luggage-master",
     name: "공항 수하물 마스터",
     color: "#255f85",
