@@ -39,6 +39,8 @@ const refs = {
   bestScore: document.querySelector("#bestScore"),
   firstAidButton: document.querySelector("#firstAidButton"),
   firstAidCount: document.querySelector("#firstAidCount"),
+  policeButton: document.querySelector("#policeButton"),
+  policeCount: document.querySelector("#policeCount"),
   pauseButton: document.querySelector("#pauseButton"),
   moveStick: document.querySelector("#moveStick"),
   moveStickThumb: document.querySelector("#moveStickThumb"),
@@ -603,6 +605,7 @@ const popups = [];
 const speechBubbles = [];
 const cards = [];
 const missiles = [];
+const policeSquads = [];
 
 const input = {
   x: 0,
@@ -649,6 +652,7 @@ const player = {
   regenLevel: 0,
   regenTimer: 4,
   firstAidKits: 1,
+  policeCalls: 0,
   xpNeedMultiplier: 1,
   invuln: 0,
   alive: false,
@@ -871,6 +875,7 @@ function resetGame() {
   speechBubbles.length = 0;
   cards.length = 0;
   missiles.length = 0;
+  policeSquads.length = 0;
   bossIndex = 0;
   bossBag = [];
   nextBossAt = 20;
@@ -915,6 +920,7 @@ function resetGame() {
     regenLevel: 0,
     regenTimer: 4,
     firstAidKits: 1,
+    policeCalls: 0,
     xpNeedMultiplier: 1,
     invuln: 0,
     alive: true,
@@ -1757,7 +1763,7 @@ function createDansoSwing(enemy) {
     angle,
     length: Math.hypot(viewWidth, viewHeight) * 1.25,
     width: 48,
-    radius: 390,
+    radius: Math.hypot(viewWidth, viewHeight) * 1.25,
     damage: scaleBossDamage(enemy, 20),
     push: 54,
     stun: 0.22,
@@ -2296,6 +2302,7 @@ function killEnemy(enemy) {
   if (enemy.boss) {
     playSound("bossKill");
     grantFirstAidKit(1, enemy.x, enemy.y);
+    grantPoliceCall(1, enemy.x, enemy.y);
     for (let i = 0; i < 16; i += 1) dropXp(enemy.x + rand(-45, 45), enemy.y + rand(-45, 45), 12);
     nextBossAt = player.elapsed + Math.max(34, 46 - Math.min(12, bossIndex * 2));
     bossWarningFor = 0;
@@ -2310,6 +2317,118 @@ function grantFirstAidKit(count = 1, x = player.x, y = player.y) {
   addPopup(`구급팩 +${count}`, x, y - 24, "#b8ffe4", 0.9, 16);
   playSound("heal");
   updateHud();
+}
+
+function grantPoliceCall(count = 1, x = player.x, y = player.y) {
+  player.policeCalls += count;
+  addPopup(`지하철 경찰대 +${count}`, x, y - 48, "#b8dcff", 0.9, 16);
+  playSound("levelUp");
+  updateHud();
+}
+
+function getPoliceCallAngle() {
+  const target = findNearestEnemy(1200);
+  if (target) return angleTo(player, target);
+  if (Math.abs(input.x) + Math.abs(input.y) > 0.1) return Math.atan2(input.y, input.x);
+  return -Math.PI / 2;
+}
+
+function usePoliceCall() {
+  if (game.state !== "playing" || game.paused || game.pendingHeroChoice || player.policeCalls <= 0) return;
+  player.policeCalls -= 1;
+  const angle = getPoliceCallAngle();
+  const sideAngle = angle + Math.PI / 2;
+  const officers = [];
+  for (let i = 0; i < 15; i += 1) {
+    const row = Math.floor(i / 5);
+    const column = i % 5 - 2;
+    officers.push({
+      lane: column * 38,
+      back: row * 42,
+      bob: Math.random() * TAU,
+    });
+  }
+  policeSquads.push({
+    x: player.x,
+    y: player.y,
+    angle,
+    sideAngle,
+    officers,
+    distance: 0,
+    speed: 205,
+    damage: 46,
+    radius: 28,
+    life: 5.2,
+    maxLife: 5.2,
+    hitTimers: new Map(),
+  });
+  addPopup("지하철 경찰대 출동!", player.x, player.y - 72, "#b8dcff", 0.9, 18);
+  addParticles(player.x, player.y, "#77beff", 26);
+  playSound("boss");
+  updateHud();
+}
+
+function getPoliceOfficerPosition(squad, officer) {
+  const formationBloom = Math.sin((1 - squad.life / squad.maxLife) * Math.PI) * 14;
+  return {
+    x:
+      squad.x +
+      Math.cos(squad.angle) * (squad.distance - officer.back + 42) +
+      Math.cos(squad.sideAngle) * (officer.lane + Math.sin(officer.bob + squad.distance * 0.025) * formationBloom),
+    y:
+      squad.y +
+      Math.sin(squad.angle) * (squad.distance - officer.back + 42) +
+      Math.sin(squad.sideAngle) * (officer.lane + Math.sin(officer.bob + squad.distance * 0.025) * formationBloom),
+  };
+}
+
+function officerHitsHostileZone(officer, zone, radius) {
+  if (zone.kind === "jarvanSpear" || zone.kind === "dansoStab") {
+    const dx = officer.x - zone.x;
+    const dy = officer.y - zone.y;
+    const forward = Math.cos(zone.angle) * dx + Math.sin(zone.angle) * dy;
+    const side = Math.abs(-Math.sin(zone.angle) * dx + Math.cos(zone.angle) * dy);
+    return forward > 0 && forward < (zone.length ?? zone.radius) + radius && side < (zone.width ?? 40) / 2 + radius;
+  }
+  return Math.hypot(officer.x - zone.x, officer.y - zone.y) < radius + (zone.radius ?? 24);
+}
+
+function updatePoliceSquads(delta) {
+  for (const squad of [...policeSquads]) {
+    squad.life -= delta;
+    squad.distance += squad.speed * delta;
+    for (const [enemy, cooldown] of [...squad.hitTimers.entries()]) {
+      const nextCooldown = cooldown - delta;
+      if (nextCooldown <= 0 || !enemies.includes(enemy)) squad.hitTimers.delete(enemy);
+      else squad.hitTimers.set(enemy, nextCooldown);
+    }
+
+    for (const officerInfo of squad.officers) {
+      const officer = getPoliceOfficerPosition(squad, officerInfo);
+      for (const zone of [...damageZones]) {
+        if (!zone.hostile) continue;
+        if (officerHitsHostileZone(officer, zone, squad.radius + 8)) {
+          addParticles(officer.x, officer.y, "#b8dcff", 10);
+          const zoneIndex = damageZones.indexOf(zone);
+          if (zoneIndex >= 0) damageZones.splice(zoneIndex, 1);
+        }
+      }
+      for (const enemy of [...enemies]) {
+        if (Math.hypot(enemy.x - officer.x, enemy.y - officer.y) > enemy.radius + squad.radius) continue;
+        if (squad.hitTimers.has(enemy)) continue;
+        squad.hitTimers.set(enemy, 0.22);
+        damageEnemy(enemy, squad.damage, "#b8dcff");
+        const push = squad.angle;
+        const pushAmount = enemy.boss ? 14 : 38;
+        enemy.x = clamp(enemy.x + Math.cos(push) * pushAmount, 35, WORLD_SIZE - 35);
+        enemy.y = clamp(enemy.y + Math.sin(push) * pushAmount, 35, WORLD_SIZE - 35);
+        addParticles(enemy.x, enemy.y, "#b8dcff", 8);
+      }
+    }
+    if (squad.life <= 0 || squad.distance > Math.max(viewWidth, viewHeight) * 1.35) {
+      policeSquads.splice(policeSquads.indexOf(squad), 1);
+    }
+  }
 }
 
 function dropEnergy(enemy) {
@@ -2838,6 +2957,7 @@ function update(delta) {
   updatePlayer(delta);
   updateEnemies(delta);
   updateProjectiles(delta);
+  updatePoliceSquads(delta);
   updateOrbs(delta);
   updateEnergyPickups(delta);
   updateDamageZones(delta);
@@ -2915,6 +3035,8 @@ function updateHud() {
   refs.bestScore.textContent = formatScore(bestScore);
   if (refs.firstAidCount) refs.firstAidCount.textContent = player.firstAidKits;
   if (refs.firstAidButton) refs.firstAidButton.disabled = player.firstAidKits <= 0 || player.hp >= player.maxHp || game.state !== "playing" || game.paused;
+  if (refs.policeCount) refs.policeCount.textContent = player.policeCalls;
+  if (refs.policeButton) refs.policeButton.disabled = player.policeCalls <= 0 || game.state !== "playing" || game.paused;
   if (refs.pauseButton) {
     refs.pauseButton.disabled = game.state !== "playing" || game.pendingHeroChoice || game.pendingStarterChoices > 0 || (game.paused && !game.manualPaused);
     refs.pauseButton.textContent = game.manualPaused ? "▶" : "Ⅱ";
@@ -3423,6 +3545,76 @@ function drawProjectiles() {
     ctx.restore();
   }
 
+}
+
+function drawPoliceSquads() {
+  for (const squad of policeSquads) {
+    const fade = clamp(squad.life / 0.7, 0, 1);
+    const progress = 1 - squad.life / squad.maxLife;
+    for (const officerInfo of squad.officers) {
+      const officer = getPoliceOfficerPosition(squad, officerInfo);
+      const p = worldToScreen(officer.x, officer.y);
+      const step = Math.sin(officerInfo.bob + player.elapsed * 9 + squad.distance * 0.05);
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(squad.angle);
+      ctx.globalAlpha = fade;
+      ctx.shadowColor = "#77beff";
+      ctx.shadowBlur = 13;
+      ctx.fillStyle = "rgba(119, 190, 255, 0.16)";
+      ctx.beginPath();
+      ctx.ellipse(0, 10, 24, 13, 0, 0, TAU);
+      ctx.fill();
+
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "#1b4f9c";
+      roundedRect(-11, -14, 22, 28, 7);
+      ctx.fill();
+      ctx.strokeStyle = "#b8dcff";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = "#f1c9a4";
+      ctx.beginPath();
+      ctx.arc(0, -25, 9, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = "#183f7a";
+      roundedRect(-10, -34, 20, 8, 4);
+      ctx.fill();
+      ctx.fillStyle = "#ffd166";
+      ctx.fillRect(-3, -36, 6, 3);
+
+      ctx.strokeStyle = "#0b234a";
+      ctx.lineWidth = 4;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(-7, 13);
+      ctx.lineTo(-12, 23 + step * 3);
+      ctx.moveTo(7, 13);
+      ctx.lineTo(12, 23 - step * 3);
+      ctx.stroke();
+
+      ctx.strokeStyle = "#2a1608";
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(11, -4);
+      ctx.lineTo(28 + Math.sin(progress * Math.PI * 6) * 8, -13);
+      ctx.stroke();
+      ctx.strokeStyle = "#ffd166";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(15, -6);
+      ctx.lineTo(26, -11);
+      ctx.stroke();
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "900 7px system-ui";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("POL", 0, -3);
+      ctx.restore();
+    }
+  }
 }
 
 function drawOrbs() {
@@ -4568,6 +4760,7 @@ function render() {
   drawOrbs();
   drawEnergyPickups();
   drawProjectiles();
+  drawPoliceSquads();
   for (const enemy of enemies) drawEnemy(enemy);
   drawBlades();
   drawPlayer();
@@ -4652,12 +4845,17 @@ window.addEventListener("keydown", (event) => {
     useFirstAidKit();
     return;
   }
+  if (event.code === "KeyP") {
+    usePoliceCall();
+    return;
+  }
   keys.add(event.code);
 });
 window.addEventListener("keyup", (event) => keys.delete(event.code));
 
 refs.startButton.addEventListener("click", resetGame);
 refs.firstAidButton?.addEventListener("click", useFirstAidKit);
+refs.policeButton?.addEventListener("click", usePoliceCall);
 refs.pauseButton?.addEventListener("click", togglePause);
 refs.upgradePauseButton?.addEventListener("click", toggleUpgradePause);
 refs.rankForm?.addEventListener("submit", submitLeaderboardEntry);
