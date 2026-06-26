@@ -1692,10 +1692,10 @@ function updatePlayer(delta) {
     player.defenseBreakTimer = Math.max(0, player.defenseBreakTimer - delta);
     if (player.defenseBreakTimer <= 0) player.defenseBreakPower = 0;
   }
-  if (player.regenLevel > 0 && player.hp < player.maxHp) {
+  if (player.hp < player.maxHp) {
     player.regenTimer -= delta;
     if (player.regenTimer <= 0) {
-      healPlayer(player.regenLevel, false);
+      healPlayer(1 + player.regenLevel, false);
       player.regenTimer = Math.max(2.2, 5.2 - player.regenLevel * 0.32);
     }
   }
