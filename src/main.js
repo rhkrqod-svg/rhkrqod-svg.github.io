@@ -3382,11 +3382,20 @@ function updateHud() {
   refs.xpFill.style.transform = `scaleX(${clamp(player.xp / player.nextXp, 0, 1)})`;
   refs.bestScore.textContent = formatScore(bestScore);
   if (refs.firstAidCount) refs.firstAidCount.textContent = player.firstAidKits;
-  if (refs.firstAidButton) refs.firstAidButton.disabled = player.firstAidKits <= 0 || player.hp >= player.maxHp || game.state !== "playing" || game.paused;
+  if (refs.firstAidButton) {
+    refs.firstAidButton.classList.toggle("item-hidden", player.firstAidKits <= 0);
+    refs.firstAidButton.disabled = player.firstAidKits <= 0 || player.hp >= player.maxHp || game.state !== "playing" || game.paused;
+  }
   if (refs.policeCount) refs.policeCount.textContent = player.policeCalls;
-  if (refs.policeButton) refs.policeButton.disabled = player.policeCalls <= 0 || game.state !== "playing" || game.paused;
+  if (refs.policeButton) {
+    refs.policeButton.classList.toggle("item-hidden", player.policeCalls <= 0);
+    refs.policeButton.disabled = player.policeCalls <= 0 || game.state !== "playing" || game.paused;
+  }
   if (refs.taserCount) refs.taserCount.textContent = player.taserGuns;
-  if (refs.taserButton) refs.taserButton.disabled = player.taserGuns <= 0 || !enemies.some((enemy) => enemy.boss) || game.state !== "playing" || game.paused;
+  if (refs.taserButton) {
+    refs.taserButton.classList.toggle("item-hidden", player.taserGuns <= 0);
+    refs.taserButton.disabled = player.taserGuns <= 0 || !enemies.some((enemy) => enemy.boss) || game.state !== "playing" || game.paused;
+  }
   if (refs.pauseButton) {
     refs.pauseButton.disabled = game.state !== "playing" || game.pendingHeroChoice || game.pendingStarterChoices > 0 || (game.paused && !game.manualPaused);
     refs.pauseButton.textContent = game.manualPaused ? "▶" : "Ⅱ";

@@ -714,6 +714,10 @@ button {
   display: none;
 }
 
+.hud.item-hidden {
+  display: none;
+}
+
 .leaderboard-head {
   display: flex;
   align-items: baseline;
