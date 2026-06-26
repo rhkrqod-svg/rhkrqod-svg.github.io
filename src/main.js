@@ -41,6 +41,8 @@ const refs = {
   firstAidCount: document.querySelector("#firstAidCount"),
   policeButton: document.querySelector("#policeButton"),
   policeCount: document.querySelector("#policeCount"),
+  taserButton: document.querySelector("#taserButton"),
+  taserCount: document.querySelector("#taserCount"),
   pauseButton: document.querySelector("#pauseButton"),
   moveStick: document.querySelector("#moveStick"),
   moveStickThumb: document.querySelector("#moveStickThumb"),
@@ -605,6 +607,7 @@ const popups = [];
 const speechBubbles = [];
 const cards = [];
 const missiles = [];
+const taserShots = [];
 const policeSquads = [];
 
 const input = {
@@ -653,6 +656,7 @@ const player = {
   regenTimer: 4,
   firstAidKits: 1,
   policeCalls: 0,
+  taserGuns: 0,
   xpNeedMultiplier: 1,
   invuln: 0,
   alive: false,
@@ -876,6 +880,7 @@ function resetGame() {
   speechBubbles.length = 0;
   cards.length = 0;
   missiles.length = 0;
+  taserShots.length = 0;
   policeSquads.length = 0;
   bossIndex = 0;
   bossBag = [];
@@ -922,6 +927,7 @@ function resetGame() {
     regenTimer: 4,
     firstAidKits: 1,
     policeCalls: 0,
+    taserGuns: 0,
     xpNeedMultiplier: 1,
     invuln: 0,
     alive: true,
@@ -1135,6 +1141,7 @@ function spawnEnemy(type = null, boss = false) {
     speedBoostMultiplier: 1,
     defenseBoostTimer: 0,
     defenseBoostPower: 0,
+    stunTimer: 0,
   };
   enemies.push(enemy);
   return enemy;
@@ -1583,13 +1590,18 @@ function updateEnemies(delta) {
   updateBossSchedule();
 
   for (const enemy of [...enemies]) {
+    enemy.stunTimer = Math.max(0, (enemy.stunTimer ?? 0) - delta);
+    enemy.hitFlash = Math.max(0, enemy.hitFlash - delta);
+    if (enemy.stunTimer > 0) {
+      enemy.wobble += delta * 0.35;
+      continue;
+    }
     enemy.cooldown -= delta;
     enemy.attackSpeechCooldown = Math.max(0, (enemy.attackSpeechCooldown ?? 0) - delta);
     enemy.boostTimer = Math.max(0, (enemy.boostTimer ?? 0) - delta);
     if (enemy.boostTimer <= 0) enemy.speedBoostMultiplier = 1;
     enemy.defenseBoostTimer = Math.max(0, (enemy.defenseBoostTimer ?? 0) - delta);
     if (enemy.defenseBoostTimer <= 0) enemy.defenseBoostPower = 0;
-    enemy.hitFlash = Math.max(0, enemy.hitFlash - delta);
     enemy.wobble += delta;
     let angle = angleTo(enemy, player);
     let speed = enemy.speed;
@@ -2170,6 +2182,43 @@ function updateProjectiles(delta) {
     if (bullet.life <= 0) bullets.splice(bullets.indexOf(bullet), 1);
   }
 
+  for (const taser of [...taserShots]) {
+    taser.life -= delta;
+    taser.trail.push({ x: taser.x, y: taser.y, life: 0.18 });
+    if (taser.trail.length > 10) taser.trail.shift();
+    for (const point of taser.trail) point.life -= delta;
+    taser.trail = taser.trail.filter((point) => point.life > 0);
+
+    if (!taser.target || !enemies.includes(taser.target) || !taser.target.boss) {
+      taser.target = findNearestBoss(1800);
+    }
+    if (taser.target) {
+      const desired = angleTo(taser, taser.target);
+      const current = Math.atan2(taser.vy, taser.vx);
+      const next = current + clamp(angleDelta(desired, current), -8.5 * delta, 8.5 * delta);
+      const speed = 820;
+      taser.vx = Math.cos(next) * speed;
+      taser.vy = Math.sin(next) * speed;
+    }
+    taser.x += taser.vx * delta;
+    taser.y += taser.vy * delta;
+
+    const target = taser.target;
+    if (target && enemies.includes(target) && Math.hypot(target.x - taser.x, target.y - taser.y) < target.radius + taser.radius) {
+      damageEnemy(target, taser.damage, "#fff3b0");
+      if (enemies.includes(target)) {
+        target.stunTimer = Math.max(target.stunTimer ?? 0, taser.stun);
+        addPopup("감전 5초", target.x, target.y - target.radius - 28, "#fff3b0", 0.85, 17);
+        addParticles(target.x, target.y, "#fff3b0", 28);
+      }
+      taserShots.splice(taserShots.indexOf(taser), 1);
+      continue;
+    }
+    if (taser.life <= 0 || taser.x < 0 || taser.x > WORLD_SIZE || taser.y < 0 || taser.y > WORLD_SIZE) {
+      taserShots.splice(taserShots.indexOf(taser), 1);
+    }
+  }
+
   for (const card of [...cards]) {
     card.trail.push({ x: card.x, y: card.y, life: 0.22 });
     if (card.trail.length > 12) card.trail.shift();
@@ -2319,11 +2368,9 @@ function killEnemy(enemy) {
   const earnedScore = Math.max(1, Math.round((enemy.score ?? 0) / 10));
   player.score += earnedScore;
   dropXp(enemy.x, enemy.y, enemy.xp);
-  dropEnergy(enemy);
   if (enemy.boss) {
     playSound("bossKill");
-    grantFirstAidKit(1, enemy.x, enemy.y);
-    dropPoliceRadio(enemy);
+    dropBossRewardItems(enemy);
     for (let i = 0; i < 16; i += 1) dropXp(enemy.x + rand(-45, 45), enemy.y + rand(-45, 45), 12);
     nextBossAt = player.elapsed + Math.max(34, 46 - Math.min(12, bossIndex * 2));
     bossWarningFor = 0;
@@ -2345,6 +2392,42 @@ function grantPoliceCall(count = 1, x = player.x, y = player.y) {
   addPopup(`지하철 경찰대 +${count}`, x, y - 48, "#b8dcff", 0.9, 16);
   playSound("levelUp");
   updateHud();
+}
+
+function grantTaserGun(count = 1, x = player.x, y = player.y) {
+  player.taserGuns += count;
+  addPopup(`테이저건 +${count}`, x, y - 66, "#fff3b0", 0.9, 16);
+  playSound("levelUp");
+  updateHud();
+}
+
+function dropBossRewardItems(enemy) {
+  if (!enemy.boss) return;
+  const rewardKinds = ["firstAid", "radio", "taser"];
+  for (let i = rewardKinds.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [rewardKinds[i], rewardKinds[j]] = [rewardKinds[j], rewardKinds[i]];
+  }
+  const rewardCount = Math.random() < 0.5 ? 2 : 1;
+  for (let i = 0; i < rewardCount; i += 1) {
+    dropBossRewardPickup(enemy, rewardKinds[i], i, rewardCount);
+  }
+}
+
+function dropBossRewardPickup(enemy, kind, index = 0, count = 1) {
+  const angle = Math.random() * TAU + (TAU * index) / Math.max(1, count);
+  const distance = rand(26, 72);
+  energyPickups.push({
+    kind,
+    x: enemy.x + Math.cos(angle) * distance,
+    y: enemy.y + Math.sin(angle) * distance,
+    heal: 0,
+    radius: kind === "taser" ? 13 : kind === "radio" ? 14 : 13,
+    boss: true,
+    pulse: Math.random() * TAU,
+    vx: Math.cos(angle) * rand(28, 78),
+    vy: Math.sin(angle) * rand(28, 78),
+  });
 }
 
 function getPoliceCallAngle() {
@@ -2383,6 +2466,46 @@ function usePoliceCall() {
   addPopup("지하철 경찰대 출동!", player.x, player.y - 72, "#b8dcff", 0.9, 18);
   addParticles(player.x, player.y, "#77beff", 26);
   playSound("boss");
+  updateHud();
+}
+
+function findNearestBoss(maxDistance = Infinity) {
+  let nearest = null;
+  let nearestDistance = maxDistance;
+  for (const enemy of enemies) {
+    if (!enemy.boss) continue;
+    const currentDistance = Math.hypot(enemy.x - player.x, enemy.y - player.y);
+    if (currentDistance < nearestDistance) {
+      nearest = enemy;
+      nearestDistance = currentDistance;
+    }
+  }
+  return nearest;
+}
+
+function useTaserGun() {
+  if (game.state !== "playing" || game.paused || game.pendingHeroChoice || player.taserGuns <= 0) return;
+  const target = findNearestBoss(1800);
+  if (!target) {
+    addPopup("보스 없음", player.x, player.y - 58, "#fff3b0", 0.55, 14);
+    return;
+  }
+  player.taserGuns -= 1;
+  const angle = angleTo(player, target);
+  taserShots.push({
+    x: player.x + Math.cos(angle) * 26,
+    y: player.y + Math.sin(angle) * 26,
+    vx: Math.cos(angle) * 820,
+    vy: Math.sin(angle) * 820,
+    radius: 9,
+    damage: 220,
+    stun: 5,
+    life: 1.8,
+    target,
+    trail: [],
+  });
+  addPopup("테이저건!", player.x, player.y - 62, "#fff3b0", 0.65, 15);
+  playSound("lightning");
   updateHud();
 }
 
@@ -2550,10 +2673,17 @@ function updateEnergyPickups(delta) {
         grantPoliceCall(1, pickup.x, pickup.y);
         addPopup("무전기", pickup.x, pickup.y - 18, "#b8dcff", 0.8, 14);
         addParticles(pickup.x, pickup.y, "#77beff", 18);
+      } else if (pickup.kind === "taser") {
+        grantTaserGun(1, pickup.x, pickup.y);
+        addPopup("테이저건", pickup.x, pickup.y - 18, "#fff3b0", 0.8, 14);
+        addParticles(pickup.x, pickup.y, "#fff3b0", 20);
+      } else if (pickup.kind === "firstAid") {
+        grantFirstAidKit(1, pickup.x, pickup.y);
+        addPopup("구급팩", pickup.x, pickup.y - 18, "#b8ffe4", 0.8, 14);
+        addParticles(pickup.x, pickup.y, "#36d399", 18);
       } else {
         healPlayer(Math.round(pickup.heal));
         playSound("heal");
-        if (pickup.kind === "firstAid") addPopup("구급팩", pickup.x, pickup.y - 18, "#b8ffe4", 0.8, 14);
         addParticles(pickup.x, pickup.y, "#36d399", pickup.boss ? 18 : 10);
       }
       energyPickups.splice(energyPickups.indexOf(pickup), 1);
@@ -3075,6 +3205,8 @@ function updateHud() {
   if (refs.firstAidButton) refs.firstAidButton.disabled = player.firstAidKits <= 0 || player.hp >= player.maxHp || game.state !== "playing" || game.paused;
   if (refs.policeCount) refs.policeCount.textContent = player.policeCalls;
   if (refs.policeButton) refs.policeButton.disabled = player.policeCalls <= 0 || game.state !== "playing" || game.paused;
+  if (refs.taserCount) refs.taserCount.textContent = player.taserGuns;
+  if (refs.taserButton) refs.taserButton.disabled = player.taserGuns <= 0 || !enemies.some((enemy) => enemy.boss) || game.state !== "playing" || game.paused;
   if (refs.pauseButton) {
     refs.pauseButton.disabled = game.state !== "playing" || game.pendingHeroChoice || game.pendingStarterChoices > 0 || (game.paused && !game.manualPaused);
     refs.pauseButton.textContent = game.manualPaused ? "▶" : "Ⅱ";
@@ -3535,6 +3667,28 @@ function drawEnemy(enemy) {
     roundedRect(-barWidth / 2, barY, barWidth * clamp(enemy.hp / enemy.maxHp, 0, 1), barHeight, barHeight / 2);
     ctx.fill();
   }
+  if (enemy.stunTimer > 0) {
+    const stunY = -visualTop - (enemy.boss ? 36 : 25);
+    ctx.save();
+    ctx.globalAlpha = 0.78 + Math.sin(player.elapsed * 24) * 0.18;
+    ctx.strokeStyle = "#fff3b0";
+    ctx.fillStyle = "#fff3b0";
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 3; i += 1) {
+      const offset = (i - 1) * 12;
+      ctx.beginPath();
+      ctx.moveTo(offset - 3, stunY - 10);
+      ctx.lineTo(offset + 4, stunY - 1);
+      ctx.lineTo(offset - 1, stunY - 1);
+      ctx.lineTo(offset + 5, stunY + 10);
+      ctx.stroke();
+    }
+    ctx.font = "900 12px system-ui";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("STOP", 0, stunY + 22);
+    ctx.restore();
+  }
 
   ctx.restore();
 }
@@ -3592,6 +3746,40 @@ function drawProjectiles() {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText("TAP", 0, 4);
+    ctx.restore();
+  }
+
+  for (const taser of taserShots) {
+    for (const point of taser.trail) {
+      const trailPoint = worldToScreen(point.x, point.y);
+      ctx.globalAlpha = clamp(point.life / 0.18, 0, 1) * 0.62;
+      ctx.fillStyle = "#fff3b0";
+      ctx.beginPath();
+      ctx.arc(trailPoint.x, trailPoint.y, 4.5, 0, TAU);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+    const p = worldToScreen(taser.x, taser.y);
+    const angle = Math.atan2(taser.vy, taser.vx);
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(angle);
+    ctx.shadowColor = "#fff3b0";
+    ctx.shadowBlur = 18;
+    ctx.strokeStyle = "#fff3b0";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-13, 0);
+    ctx.lineTo(8, 0);
+    ctx.stroke();
+    ctx.fillStyle = "#f9c74f";
+    ctx.beginPath();
+    ctx.moveTo(12, 0);
+    ctx.lineTo(0, -7);
+    ctx.lineTo(3, 0);
+    ctx.lineTo(0, 7);
+    ctx.closePath();
+    ctx.fill();
     ctx.restore();
   }
 
@@ -3775,6 +3963,31 @@ function drawEnergyPickups() {
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText("P", 0, size * 0.42);
+      ctx.shadowBlur = 0;
+      ctx.restore();
+      continue;
+    }
+    if (pickup.kind === "taser") {
+      ctx.shadowColor = "#fff3b0";
+      ctx.shadowBlur = 20;
+      ctx.fillStyle = "#1f2933";
+      ctx.strokeStyle = "#fff3b0";
+      ctx.lineWidth = 2.5;
+      roundedRect(-size * 1.0, -size * 0.45, size * 1.55, size * 0.9, 5);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#fff3b0";
+      ctx.fillRect(size * 0.42, -size * 0.18, size * 0.7, size * 0.36);
+      ctx.fillStyle = "#f9c74f";
+      ctx.beginPath();
+      ctx.moveTo(-size * 0.28, -size * 0.95);
+      ctx.lineTo(size * 0.08, -size * 0.15);
+      ctx.lineTo(-size * 0.1, -size * 0.15);
+      ctx.lineTo(size * 0.22, size * 0.84);
+      ctx.lineTo(-size * 0.38, -size * 0.02);
+      ctx.lineTo(-size * 0.16, -size * 0.02);
+      ctx.closePath();
+      ctx.fill();
       ctx.shadowBlur = 0;
       ctx.restore();
       continue;
@@ -4993,6 +5206,10 @@ window.addEventListener("keydown", (event) => {
     usePoliceCall();
     return;
   }
+  if (event.code === "KeyT") {
+    useTaserGun();
+    return;
+  }
   keys.add(event.code);
 });
 window.addEventListener("keyup", (event) => keys.delete(event.code));
@@ -5000,6 +5217,7 @@ window.addEventListener("keyup", (event) => keys.delete(event.code));
 refs.startButton.addEventListener("click", resetGame);
 refs.firstAidButton?.addEventListener("click", useFirstAidKit);
 refs.policeButton?.addEventListener("click", usePoliceCall);
+refs.taserButton?.addEventListener("click", useTaserGun);
 refs.pauseButton?.addEventListener("click", togglePause);
 refs.upgradePauseButton?.addEventListener("click", toggleUpgradePause);
 refs.rankForm?.addEventListener("submit", submitLeaderboardEntry);
