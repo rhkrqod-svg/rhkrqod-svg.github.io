@@ -313,22 +313,22 @@ button {
 }
 
 .police-call {
-  left: 104px;
+  left: 101px;
   right: auto;
   bottom: max(92px, calc(env(safe-area-inset-bottom) + 92px));
   display: grid;
   grid-template-columns: auto auto;
-  gap: 4px;
+  gap: 3px;
   align-items: center;
   justify-content: center;
-  width: 92px;
+  width: 84px;
   min-height: 28px;
   border: 1px solid rgba(119, 190, 255, 0.42);
   border-radius: 7px;
   background: rgba(10, 19, 36, 0.78);
   color: #b8dcff;
   cursor: pointer;
-  padding: 4px 6px;
+  padding: 4px;
   pointer-events: auto;
   box-shadow: 0 12px 34px rgba(0, 0, 0, 0.24);
   backdrop-filter: blur(14px);
@@ -350,7 +350,7 @@ button {
 
 .police-call span {
   color: rgba(248, 249, 250, 0.76);
-  font-size: 5.8px;
+  font-size: 5.6px;
   font-weight: 900;
   line-height: 1;
   white-space: nowrap;
@@ -370,7 +370,7 @@ button {
 }
 
 .taser-call {
-  left: 204px;
+  left: 191px;
   right: auto;
   bottom: max(92px, calc(env(safe-area-inset-bottom) + 92px));
   display: grid;
@@ -1097,13 +1097,13 @@ button {
   }
 
   .police-call {
-    left: 94px;
+    left: 91px;
     bottom: max(88px, calc(env(safe-area-inset-bottom) + 88px));
-    width: 90px;
+    width: 82px;
   }
 
   .taser-call {
-    left: 190px;
+    left: 178px;
     bottom: max(88px, calc(env(safe-area-inset-bottom) + 88px));
     width: 78px;
   }
