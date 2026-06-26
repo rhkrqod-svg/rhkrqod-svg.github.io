@@ -2484,8 +2484,9 @@ function usePoliceCall() {
   if (game.state !== "playing" || game.paused || game.pendingHeroChoice || player.policeCalls <= 0) return;
   player.policeCalls -= 1;
   const officers = [];
-  for (let i = 0; i < 30; i += 1) {
-    const angle = (TAU * i) / 30 + rand(-0.035, 0.035);
+  const officerCount = 45;
+  for (let i = 0; i < officerCount; i += 1) {
+    const angle = (TAU * i) / officerCount + rand(-0.035, 0.035);
     const ring = i % 2;
     officers.push({
       angle,
