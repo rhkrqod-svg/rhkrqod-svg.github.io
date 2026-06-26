@@ -626,7 +626,7 @@ const player = {
   kills: 0,
   score: 0,
   elapsed: 0,
-  damage: 27,
+  damage: 19,
   attackPower: 100,
   defensePower: 100,
   fireRate: 0.5,
@@ -894,7 +894,7 @@ function resetGame() {
     kills: 0,
     score: 0,
     elapsed: 0,
-    damage: 27,
+    damage: 19,
     attackPower: 100,
     defensePower: 100,
     fireRate: 0.5,
@@ -971,7 +971,7 @@ function selectHero(heroId) {
   player.heroAccent = hero.accent;
   player.maxHp = hero.maxHp;
   player.hp = hero.maxHp;
-  player.damage = 27;
+  player.damage = 19;
   player.attackPower = hero.atk;
   player.defensePower = hero.def;
   player.speed = 205 * (hero.spd / 100);
@@ -1248,7 +1248,7 @@ function spawnCard() {
     y: player.y,
     vx: Math.cos(angle) * speed,
     vy: Math.sin(angle) * speed,
-    damage: 46 + level * 32,
+    damage: 32 + level * 32,
     life: 7.5 + level * 0.35,
     maxLife: 7.5 + level * 0.35,
     radius: 24 + level * 3,
@@ -1278,7 +1278,7 @@ function strikeLightning() {
     targets.push(enemy);
   }
   for (const enemy of targets) {
-    const damage = Math.round((90 + weapons.lightning.level * 58) * 1.105);
+    const damage = Math.round((63 + weapons.lightning.level * 58) * 1.105);
     const strikeRadius = (58 + weapons.lightning.level * 7) * 1.183;
     damageEnemy(enemy, enemy.boss ? Math.round(damage * 1.25) : damage, "#9bf6ff");
     addParticles(enemy.x, enemy.y, "#9bf6ff", enemy.boss ? 14 : 9);
@@ -1383,7 +1383,7 @@ function spawnExpressTrain() {
     vertical,
     width: 92 + level * 13,
     trainLength: 520 + level * 34,
-    damage: (150 + level * 42) * 2,
+    damage: (105 + level * 42) * 2,
     push: 470 + level * 62,
     angle: vertical ? (direction > 0 ? Math.PI / 2 : -Math.PI / 2) : direction > 0 ? 0 : Math.PI,
     direction,
@@ -1443,7 +1443,7 @@ function spawnTransferGate() {
 function explodeCustomerMissile(missile) {
   const level = weapons.customerMissile.level;
   const radius = 54 + level * 12;
-  const damage = Math.round((45 + level * 24) * 1.3);
+  const damage = Math.round((32 + level * 24) * 1.3);
   damageZones.push({
     x: missile.x,
     y: missile.y,
@@ -1476,7 +1476,7 @@ function spawnCustomerMissiles() {
       vy: Math.sin(angle) * speed,
       speed,
       turnRate: 7.2 + level * 0.5,
-      damage: Math.round((32 + level * 15) * 1.3),
+      damage: Math.round((22 + level * 15) * 1.3),
       radius: 8,
       life: 3.2,
       target,
@@ -2118,8 +2118,8 @@ function calculateIncomingDamage(amount) {
 }
 
 function increaseLevelStats() {
-  player.attackPower *= 1.05;
-  player.defensePower *= 1.05;
+  player.attackPower *= 1.07;
+  player.defensePower *= 1.07;
   player.speed *= 1.015;
 }
 
@@ -2250,7 +2250,7 @@ function updateBlade() {
   if (weapons.strapOrbit.level > 0) {
     const strapCount = Math.min(7, weapons.strapOrbit.level + 2);
     const strapRadius = (58 + weapons.strapOrbit.level * 6) * 1.3;
-    const strapDamage = 20 + (weapons.strapOrbit.level - 1) * 8;
+    const strapDamage = 14 + (weapons.strapOrbit.level - 1) * 8;
     for (let i = 0; i < strapCount; i += 1) {
       const strapAngle = weapons.strapOrbit.angle + (TAU * i) / strapCount;
       const strap = {
@@ -2344,7 +2344,7 @@ function usePoliceCall() {
     officers,
     distance: 0,
     speed: 220,
-    damage: 46,
+    damage: 32,
     radius: 28,
     life: 4.4,
     maxLife: 4.4,
