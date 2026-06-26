@@ -3722,13 +3722,19 @@ function drawBlades() {
 
 function drawEnemy(enemy) {
   const p = worldToScreen(enemy.x, enemy.y);
-  if (p.x < -120 || p.x > width + 120 || p.y < -120 || p.y > height + 120) return;
   const actorImage = enemy.boss ? bossImages.get(enemy.id) : monsterImages.get(enemy.id);
   const useActorImage = Boolean(actorImage?.complete && actorImage.naturalWidth > 0);
   const imageHeight = useActorImage ? Math.max(enemy.boss ? 72 : 46, enemy.radius * (enemy.boss ? 7.4 : 5.9)) : 0;
   const imageWidth = useActorImage ? imageHeight * (actorImage.naturalWidth / actorImage.naturalHeight) : 0;
   const visualTop = useActorImage ? imageHeight * 0.72 : enemy.radius;
   const visualBottom = useActorImage ? imageHeight * 0.28 : enemy.radius;
+  const visualHalfWidth = useActorImage ? imageWidth / 2 : enemy.radius;
+  const cullPadding = enemy.boss ? 96 : 42;
+  const cullLeft = -visualHalfWidth - cullPadding;
+  const cullRight = width + visualHalfWidth + cullPadding;
+  const cullTop = -visualTop - cullPadding;
+  const cullBottom = height + visualBottom + cullPadding;
+  if (p.x < cullLeft || p.x > cullRight || p.y < cullTop || p.y > cullBottom) return;
   ctx.save();
   ctx.translate(p.x, p.y);
   ctx.save();
