@@ -2302,7 +2302,7 @@ function killEnemy(enemy) {
   if (enemy.boss) {
     playSound("bossKill");
     grantFirstAidKit(1, enemy.x, enemy.y);
-    grantPoliceCall(1, enemy.x, enemy.y);
+    dropPoliceRadio(enemy);
     for (let i = 0; i < 16; i += 1) dropXp(enemy.x + rand(-45, 45), enemy.y + rand(-45, 45), 12);
     nextBossAt = player.elapsed + Math.max(34, 46 - Math.min(12, bossIndex * 2));
     bossWarningFor = 0;
@@ -2446,6 +2446,23 @@ function dropEnergy(enemy) {
   }
 }
 
+function dropPoliceRadio(enemy) {
+  if (!enemy.boss) return;
+  const angle = Math.random() * TAU;
+  const distance = rand(28, 72);
+  energyPickups.push({
+    kind: "radio",
+    x: enemy.x + Math.cos(angle) * distance,
+    y: enemy.y + Math.sin(angle) * distance,
+    heal: 0,
+    radius: 14,
+    boss: true,
+    pulse: Math.random() * TAU,
+    vx: Math.cos(angle) * rand(28, 78),
+    vy: Math.sin(angle) * rand(28, 78),
+  });
+}
+
 function dropXp(x, y, amount) {
   const pieces = Math.max(1, Math.ceil(amount / 9));
   for (let i = 0; i < pieces; i += 1) {
@@ -2508,10 +2525,16 @@ function updateEnergyPickups(delta) {
     pickup.vx *= 0.92;
     pickup.vy *= 0.92;
     if (d < player.radius + pickup.radius + 8) {
-      healPlayer(Math.round(pickup.heal));
-      playSound("heal");
-      if (pickup.kind === "firstAid") addPopup("구급팩", pickup.x, pickup.y - 18, "#b8ffe4", 0.8, 14);
-      addParticles(pickup.x, pickup.y, "#36d399", pickup.boss ? 18 : 10);
+      if (pickup.kind === "radio") {
+        grantPoliceCall(1, pickup.x, pickup.y);
+        addPopup("무전기", pickup.x, pickup.y - 18, "#b8dcff", 0.8, 14);
+        addParticles(pickup.x, pickup.y, "#77beff", 18);
+      } else {
+        healPlayer(Math.round(pickup.heal));
+        playSound("heal");
+        if (pickup.kind === "firstAid") addPopup("구급팩", pickup.x, pickup.y - 18, "#b8ffe4", 0.8, 14);
+        addParticles(pickup.x, pickup.y, "#36d399", pickup.boss ? 18 : 10);
+      }
       energyPickups.splice(energyPickups.indexOf(pickup), 1);
     }
   }
@@ -3658,6 +3681,34 @@ function drawEnergyPickups() {
       ctx.beginPath();
       ctx.arc(0, -size * 0.92, size * 0.38, Math.PI, TAU);
       ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.restore();
+      continue;
+    }
+    if (pickup.kind === "radio") {
+      ctx.shadowColor = "#77beff";
+      ctx.shadowBlur = 20;
+      ctx.fillStyle = "#102a55";
+      ctx.strokeStyle = "#b8dcff";
+      ctx.lineWidth = 2.5;
+      roundedRect(-size * 0.82, -size * 1.05, size * 1.64, size * 2.1, 5);
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = "#b8dcff";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(size * 0.18, -size * 1.05);
+      ctx.lineTo(size * 0.68, -size * 1.82);
+      ctx.stroke();
+      ctx.fillStyle = "#77beff";
+      ctx.beginPath();
+      ctx.arc(0, -size * 0.34, size * 0.22, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = "#eaf5ff";
+      ctx.font = `900 ${Math.max(7, size * 0.58)}px system-ui`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("P", 0, size * 0.42);
       ctx.shadowBlur = 0;
       ctx.restore();
       continue;
