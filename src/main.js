@@ -499,7 +499,7 @@ const upgradePool = [
     desc: "강화 교통카드를 던져 적을 강하게 관통 공격",
     apply: () => {
       weapons.card.level += 1;
-      weapons.card.cooldown = Math.min(weapons.card.cooldown, 0.32);
+      weapons.card.cooldown = Math.min(weapons.card.cooldown, 0.64);
     },
   },
   {
@@ -1715,7 +1715,7 @@ function updatePlayer(delta) {
   weapons.card.cooldown -= delta;
   if (weapons.card.level > 0 && weapons.card.cooldown <= 0) {
     spawnCard();
-    weapons.card.cooldown = Math.max(0.4, (1.05 - weapons.card.level * 0.11) * 1.26);
+    weapons.card.cooldown = Math.max(0.8, (1.05 - weapons.card.level * 0.11) * 2.52);
   }
 
   weapons.expressTrain.cooldown -= delta;
