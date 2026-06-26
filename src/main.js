@@ -1788,22 +1788,21 @@ function createAirportTaunt(enemy) {
   const angle = angleTo(enemy, player);
   addSpeechBubble(enemy, "왜 나만 갈구냐고!", 1.25);
   damageZones.push({
-    x: enemy.x,
-    y: enemy.y,
-    angle,
-    length: 210,
-    width: 56,
-    radius: 210,
+    x: enemy.x + Math.cos(angle) * 34,
+    y: enemy.y + Math.sin(angle) * 34,
+    vx: Math.cos(angle) * 260,
+    vy: Math.sin(angle) * 260,
+    radius: 38,
     damage: scaleBossDamage(enemy, 20),
-    push: 70,
-    life: 0.34,
-    maxLife: 0.34,
-    color: "#ffd166",
+    life: 2.15,
+    maxLife: 2.15,
+    color: "#80ffdb",
     hostile: true,
+    consumeOnHit: true,
     applied: false,
-    kind: "airportPoint",
+    kind: "dollarBill",
   });
-  addParticles(enemy.x + Math.cos(angle) * 80, enemy.y + Math.sin(angle) * 80, "#ffd166", 12);
+  addParticles(enemy.x + Math.cos(angle) * 48, enemy.y + Math.sin(angle) * 48, "#80ffdb", 10);
 }
 
 function createAirportCrisis(enemy) {
@@ -2490,7 +2489,7 @@ function updateDamageZones(delta) {
       } else if (zone.kind === "danceKick") {
         const kickAngle = angleTo(zone, player);
         hitPlayer = hitPlayer && Math.abs(angleDelta(kickAngle, zone.angle)) < zone.arc / 2;
-      } else if (zone.kind === "jarvanSpear" || zone.kind === "airportPoint") {
+      } else if (zone.kind === "jarvanSpear") {
         const dx = player.x - zone.x;
         const dy = player.y - zone.y;
         const forward = Math.cos(zone.angle) * dx + Math.sin(zone.angle) * dy;
@@ -2501,7 +2500,7 @@ function updateDamageZones(delta) {
         hurtPlayer(zone.damage);
         zone.applied = true;
         if (zone.push) {
-          const push = zone.kind === "jarvanSpear" || zone.kind === "airportPoint" ? zone.angle : angleTo(zone, player);
+          const push = zone.kind === "jarvanSpear" ? zone.angle : angleTo(zone, player);
           player.x += Math.cos(push) * zone.push;
           player.y += Math.sin(push) * zone.push;
         }
@@ -3931,31 +3930,6 @@ function drawDamageZones() {
       ctx.moveTo(-28, -4);
       ctx.lineTo(28, -4);
       ctx.stroke();
-      ctx.restore();
-      continue;
-    }
-
-    if (zone.kind === "airportTaunt") {
-      const wave = Math.sin(progress * Math.PI);
-      ctx.translate(p.x, p.y);
-      ctx.globalCompositeOperation = "lighter";
-      ctx.globalAlpha = 0.18 + wave * 0.28;
-      ctx.fillStyle = "rgba(255, 209, 102, 0.12)";
-      ctx.beginPath();
-      ctx.arc(0, 0, zone.radius * (0.34 + progress * 0.72), 0, TAU);
-      ctx.fill();
-      ctx.globalAlpha = 0.72 - progress * 0.34;
-      ctx.strokeStyle = "#ffd166";
-      ctx.lineWidth = 5;
-      ctx.beginPath();
-      ctx.arc(0, 0, zone.radius * (0.26 + progress * 0.74), 0, TAU);
-      ctx.stroke();
-      ctx.globalAlpha = 0.9 * wave;
-      ctx.fillStyle = "#ffe066";
-      ctx.font = "900 15px system-ui";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("가속!", 0, 0);
       ctx.restore();
       continue;
     }
