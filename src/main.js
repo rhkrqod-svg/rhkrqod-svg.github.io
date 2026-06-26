@@ -1268,7 +1268,7 @@ function strikeLightning() {
   }
   for (const enemy of targets) {
     const damage = Math.round((90 + weapons.lightning.level * 58) * 1.3);
-    const strikeRadius = (58 + weapons.lightning.level * 7) * 1.69;
+    const strikeRadius = (58 + weapons.lightning.level * 7) * 1.183;
     damageEnemy(enemy, enemy.boss ? Math.round(damage * 1.25) : damage, "#9bf6ff");
     addParticles(enemy.x, enemy.y, "#9bf6ff", enemy.boss ? 14 : 9);
     damageZones.push({
