@@ -527,14 +527,6 @@ const upgradePool = [
     },
   },
   {
-    id: "transferMaster",
-    name: "환승 고수",
-    desc: "경험치 흡수 범위 +30%",
-    apply: () => {
-      player.magnet *= 1.3;
-    },
-  },
-  {
     id: "nuisanceResist",
     name: "민폐 내성",
     desc: "받는 피해 15% 감소",
@@ -563,7 +555,6 @@ const upgradePool = [
 ];
 
 const passiveUpgradeIds = new Set([
-  "transferMaster",
   "nuisanceResist",
   "mentalRegen",
   "commuteSurvival",
