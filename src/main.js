@@ -2671,12 +2671,16 @@ function useTaserGun() {
   taserShots.push({
     x: player.x + Math.cos(angle) * 26,
     y: player.y + Math.sin(angle) * 26,
+    originX: player.x + Math.cos(angle) * 18,
+    originY: player.y + Math.sin(angle) * 18,
     vx: Math.cos(angle) * 820,
     vy: Math.sin(angle) * 820,
-    radius: 9,
+    radius: 12,
     damage: 220,
     stun: 5,
     life: 1.8,
+    maxLife: 1.8,
+    seed: Math.random() * 1000,
     target,
     trail: [],
   });
@@ -3880,24 +3884,34 @@ function drawEnemy(enemy) {
     const electricPulse = 0.75 + Math.sin(player.elapsed * 18) * 0.18;
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
-    ctx.globalAlpha = 0.48 + electricPulse * 0.28;
+    ctx.globalAlpha = enemy.boss ? 0.66 + electricPulse * 0.34 : 0.48 + electricPulse * 0.28;
     ctx.strokeStyle = "#fff3b0";
-    ctx.lineWidth = enemy.boss ? 4 : 2.4;
-    for (let ring = 0; ring < 3; ring += 1) {
-      const ringRadius = enemy.radius * (1.35 + ring * 0.36 + Math.sin(player.elapsed * 11 + ring) * 0.07);
+    ctx.lineWidth = enemy.boss ? 6 : 2.4;
+    const ringCount = enemy.boss ? 4 : 3;
+    for (let ring = 0; ring < ringCount; ring += 1) {
+      const ringRadius = enemy.radius * (1.28 + ring * 0.34 + Math.sin(player.elapsed * 11 + ring) * 0.09);
       ctx.beginPath();
       ctx.arc(0, 0, ringRadius, player.elapsed * (2 + ring * 0.4), TAU + player.elapsed * (2 + ring * 0.4));
       ctx.stroke();
     }
-    ctx.lineWidth = enemy.boss ? 3.2 : 2.2;
-    for (let i = 0; i < 9; i += 1) {
-      const angle = player.elapsed * 5.2 + (TAU * i) / 9;
+    ctx.strokeStyle = enemy.boss ? "#80ffdb" : "#fff3b0";
+    ctx.lineWidth = enemy.boss ? 4.2 : 2.2;
+    const boltCount = enemy.boss ? 14 : 9;
+    for (let i = 0; i < boltCount; i += 1) {
+      const angle = player.elapsed * 6.4 + (TAU * i) / boltCount;
       const inner = enemy.radius * (0.75 + (i % 3) * 0.08);
-      const outer = enemy.radius * (1.55 + Math.sin(player.elapsed * 17 + i) * 0.18);
+      const outer = enemy.radius * ((enemy.boss ? 1.95 : 1.55) + Math.sin(player.elapsed * 17 + i) * 0.2);
       ctx.beginPath();
       ctx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
       ctx.lineTo(Math.cos(angle + 0.16) * outer, Math.sin(angle + 0.16) * outer);
       ctx.stroke();
+    }
+    if (enemy.boss) {
+      ctx.globalAlpha = 0.34 + electricPulse * 0.2;
+      ctx.fillStyle = "#80ffdb";
+      ctx.beginPath();
+      ctx.arc(0, 0, enemy.radius * 1.55, 0, TAU);
+      ctx.fill();
     }
 
     ctx.globalCompositeOperation = "source-over";
@@ -3991,17 +4005,63 @@ function drawProjectiles() {
   }
 
   for (const taser of taserShots) {
+    const start = worldToScreen(taser.originX ?? player.x, taser.originY ?? player.y);
+    const end = worldToScreen(taser.x, taser.y);
+    const wireAngle = Math.atan2(end.y - start.y, end.x - start.x);
+    const wireLength = Math.hypot(end.x - start.x, end.y - start.y);
+    const pulse = performance.now() * 0.018 + (taser.seed ?? 0);
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    for (let strand = -1; strand <= 1; strand += 2) {
+      ctx.beginPath();
+      for (let i = 0; i <= 9; i += 1) {
+        const t = i / 9;
+        const jitter = Math.sin(pulse + i * 1.8 + strand) * 6 + Math.cos(pulse * 0.7 + i * 2.4) * 3;
+        const x = start.x + Math.cos(wireAngle) * wireLength * t + Math.cos(wireAngle + Math.PI / 2) * (strand * 5 + jitter);
+        const y = start.y + Math.sin(wireAngle) * wireLength * t + Math.sin(wireAngle + Math.PI / 2) * (strand * 5 + jitter);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.shadowColor = "#80ffdb";
+      ctx.shadowBlur = 18;
+      ctx.strokeStyle = strand < 0 ? "rgba(128, 255, 219, 0.9)" : "rgba(255, 243, 176, 0.92)";
+      ctx.lineWidth = 3.2;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.86)";
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+    }
+    for (let i = 0; i < 5; i += 1) {
+      const t = (i + 0.5) / 5;
+      const x = start.x + (end.x - start.x) * t + Math.sin(pulse + i) * 8;
+      const y = start.y + (end.y - start.y) * t + Math.cos(pulse * 0.8 + i) * 8;
+      ctx.globalAlpha = 0.45 + Math.sin(pulse + i) * 0.12;
+      ctx.strokeStyle = i % 2 ? "#fff3b0" : "#80ffdb";
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(x - 8, y);
+      ctx.lineTo(x + 1, y - 5);
+      ctx.lineTo(x - 1, y + 5);
+      ctx.lineTo(x + 9, y);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+
     for (const point of taser.trail) {
       const trailPoint = worldToScreen(point.x, point.y);
-      ctx.globalAlpha = clamp(point.life / 0.18, 0, 1) * 0.78;
+      ctx.globalAlpha = clamp(point.life / 0.18, 0, 1) * 0.92;
       ctx.fillStyle = "#fff3b0";
       ctx.beginPath();
-      ctx.arc(trailPoint.x, trailPoint.y, 6.5, 0, TAU);
+      ctx.arc(trailPoint.x, trailPoint.y, 8.5, 0, TAU);
       ctx.fill();
       ctx.strokeStyle = "#80ffdb";
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.arc(trailPoint.x, trailPoint.y, 10, 0, TAU);
+      ctx.arc(trailPoint.x, trailPoint.y, 14, 0, TAU);
       ctx.stroke();
       ctx.globalAlpha = 1;
     }
@@ -4011,27 +4071,27 @@ function drawProjectiles() {
     ctx.translate(p.x, p.y);
     ctx.rotate(angle);
     ctx.shadowColor = "#fff3b0";
-    ctx.shadowBlur = 28;
+    ctx.shadowBlur = 38;
     ctx.strokeStyle = "#fff3b0";
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 7;
     ctx.beginPath();
-    ctx.moveTo(-18, 0);
-    ctx.lineTo(12, 0);
+    ctx.moveTo(-24, 0);
+    ctx.lineTo(17, 0);
     ctx.stroke();
     ctx.strokeStyle = "#80ffdb";
-    ctx.lineWidth = 2.4;
+    ctx.lineWidth = 3.2;
     ctx.beginPath();
-    ctx.moveTo(-20, -7);
-    ctx.lineTo(-10, 2);
-    ctx.lineTo(0, -5);
-    ctx.lineTo(10, 5);
+    ctx.moveTo(-24, -10);
+    ctx.lineTo(-13, 3);
+    ctx.lineTo(0, -8);
+    ctx.lineTo(14, 7);
     ctx.stroke();
     ctx.fillStyle = "#f9c74f";
     ctx.beginPath();
-    ctx.moveTo(16, 0);
-    ctx.lineTo(1, -10);
-    ctx.lineTo(5, 0);
-    ctx.lineTo(1, 10);
+    ctx.moveTo(24, 0);
+    ctx.lineTo(1, -15);
+    ctx.lineTo(7, 0);
+    ctx.lineTo(1, 15);
     ctx.closePath();
     ctx.fill();
     ctx.restore();
