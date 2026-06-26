@@ -1435,6 +1435,7 @@ function spawnAnnouncementWave() {
 function spawnExpressTrain() {
   const level = weapons.expressTrain.level;
   if (level <= 0) return;
+  const trainSizeScale = 1.3;
   const vertical = Math.random() < 0.5;
   const direction = Math.random() < 0.5 ? -1 : 1;
   const target = pickBossPriorityTarget(1300);
@@ -1442,8 +1443,8 @@ function spawnExpressTrain() {
     x: target ? target.x : player.x,
     y: target ? target.y : player.y,
     vertical,
-    width: 92 + level * 13,
-    trainLength: 520 + level * 34,
+    width: (92 + level * 13) * trainSizeScale,
+    trainLength: (520 + level * 34) * trainSizeScale,
     damage: (105 + level * 42) * 2,
     push: 470 + level * 62,
     angle: vertical ? (direction > 0 ? Math.PI / 2 : -Math.PI / 2) : direction > 0 ? 0 : Math.PI,
