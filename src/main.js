@@ -2600,7 +2600,7 @@ function usePoliceCall() {
   if (game.state !== "playing" || game.paused || game.pendingHeroChoice || player.policeCalls <= 0) return;
   player.policeCalls -= 1;
   const officers = [];
-  const officerCount = 45;
+  const officerCount = 60;
   for (let i = 0; i < officerCount; i += 1) {
     const angle = (TAU * i) / officerCount + rand(-0.035, 0.035);
     const ring = i % 2;
@@ -2616,11 +2616,11 @@ function usePoliceCall() {
     y: player.y,
     officers,
     distance: 0,
-    speed: 220,
+    speed: 110,
     damage: 32,
     radius: 28,
-    life: 4.4,
-    maxLife: 4.4,
+    life: 7.2,
+    maxLife: 7.2,
     hitTimers: new Map(),
   });
   addPopup("지하철 경찰대 출동!", player.x, player.y - 72, "#b8dcff", 0.9, 18);
