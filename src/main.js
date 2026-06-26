@@ -1392,7 +1392,7 @@ function spawnExpressTrain() {
     vertical,
     width: 92 + level * 13,
     trainLength: 520 + level * 34,
-    damage: (92 + level * 42) * 2,
+    damage: (150 + level * 42) * 2,
     push: 470 + level * 62,
     angle: vertical ? (direction > 0 ? Math.PI / 2 : -Math.PI / 2) : direction > 0 ? 0 : Math.PI,
     direction,
