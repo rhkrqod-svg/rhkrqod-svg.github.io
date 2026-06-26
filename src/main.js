@@ -2546,7 +2546,7 @@ function useFirstAidKit() {
 function getNextXpRequirement(previousRequirement, level) {
   const growth = 1.22 + Math.min(0.24, level * 0.014);
   const levelBonus = 34 + level * 5;
-  const earlyLevelMultiplier = level <= 10 ? 1.15 : 1;
+  const earlyLevelMultiplier = level <= 10 ? 1.2 : 1;
   return Math.max(12, Math.round((previousRequirement * growth + levelBonus) * player.xpNeedMultiplier * earlyLevelMultiplier));
 }
 
