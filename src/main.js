@@ -525,15 +525,6 @@ const upgradePool = [
     },
   },
   {
-    id: "laser",
-    name: "개찰구 관통 레이저",
-    desc: "가장 가까운 방향으로 긴 레이저를 쏘아 적을 관통",
-    apply: () => {
-      weapons.laser.level += 1;
-      weapons.laser.cooldown = Math.min(weapons.laser.cooldown, 0.65);
-    },
-  },
-  {
     id: "transferMaster",
     name: "환승 고수",
     desc: "경험치 흡수 범위 +30%",
@@ -592,7 +583,6 @@ const weaponUpgradeIds = new Set([
   "strapOrbit",
   "expressTrain",
   "customerMissile",
-  "laser",
 ]);
 
 let width = 1;
@@ -683,7 +673,6 @@ const weapons = {
   expressTrain: { level: 0, cooldown: 8.2 },
   transferGate: { level: 0, cooldown: 6.2 },
   customerMissile: { level: 0, cooldown: 0.45 },
-  laser: { level: 0, cooldown: 2.8 },
 };
 
 const game = {
@@ -948,7 +937,6 @@ function resetGame() {
   Object.assign(weapons.expressTrain, { level: 0, cooldown: 8.2 });
   Object.assign(weapons.transferGate, { level: 0, cooldown: 6.2 });
   Object.assign(weapons.customerMissile, { level: 0, cooldown: 0.45 });
-  Object.assign(weapons.laser, { level: 0, cooldown: 2.8 });
   game.state = "playing";
   game.paused = true;
   game.manualPaused = false;
@@ -1485,31 +1473,6 @@ function spawnCustomerMissiles() {
   playSound("missile");
 }
 
-function spawnLaser() {
-  const level = weapons.laser.level;
-  if (level <= 0 || enemies.length === 0) return;
-  const target = findNearestEnemy(920 + level * 80);
-  if (!target) return;
-  const angle = angleTo(player, target);
-  const laserWidth = Math.round(26 * Math.pow(1.5, level - 1));
-  damageZones.push({
-    x: player.x,
-    y: player.y,
-    angle,
-    length: 720 + level * 90,
-    width: laserWidth,
-    radius: 720 + level * 90,
-    damage: 42 + level * 25,
-    life: 1,
-    maxLife: 1,
-    color: "#64dfdf",
-    hits: new Set(),
-    kind: "laser",
-  });
-  addParticles(player.x + Math.cos(angle) * 46, player.y + Math.sin(angle) * 46, "#64dfdf", 10);
-  playSound("lightning");
-}
-
 function updatePlayer(delta) {
   const move = getMoveVector();
   const stunned = player.stunTimer > 0;
@@ -1568,12 +1531,6 @@ function updatePlayer(delta) {
   if (weapons.customerMissile.level > 0 && weapons.customerMissile.cooldown <= 0) {
     spawnCustomerMissiles();
     weapons.customerMissile.cooldown = Math.max(0.32, ((0.55 - weapons.customerMissile.level * 0.04) / 0.7) * 0.8);
-  }
-
-  weapons.laser.cooldown -= delta;
-  if (weapons.laser.level > 0 && weapons.laser.cooldown <= 0) {
-    spawnLaser();
-    weapons.laser.cooldown = Math.max(1.35, 3.15 - weapons.laser.level * 0.24);
   }
 
 }
@@ -2596,12 +2553,6 @@ function updateDamageZones(delta) {
             const distanceToEnemy = Math.hypot(enemy.x - zone.x, enemy.y - zone.y);
             const kickAngle = angleTo(zone, enemy);
             hit = distanceToEnemy < zone.radius + enemy.radius && Math.abs(angleDelta(kickAngle, zone.angle)) < zone.arc / 2;
-          } else if (zone.kind === "laser") {
-            const dx = enemy.x - zone.x;
-            const dy = enemy.y - zone.y;
-            const forward = Math.cos(zone.angle) * dx + Math.sin(zone.angle) * dy;
-            const side = Math.abs(-Math.sin(zone.angle) * dx + Math.cos(zone.angle) * dy);
-            hit = forward > 0 && forward < zone.length + enemy.radius && side < zone.width / 2 + enemy.radius;
           } else if (zone.kind === "gate") {
             const angle = zone.angle ?? 0;
             const sideAngle = angle + Math.PI / 2;
@@ -2943,7 +2894,6 @@ function updateHud() {
     weapons.strapOrbit.level > 0 ? { label: `손잡이 Lv.${weapons.strapOrbit.level}`, type: "attack", power: chipPower(weapons.strapOrbit.level), desc: "지하철 손잡이가 주위를 회전하며 닿은 적을 계속 공격합니다." } : null,
     weapons.expressTrain.level > 0 ? { label: `급행 Lv.${weapons.expressTrain.level}`, type: "attack", power: chipPower(weapons.expressTrain.level), desc: "급행열차가 지나가며 직선 경로의 적에게 피해와 넉백을 줍니다." } : null,
     weapons.customerMissile.level > 0 ? { label: `유도탄 Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level), desc: "고객센터 유도탄이 가까운 적을 추적해 폭발 피해를 줍니다." } : null,
-    weapons.laser.level > 0 ? { label: `레이저 Lv.${weapons.laser.level}`, type: "attack", power: chipPower(weapons.laser.level), desc: "개찰구 레이저가 전방을 관통하며 일정 시간 피해를 줍니다." } : null,
     player.defenseBreakTimer > 0 ? { label: `방어저하 ${Math.ceil(player.defenseBreakTimer)}초`, type: "status", desc: "현재 방어력이 감소한 상태입니다." } : null,
     player.stunTimer > 0 ? { label: `경직 ${Math.ceil(player.stunTimer)}초`, type: "status", desc: "잠시 움직일 수 없는 상태입니다." } : null,
     player.slowTimer > 0 ? { label: `둔화 ${Math.ceil(player.slowTimer)}초`, type: "status", desc: "이동 속도가 느려진 상태입니다." } : null,
@@ -3581,37 +3531,6 @@ function drawDamageZones() {
       ctx.arc(carX + trainLength - 26, carY + trainWidth * 0.7, 5, 0, TAU);
       ctx.fill();
       ctx.restore();
-      ctx.restore();
-      continue;
-    }
-
-    if (zone.kind === "laser") {
-      const flash = Math.sin(progress * Math.PI);
-      const endX = p.x + Math.cos(zone.angle) * zone.length;
-      const endY = p.y + Math.sin(zone.angle) * zone.length;
-      ctx.globalCompositeOperation = "lighter";
-      ctx.lineCap = "round";
-      ctx.globalAlpha = 0.16 + flash * 0.24;
-      ctx.strokeStyle = "#64dfdf";
-      ctx.lineWidth = zone.width * 2.1;
-      ctx.beginPath();
-      ctx.moveTo(p.x, p.y);
-      ctx.lineTo(endX, endY);
-      ctx.stroke();
-      ctx.globalAlpha = 0.42 + flash * 0.38;
-      ctx.strokeStyle = "#80ffdb";
-      ctx.lineWidth = zone.width;
-      ctx.beginPath();
-      ctx.moveTo(p.x, p.y);
-      ctx.lineTo(endX, endY);
-      ctx.stroke();
-      ctx.globalAlpha = 0.9;
-      ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = Math.max(3, zone.width * 0.22);
-      ctx.beginPath();
-      ctx.moveTo(p.x, p.y);
-      ctx.lineTo(endX, endY);
-      ctx.stroke();
       ctx.restore();
       continue;
     }
