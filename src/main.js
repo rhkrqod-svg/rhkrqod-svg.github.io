@@ -4695,10 +4695,10 @@ function drawDamageZones() {
       ctx.rotate(zone.angle);
       ctx.globalCompositeOperation = "lighter";
       if (isDansoStab) {
-        const bodyWidth = 28;
+        const bodyWidth = 22;
         ctx.globalAlpha = 0.12 + thrust * 0.22;
         ctx.fillStyle = "rgba(249, 199, 79, 0.18)";
-        roundedRect(8, -bodyWidth * 0.8, reach, bodyWidth * 1.6, 18);
+        roundedRect(8, -bodyWidth * 0.78, reach, bodyWidth * 1.56, 16);
         ctx.fill();
 
         ctx.globalCompositeOperation = "source-over";
@@ -4711,7 +4711,7 @@ function drawDamageZones() {
         roundedRect(12, -bodyWidth / 2, Math.max(24, reach - 8), bodyWidth, 14);
         ctx.fill();
         ctx.strokeStyle = "#2a1608";
-        ctx.lineWidth = 2.4;
+        ctx.lineWidth = 2;
         ctx.stroke();
 
         ctx.fillStyle = "#1b1209";
@@ -4721,12 +4721,12 @@ function drawDamageZones() {
           const hx = holeStart + i * holeGap;
           if (hx > reach - 38) break;
           ctx.beginPath();
-          ctx.ellipse(hx, -bodyWidth * 0.12, 4.2, 5.2, 0, 0, TAU);
+          ctx.ellipse(hx, -bodyWidth * 0.12, 3.4, 4.4, 0, 0, TAU);
           ctx.fill();
         }
 
         ctx.strokeStyle = "#ffe6a3";
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 2.4;
         for (const bandX of [32, reach * 0.34, reach * 0.62, Math.max(44, reach - 24)]) {
           ctx.beginPath();
           ctx.moveTo(bandX, -bodyWidth * 0.42);
@@ -4742,12 +4742,11 @@ function drawDamageZones() {
         ctx.arc(-10, 0, 12, 0, TAU);
         ctx.fill();
 
-        ctx.strokeStyle = "#ffe066";
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.moveTo(reach - 8, -bodyWidth * 0.36);
-        ctx.lineTo(reach + 18, 0);
-        ctx.lineTo(reach - 8, bodyWidth * 0.36);
+        ctx.fillStyle = "#f1c56b";
+        ctx.strokeStyle = "#2a1608";
+        ctx.lineWidth = 1.8;
+        roundedRect(Math.max(14, reach - 6), -bodyWidth * 0.5, bodyWidth * 0.72, bodyWidth, bodyWidth * 0.5);
+        ctx.fill();
         ctx.stroke();
       } else {
         ctx.globalAlpha = 0.18 + thrust * 0.35;
