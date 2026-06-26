@@ -499,7 +499,7 @@ const upgradePool = [
     desc: "강화 교통카드를 던져 적을 강하게 관통 공격",
     apply: () => {
       weapons.card.level += 1;
-      weapons.card.cooldown = Math.min(weapons.card.cooldown, 0.25);
+      weapons.card.cooldown = Math.min(weapons.card.cooldown, 0.23);
     },
   },
   {
@@ -533,7 +533,7 @@ const upgradePool = [
     desc: "가까운 적에게 유도탄을 발사하고 폭발 피해",
     apply: () => {
       weapons.customerMissile.level += 1;
-      weapons.customerMissile.cooldown = Math.min(weapons.customerMissile.cooldown, 0.32);
+      weapons.customerMissile.cooldown = Math.min(weapons.customerMissile.cooldown, 0.29);
     },
   },
   {
@@ -1588,7 +1588,7 @@ function updatePlayer(delta) {
   weapons.card.cooldown -= delta;
   if (weapons.card.level > 0 && weapons.card.cooldown <= 0) {
     spawnCard();
-    weapons.card.cooldown = Math.max(0.32, 1.05 - weapons.card.level * 0.11);
+    weapons.card.cooldown = Math.max(0.29, (1.05 - weapons.card.level * 0.11) * 0.9);
   }
 
   weapons.expressTrain.cooldown -= delta;
@@ -1606,7 +1606,7 @@ function updatePlayer(delta) {
   weapons.customerMissile.cooldown -= delta;
   if (weapons.customerMissile.level > 0 && weapons.customerMissile.cooldown <= 0) {
     spawnCustomerMissiles();
-    weapons.customerMissile.cooldown = Math.max(0.32, ((0.55 - weapons.customerMissile.level * 0.04) / 0.7) * 0.8);
+    weapons.customerMissile.cooldown = Math.max(0.29, ((0.55 - weapons.customerMissile.level * 0.04) / 0.7) * 0.72);
   }
 
 }
