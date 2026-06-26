@@ -1989,25 +1989,28 @@ function createDansoBoomerang(enemy) {
   const angle = angleTo(enemy, player);
   addSpeechBubble(enemy, "WHO ARE YOU!", 1.05);
   const speed = 420;
-  damageZones.push({
-    x: enemy.x + Math.cos(angle) * 54,
-    y: enemy.y + Math.sin(angle) * 54,
-    vx: Math.cos(angle) * speed,
-    vy: Math.sin(angle) * speed,
-    angle,
-    owner: enemy,
-    radius: 38,
-    damage: scaleBossDamage(enemy, 24),
-    push: 58,
-    stun: 0.28,
-    returnAt: 0.48,
-    life: 2.45,
-    maxLife: 2.45,
-    color: "#fff3b0",
-    hostile: true,
-    applied: false,
-    kind: "dansoBoomerang",
-  });
+  for (let i = 0; i < 3; i += 1) {
+    const spreadAngle = angle + (i - 1) * 0.18;
+    damageZones.push({
+      x: enemy.x + Math.cos(spreadAngle) * 62,
+      y: enemy.y + Math.sin(spreadAngle) * 62,
+      vx: Math.cos(spreadAngle) * speed,
+      vy: Math.sin(spreadAngle) * speed,
+      angle: spreadAngle,
+      owner: enemy,
+      radius: 76,
+      damage: scaleBossDamage(enemy, 24),
+      push: 58,
+      stun: 0.28,
+      returnAt: 0.48,
+      life: 2.45,
+      maxLife: 2.45,
+      color: "#fff3b0",
+      hostile: true,
+      applied: false,
+      kind: "dansoBoomerang",
+    });
+  }
   addParticles(enemy.x + Math.cos(angle) * 42, enemy.y + Math.sin(angle) * 42, "#fff3b0", 12);
 }
 
@@ -4718,17 +4721,18 @@ function drawDamageZones() {
       ctx.fill();
       ctx.globalAlpha = 0.96;
       ctx.strokeStyle = "#8d5524";
-      ctx.lineWidth = 10;
+      ctx.lineWidth = Math.max(10, zone.radius * 0.26);
       ctx.lineCap = "round";
+      const stickLength = Math.max(68, zone.radius * 1.78);
       ctx.beginPath();
-      ctx.moveTo(-34, 0);
-      ctx.lineTo(34, 0);
+      ctx.moveTo(-stickLength / 2, 0);
+      ctx.lineTo(stickLength / 2, 0);
       ctx.stroke();
       ctx.strokeStyle = "#ffe066";
-      ctx.lineWidth = 3;
+      ctx.lineWidth = Math.max(3, zone.radius * 0.08);
       ctx.beginPath();
-      ctx.moveTo(-28, -4);
-      ctx.lineTo(28, -4);
+      ctx.moveTo(-stickLength * 0.42, -zone.radius * 0.1);
+      ctx.lineTo(stickLength * 0.42, -zone.radius * 0.1);
       ctx.stroke();
       ctx.restore();
       continue;
