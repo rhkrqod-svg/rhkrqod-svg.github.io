@@ -2251,8 +2251,9 @@ function updateProjectiles(delta) {
       damageEnemy(target, taser.damage, "#fff3b0");
       if (enemies.includes(target)) {
         target.stunTimer = Math.max(target.stunTimer ?? 0, taser.stun);
-        addPopup("감전 5초", target.x, target.y - target.radius - 28, "#fff3b0", 0.85, 17);
-        addParticles(target.x, target.y, "#fff3b0", 28);
+        addPopup("기절 5초", target.x, target.y - target.radius - 36, "#fff3b0", 1.0, 20);
+        addParticles(target.x, target.y, "#fff3b0", 46);
+        addParticles(target.x, target.y, "#80ffdb", 24);
       }
       taserShots.splice(taserShots.indexOf(taser), 1);
       continue;
@@ -3712,9 +3713,32 @@ function drawEnemy(enemy) {
     ctx.fill();
   }
   if (enemy.stunTimer > 0) {
-    const stunY = -visualTop - (enemy.boss ? 36 : 25);
+    const stunY = -visualTop - (enemy.boss ? 44 : 28);
+    const electricPulse = 0.75 + Math.sin(player.elapsed * 18) * 0.18;
     ctx.save();
-    ctx.globalAlpha = 0.78 + Math.sin(player.elapsed * 24) * 0.18;
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = 0.48 + electricPulse * 0.28;
+    ctx.strokeStyle = "#fff3b0";
+    ctx.lineWidth = enemy.boss ? 4 : 2.4;
+    for (let ring = 0; ring < 3; ring += 1) {
+      const ringRadius = enemy.radius * (1.35 + ring * 0.36 + Math.sin(player.elapsed * 11 + ring) * 0.07);
+      ctx.beginPath();
+      ctx.arc(0, 0, ringRadius, player.elapsed * (2 + ring * 0.4), TAU + player.elapsed * (2 + ring * 0.4));
+      ctx.stroke();
+    }
+    ctx.lineWidth = enemy.boss ? 3.2 : 2.2;
+    for (let i = 0; i < 9; i += 1) {
+      const angle = player.elapsed * 5.2 + (TAU * i) / 9;
+      const inner = enemy.radius * (0.75 + (i % 3) * 0.08);
+      const outer = enemy.radius * (1.55 + Math.sin(player.elapsed * 17 + i) * 0.18);
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+      ctx.lineTo(Math.cos(angle + 0.16) * outer, Math.sin(angle + 0.16) * outer);
+      ctx.stroke();
+    }
+
+    ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = 0.9 + Math.sin(player.elapsed * 24) * 0.08;
     ctx.strokeStyle = "#fff3b0";
     ctx.fillStyle = "#fff3b0";
     ctx.lineWidth = 2;
@@ -3727,10 +3751,20 @@ function drawEnemy(enemy) {
       ctx.lineTo(offset + 5, stunY + 10);
       ctx.stroke();
     }
-    ctx.font = "900 12px system-ui";
+    const label = `기절 ${enemy.stunTimer.toFixed(1)}초`;
+    const labelWidth = enemy.boss ? 86 : 68;
+    const labelHeight = enemy.boss ? 23 : 19;
+    ctx.fillStyle = "rgba(12, 15, 18, 0.82)";
+    ctx.strokeStyle = "#fff3b0";
+    ctx.lineWidth = 2;
+    roundedRect(-labelWidth / 2, stunY + 11, labelWidth, labelHeight, 7);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#fff3b0";
+    ctx.font = `900 ${enemy.boss ? 13 : 11}px system-ui`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("STOP", 0, stunY + 22);
+    ctx.fillText(label, 0, stunY + 11 + labelHeight / 2);
     ctx.restore();
   }
 
@@ -3796,11 +3830,16 @@ function drawProjectiles() {
   for (const taser of taserShots) {
     for (const point of taser.trail) {
       const trailPoint = worldToScreen(point.x, point.y);
-      ctx.globalAlpha = clamp(point.life / 0.18, 0, 1) * 0.62;
+      ctx.globalAlpha = clamp(point.life / 0.18, 0, 1) * 0.78;
       ctx.fillStyle = "#fff3b0";
       ctx.beginPath();
-      ctx.arc(trailPoint.x, trailPoint.y, 4.5, 0, TAU);
+      ctx.arc(trailPoint.x, trailPoint.y, 6.5, 0, TAU);
       ctx.fill();
+      ctx.strokeStyle = "#80ffdb";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(trailPoint.x, trailPoint.y, 10, 0, TAU);
+      ctx.stroke();
       ctx.globalAlpha = 1;
     }
     const p = worldToScreen(taser.x, taser.y);
@@ -3809,19 +3848,27 @@ function drawProjectiles() {
     ctx.translate(p.x, p.y);
     ctx.rotate(angle);
     ctx.shadowColor = "#fff3b0";
-    ctx.shadowBlur = 18;
+    ctx.shadowBlur = 28;
     ctx.strokeStyle = "#fff3b0";
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 5;
     ctx.beginPath();
-    ctx.moveTo(-13, 0);
-    ctx.lineTo(8, 0);
+    ctx.moveTo(-18, 0);
+    ctx.lineTo(12, 0);
+    ctx.stroke();
+    ctx.strokeStyle = "#80ffdb";
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.moveTo(-20, -7);
+    ctx.lineTo(-10, 2);
+    ctx.lineTo(0, -5);
+    ctx.lineTo(10, 5);
     ctx.stroke();
     ctx.fillStyle = "#f9c74f";
     ctx.beginPath();
-    ctx.moveTo(12, 0);
-    ctx.lineTo(0, -7);
-    ctx.lineTo(3, 0);
-    ctx.lineTo(0, 7);
+    ctx.moveTo(16, 0);
+    ctx.lineTo(1, -10);
+    ctx.lineTo(5, 0);
+    ctx.lineTo(1, 10);
     ctx.closePath();
     ctx.fill();
     ctx.restore();
