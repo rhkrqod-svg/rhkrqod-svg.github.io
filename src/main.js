@@ -628,7 +628,7 @@ const player = {
   speed: 205,
   level: 1,
   xp: 0,
-  nextXp: 78,
+  nextXp: 90,
   kills: 0,
   score: 0,
   elapsed: 0,
@@ -894,7 +894,7 @@ function resetGame() {
     speed: 205,
     level: 1,
     xp: 0,
-    nextXp: 78,
+    nextXp: 90,
     kills: 0,
     score: 0,
     elapsed: 0,
@@ -2399,7 +2399,8 @@ function useFirstAidKit() {
 function getNextXpRequirement(previousRequirement, level) {
   const growth = 1.22 + Math.min(0.24, level * 0.014);
   const levelBonus = 34 + level * 5;
-  return Math.max(12, Math.round((previousRequirement * growth + levelBonus) * player.xpNeedMultiplier));
+  const earlyLevelMultiplier = level <= 10 ? 1.15 : 1;
+  return Math.max(12, Math.round((previousRequirement * growth + levelBonus) * player.xpNeedMultiplier * earlyLevelMultiplier));
 }
 
 function gainXp(amount) {
