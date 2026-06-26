@@ -1755,7 +1755,7 @@ function createDansoSwing(enemy) {
     x: enemy.x,
     y: enemy.y,
     angle,
-    length: 390,
+    length: Math.hypot(viewWidth, viewHeight) * 1.25,
     width: 48,
     radius: 390,
     damage: scaleBossDamage(enemy, 20),
@@ -4138,7 +4138,7 @@ function drawDamageZones() {
     if (zone.kind === "jarvanSpear" || zone.kind === "dansoStab") {
       const isDansoStab = zone.kind === "dansoStab";
       const thrust = Math.sin(progress * Math.PI);
-      const reachProgress = isDansoStab ? clamp(progress * 1.45, 0.22, 1) : clamp(Math.pow(clamp(progress * 1.08, 0, 1), 1.45), 0.04, 1);
+      const reachProgress = clamp(Math.pow(clamp(progress * 1.08, 0, 1), 1.45), 0.04, 1);
       const reach = zone.length * reachProgress;
       ctx.translate(p.x, p.y);
       ctx.rotate(zone.angle);
