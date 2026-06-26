@@ -321,7 +321,7 @@ button {
   gap: 4px;
   align-items: center;
   justify-content: center;
-  width: 108px;
+  width: 92px;
   min-height: 28px;
   border: 1px solid rgba(119, 190, 255, 0.42);
   border-radius: 7px;
@@ -350,9 +350,10 @@ button {
 
 .police-call span {
   color: rgba(248, 249, 250, 0.76);
-  font-size: 6.5px;
+  font-size: 5.8px;
   font-weight: 900;
   line-height: 1;
+  white-space: nowrap;
 }
 
 .police-call strong {
@@ -1041,7 +1042,7 @@ button {
   .police-call {
     left: 94px;
     bottom: max(88px, calc(env(safe-area-inset-bottom) + 88px));
-    width: 104px;
+    width: 90px;
   }
 
   .message:not(.start-screen) {
