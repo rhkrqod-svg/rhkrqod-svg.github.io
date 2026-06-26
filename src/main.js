@@ -1229,13 +1229,14 @@ function spawnBoss() {
   const boss = spawnEnemy({ ...base, weight: () => 0 }, true);
   const cycle = Math.floor(bossIndex / bossTypes.length);
   const multiplier = 0.68 + bossIndex * 0.27 + cycle * 0.4;
+  const hpBoost = 1.15;
   const damageMultiplier = 0.82 + bossIndex * 0.06;
-  boss.hp *= multiplier;
+  boss.hp *= multiplier * hpBoost;
   boss.maxHp = boss.hp;
   boss.damage *= damageMultiplier;
   boss.attackScale *= damageMultiplier;
   boss.score = Math.round(base.score * (1 + bossIndex * 0.25));
-  boss.xp = Math.round(boss.xp * multiplier);
+  boss.xp = Math.round(boss.xp * multiplier * hpBoost);
   boss.radius = (base.radius + Math.min(14, bossIndex * 2)) * BOSS_SIZE_SCALE;
   bossIndex += 1;
   showBossBanner(base.name);
