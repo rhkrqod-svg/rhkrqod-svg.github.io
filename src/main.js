@@ -1088,6 +1088,10 @@ function getNormalEnemyLevelScale() {
   return 1 + getEnemyLevelBonus() * 0.07;
 }
 
+function getNormalEnemyHpLevelScale() {
+  return 1 + getEnemyLevelBonus() * 0.1;
+}
+
 function scaleBossDamage(enemy, damage) {
   return Math.round(damage * (enemy.attackScale ?? 1));
 }
@@ -1145,7 +1149,7 @@ function spawnEnemy(type = null, boss = false) {
   const y = spawnPoint.y;
   const normalScale = boss ? 1 + minute * 0.11 : 1 + Math.min(1.35, minute * 0.08);
   const normalLevelScale = getNormalEnemyLevelScale();
-  const levelHpScale = boss ? getBossHpLevelScale() : normalLevelScale;
+  const levelHpScale = boss ? getBossHpLevelScale() : getNormalEnemyHpLevelScale();
   const hpScale = normalScale * levelHpScale * ENEMY_HP_GLOBAL_MULTIPLIER * (boss ? 1 : 1.15);
   const attackScale = boss ? getBossAttackLevelScale() : normalLevelScale;
   const enemy = {
