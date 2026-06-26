@@ -1220,12 +1220,6 @@ function spawnBoss() {
 function updateBossSchedule() {
   if (enemies.some((enemy) => enemy.boss)) return;
 
-  const timeUntilBoss = nextBossAt - player.elapsed;
-  if (timeUntilBoss <= 5 && timeUntilBoss > 0 && bossWarningFor !== nextBossAt) {
-    bossWarningFor = nextBossAt;
-    showBossBanner("보스 접근 중");
-  }
-
   if (player.elapsed >= nextBossAt) {
     spawnBoss();
     nextBossAt = player.elapsed + 55;
