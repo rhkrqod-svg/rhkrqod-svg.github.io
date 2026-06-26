@@ -1695,7 +1695,7 @@ function updatePlayer(delta) {
   if (player.regenLevel > 0 && player.hp < player.maxHp) {
     player.regenTimer -= delta;
     if (player.regenTimer <= 0) {
-      healPlayer(3 + player.regenLevel * 2, false);
+      healPlayer(player.regenLevel, false);
       player.regenTimer = Math.max(2.2, 5.2 - player.regenLevel * 0.32);
     }
   }
