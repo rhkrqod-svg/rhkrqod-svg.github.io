@@ -832,7 +832,8 @@ function fadeMusicTrack(kind, targetVolume, { reset = false } = {}) {
 }
 
 function updateBgm() {
-  const canPlay = game.state === "playing" && !game.paused && player.alive;
+  const upgradePicking = refs.upgradePanel && !refs.upgradePanel.classList.contains("hidden");
+  const canPlay = game.state === "playing" && player.alive && (!game.paused || upgradePicking);
   const hasBoss = enemies.some((enemy) => enemy.boss);
   const shouldPlayBoss = canPlay && hasBoss;
   const shouldPlayNormal = canPlay && !hasBoss;
