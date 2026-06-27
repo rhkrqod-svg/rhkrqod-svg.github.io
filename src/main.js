@@ -646,6 +646,7 @@ let skillTooltipTimer = 0;
 let skillAnnouncement = null;
 let leaderboardSubmitting = false;
 let bossBannerTimer = 0;
+let bossBannerNameTimer = 0;
 
 const keys = new Set();
 const enemies = [];
@@ -1207,7 +1208,7 @@ function selectHero(heroId) {
   player.damageReduction = 0;
   refs.heroPanel.classList.add("hidden");
   game.pendingHeroChoice = false;
-  game.pendingStarterChoices = 2;
+  game.pendingStarterChoices = 3;
   updateHud();
   openUpgradePanel();
 }
@@ -1558,15 +1559,22 @@ function updateBossSchedule() {
 
 function showBossBanner(name, { boss = false } = {}) {
   window.clearTimeout(bossBannerTimer);
+  window.clearTimeout(bossBannerNameTimer);
   refs.bossBanner.classList.toggle("boss-alert", boss);
-  refs.bossBanner.innerHTML = boss
-    ? `<strong>보스출현</strong><span>${name}</span>`
-    : `<strong>${name}</strong>`;
+  refs.bossBanner.classList.remove("name-phase");
+  refs.bossBanner.innerHTML = boss ? "<strong>보스출현</strong>" : `<strong>${name}</strong>`;
   refs.bossBanner.classList.add("active");
+  if (boss) {
+    bossBannerNameTimer = window.setTimeout(() => {
+      refs.bossBanner.classList.add("name-phase");
+      refs.bossBanner.innerHTML = `<strong>보스출현</strong><span>${name}</span>`;
+    }, 550);
+  }
   bossBannerTimer = window.setTimeout(() => {
     refs.bossBanner.classList.remove("active");
     refs.bossBanner.classList.remove("boss-alert");
-  }, boss ? 2500 : 2200);
+    refs.bossBanner.classList.remove("name-phase");
+  }, boss ? 1750 : 2200);
 }
 
 function getMoveVector() {
@@ -3155,7 +3163,7 @@ function openUpgradePanel() {
   game.paused = true;
   if (refs.upgradeTitle) {
     refs.upgradeTitle.textContent =
-      game.pendingStarterChoices > 0 ? `기본 스킬 선택 ${3 - game.pendingStarterChoices}/2` : "레벨 업";
+      game.pendingStarterChoices > 0 ? `기본 스킬 선택 ${4 - game.pendingStarterChoices}/3` : "레벨 업";
   }
   updateUpgradePauseButton();
   const starterPool = upgradePool.filter((choice) => choice && weaponUpgradeIds.has(choice.id));
