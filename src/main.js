@@ -53,6 +53,9 @@ const sound = {
   master: null,
   enabled: true,
   voiceEnabled: true,
+  bossMusic: null,
+  bossMusicTargetVolume: 0,
+  bossMusicFade: null,
   last: new Map(),
 };
 
@@ -78,6 +81,8 @@ const ENEMY_HP_GLOBAL_MULTIPLIER = 1.6;
 const ENEMY_XP_REWARD_MULTIPLIER = 1.35;
 const XP_ORB_LIFETIME = 18;
 const XP_ORB_FADE_TIME = 5;
+const BOSS_MUSIC_SRC = "/assets/audio/neon-circuit-boss.mp3";
+const BOSS_MUSIC_VOLUME = 0.42;
 
 const heroTypes = [
   {
@@ -770,6 +775,68 @@ function ensureAudio() {
   return sound.ctx;
 }
 
+function ensureBossMusic() {
+  if (!sound.enabled) return null;
+  if (!sound.bossMusic) {
+    const music = new Audio(BOSS_MUSIC_SRC);
+    music.loop = true;
+    music.preload = "auto";
+    music.volume = 0;
+    music.playsInline = true;
+    sound.bossMusic = music;
+  }
+  return sound.bossMusic;
+}
+
+function fadeBossMusic(targetVolume, { reset = false } = {}) {
+  const music = ensureBossMusic();
+  if (!music) return;
+  sound.bossMusicTargetVolume = targetVolume;
+  window.clearInterval(sound.bossMusicFade);
+
+  if (reset) {
+    music.pause();
+    music.currentTime = 0;
+    music.volume = 0;
+    return;
+  }
+
+  sound.bossMusicFade = window.setInterval(() => {
+    const diff = sound.bossMusicTargetVolume - music.volume;
+    if (Math.abs(diff) < 0.015) {
+      music.volume = sound.bossMusicTargetVolume;
+      if (music.volume <= 0) {
+        music.pause();
+        music.currentTime = 0;
+      }
+      window.clearInterval(sound.bossMusicFade);
+      sound.bossMusicFade = null;
+      return;
+    }
+    music.volume = clamp(music.volume + Math.sign(diff) * 0.035, 0, BOSS_MUSIC_VOLUME);
+  }, 45);
+}
+
+function updateBossMusic() {
+  const shouldPlay = game.state === "playing" && !game.paused && player.alive && enemies.some((enemy) => enemy.boss);
+  if (!shouldPlay && !sound.bossMusic) return;
+  const music = ensureBossMusic();
+  if (!music) return;
+
+  if (shouldPlay) {
+    if (music.paused) {
+      music.play().catch(() => {});
+    }
+    if (sound.bossMusicTargetVolume !== BOSS_MUSIC_VOLUME) fadeBossMusic(BOSS_MUSIC_VOLUME);
+  } else if (!music.paused && sound.bossMusicTargetVolume !== 0) {
+    fadeBossMusic(0);
+  }
+}
+
+function stopBossMusic() {
+  fadeBossMusic(0, { reset: true });
+}
+
 function soundAllowed(id, gap = 0) {
   const now = performance.now();
   const last = sound.last.get(id) ?? 0;
@@ -986,6 +1053,8 @@ function playSound(id) {
 
 function resetGame() {
   ensureAudio();
+  ensureBossMusic();
+  stopBossMusic();
   playSound("ui");
   enemies.length = 0;
   bullets.length = 0;
@@ -1127,6 +1196,7 @@ function togglePause() {
   game.manualPaused = !game.manualPaused;
   game.paused = game.manualPaused;
   resetFloatingStickMove();
+  updateBossMusic();
   playSound("ui");
   updateHud();
 }
@@ -1136,6 +1206,7 @@ function toggleUpgradePause() {
   game.manualPaused = !game.manualPaused;
   game.paused = game.manualPaused;
   resetFloatingStickMove();
+  updateBossMusic();
   playSound("ui");
   updateUpgradePauseButton();
   updateHud();
@@ -1438,6 +1509,7 @@ function spawnBoss() {
   showBossBanner(base.name);
   addPopup("보스 등장", player.x, player.y - 90, "#ffe066", 1.8, 28);
   playSound("boss");
+  updateBossMusic();
 }
 
 function updateBossSchedule() {
@@ -2684,6 +2756,7 @@ function killEnemy(enemy) {
     for (let i = 0; i < 16; i += 1) dropXp(enemy.x + rand(-45, 45), enemy.y + rand(-45, 45), 12);
     nextBossAt = player.elapsed + Math.max(34, 46 - Math.min(12, bossIndex * 2));
     bossWarningFor = 0;
+    updateBossMusic();
   } else {
     playSound("kill");
   }
@@ -3521,6 +3594,7 @@ function update(delta) {
 
 function endGame(won) {
   playSound(won ? "levelUp" : "gameOver");
+  stopBossMusic();
   player.alive = false;
   game.state = "ended";
   game.manualPaused = false;
@@ -5788,6 +5862,7 @@ function frame(now) {
   const delta = Math.min(0.035, (now - lastFrame) / 1000 || 0);
   lastFrame = now;
   update(delta);
+  updateBossMusic();
   render();
   requestAnimationFrame(frame);
 }
