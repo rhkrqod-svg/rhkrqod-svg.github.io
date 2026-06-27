@@ -2748,6 +2748,7 @@ function usePoliceCall() {
     life: 7.2,
     maxLife: 7.2,
     hitTimers: new Map(),
+    hitCounts: new Map(),
   });
   addPopup("지하철 경찰대 출동!", player.x, player.y - 72, "#b8dcff", 0.9, 18);
   addParticles(player.x, player.y, "#77beff", 26);
@@ -2844,8 +2845,10 @@ function updatePoliceSquads(delta) {
       }
       for (const enemy of [...enemies]) {
         if (Math.hypot(enemy.x - officer.x, enemy.y - officer.y) > enemy.radius + squad.radius) continue;
+        if ((squad.hitCounts.get(enemy) ?? 0) >= 3) continue;
         if (squad.hitTimers.has(enemy)) continue;
         squad.hitTimers.set(enemy, 0.22);
+        squad.hitCounts.set(enemy, (squad.hitCounts.get(enemy) ?? 0) + 1);
         damageEnemy(enemy, squad.damage, "#b8dcff");
         const push = officer.angle;
         const pushAmount = enemy.boss ? 14 : 38;
