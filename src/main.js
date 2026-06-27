@@ -911,26 +911,6 @@ function playNoise({ duration = 0.14, volume = 0.22, filter = 900, when = 0 } = 
   source.start(start);
 }
 
-function speakBossLine(text) {
-  if (!sound.enabled || !sound.voiceEnabled || !("speechSynthesis" in window) || !soundAllowed("bossVoiceSpeech", 1250)) return;
-  const cleanText = String(text ?? "").replace(/[!?~]+/g, "").trim();
-  if (!cleanText || cleanText.length > 28) return;
-  if (/[�]/.test(cleanText)) return;
-  try {
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = "ko-KR";
-    utterance.rate = 1.08;
-    utterance.pitch = 0.78;
-    utterance.volume = 0.68;
-    const voices = window.speechSynthesis.getVoices?.() ?? [];
-    utterance.voice = voices.find((voice) => voice.lang?.toLowerCase().startsWith("ko")) ?? null;
-    window.speechSynthesis.speak(utterance);
-  } catch {
-    sound.voiceEnabled = false;
-  }
-}
-
 function speakSkillName(text) {
   if (!sound.enabled || !sound.voiceEnabled || !("speechSynthesis" in window) || !soundAllowed("skillVoiceSpeech", 1150)) return;
   const cleanText = String(text ?? "").replace(/Lv\.\d+/gi, "").replace(/[!?~]+/g, "").trim();
@@ -1023,11 +1003,6 @@ function playSound(id) {
       playTone({ type: "square", frequency: 740, endFrequency: 980, duration: 0.12, volume: 0.16 });
       playTone({ type: "square", frequency: 980, endFrequency: 740, duration: 0.12, volume: 0.14, when: 0.14 });
       playNoise({ duration: 0.16, volume: 0.08, filter: 2100, when: 0.06 });
-      break;
-    case "bossVoice":
-      if (!soundAllowed(id, 650)) return;
-      playTone({ type: "sawtooth", frequency: 180, endFrequency: 120, duration: 0.1, volume: 0.13 });
-      playTone({ type: "triangle", frequency: 260, endFrequency: 190, duration: 0.12, volume: 0.09, when: 0.07 });
       break;
     case "bell":
       playTone({ type: "sine", frequency: 980, endFrequency: 980, duration: 0.08, volume: 0.2 });
