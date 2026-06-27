@@ -656,10 +656,10 @@ const player = {
   kills: 0,
   score: 0,
   elapsed: 0,
-  damage: 19,
+  damage: 25,
   attackPower: 100,
   defensePower: 100,
-  fireRate: 0.5,
+  fireRate: 0.35,
   fireCooldown: 0,
   shots: 1,
   bulletSpeed: 348,
@@ -1007,10 +1007,10 @@ function resetGame() {
     kills: 0,
     score: 0,
     elapsed: 0,
-    damage: 19,
+    damage: 25,
     attackPower: 100,
     defensePower: 100,
-    fireRate: 0.5,
+    fireRate: 0.35,
     fireCooldown: 0.18,
     shots: 1,
     bulletSpeed: 348,
@@ -1086,7 +1086,7 @@ function selectHero(heroId) {
   player.heroAccent = hero.accent;
   player.maxHp = hero.maxHp;
   player.hp = hero.maxHp;
-  player.damage = 19;
+  player.damage = 25;
   player.attackPower = hero.atk;
   player.defensePower = hero.def;
   player.speed = 205 * (hero.spd / 100);
