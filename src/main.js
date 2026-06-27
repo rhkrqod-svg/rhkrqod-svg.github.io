@@ -2012,7 +2012,7 @@ function createDansoSwing(enemy) {
     y: enemy.y,
     angle,
     length: Math.hypot(viewWidth, viewHeight) * 1.25,
-    width: 48,
+    width: 32,
     radius: Math.hypot(viewWidth, viewHeight) * 1.25,
     damage: scaleBossDamage(enemy, 20),
     push: 54,
@@ -2050,29 +2050,38 @@ function createDansoShockwave(enemy) {
 function createDansoBoomerang(enemy) {
   const angle = angleTo(enemy, player);
   addSpeechBubble(enemy, "WHO ARE YOU!", 1.05);
-  const speed = 420;
-  for (let i = 0; i < 3; i += 1) {
-    const spreadAngle = angle + (i - 1) * 0.18;
-    damageZones.push({
-      x: enemy.x + Math.cos(spreadAngle) * 62,
-      y: enemy.y + Math.sin(spreadAngle) * 62,
-      vx: Math.cos(spreadAngle) * speed,
-      vy: Math.sin(spreadAngle) * speed,
-      angle: spreadAngle,
-      owner: enemy,
-      radius: 76,
-      damage: scaleBossDamage(enemy, 24),
-      push: 58,
-      stun: 0.28,
-      returnAt: 0.48,
-      life: 2.45,
-      maxLife: 2.45,
-      color: "#fff3b0",
-      hostile: true,
-      applied: false,
-      kind: "dansoBoomerang",
-    });
-  }
+  const startX = enemy.x + Math.cos(angle) * 54;
+  const startY = enemy.y + Math.sin(angle) * 54;
+  const targetDistance = Math.min(720, Math.max(260, Math.hypot(player.x - enemy.x, player.y - enemy.y) + 120));
+  const targetX = enemy.x + Math.cos(angle) * targetDistance;
+  const targetY = enemy.y + Math.sin(angle) * targetDistance;
+  const curveSide = Math.random() < 0.5 ? -1 : 1;
+  const curveOffset = curveSide * Math.min(360, Math.max(190, targetDistance * 0.42));
+  damageZones.push({
+    x: startX,
+    y: startY,
+    prevX: startX,
+    prevY: startY,
+    startX,
+    startY,
+    targetX,
+    targetY,
+    curveOffset,
+    angle,
+    owner: enemy,
+    radius: 66,
+    damage: scaleBossDamage(enemy, 24),
+    push: 58,
+    stun: 0.28,
+    returnAt: 0.56,
+    life: 2.7,
+    maxLife: 2.7,
+    color: "#fff3b0",
+    hostile: true,
+    applied: false,
+    kind: "dansoBoomerang",
+    trail: [],
+  });
   addParticles(enemy.x + Math.cos(angle) * 42, enemy.y + Math.sin(angle) * 42, "#fff3b0", 12);
 }
 
@@ -3035,6 +3044,46 @@ function updateDamageZones(delta) {
   for (const zone of [...damageZones]) {
     zone.life -= delta;
     const progress = 1 - zone.life / zone.maxLife;
+    if (zone.kind === "dansoBoomerang" && zone.startX !== undefined) {
+      const returnAt = zone.returnAt ?? 0.56;
+      const owner = zone.owner ?? zone;
+      const startX = zone.startX;
+      const startY = zone.startY;
+      const targetX = zone.targetX ?? zone.x;
+      const targetY = zone.targetY ?? zone.y;
+      const outboundAngle = Math.atan2(targetY - startY, targetX - startX);
+      const sideAngle = outboundAngle + Math.PI / 2;
+      const offset = zone.curveOffset ?? 240;
+      const previousX = zone.x;
+      const previousY = zone.y;
+      let nextX;
+      let nextY;
+      if (progress < returnAt) {
+        const t = clamp(progress / returnAt, 0, 1);
+        const controlX = (startX + targetX) / 2 + Math.cos(sideAngle) * offset;
+        const controlY = (startY + targetY) / 2 + Math.sin(sideAngle) * offset;
+        nextX = (1 - t) ** 2 * startX + 2 * (1 - t) * t * controlX + t ** 2 * targetX;
+        nextY = (1 - t) ** 2 * startY + 2 * (1 - t) * t * controlY + t ** 2 * targetY;
+      } else {
+        const t = clamp((progress - returnAt) / (1 - returnAt), 0, 1);
+        const endX = owner.x ?? targetX;
+        const endY = owner.y ?? targetY;
+        const returnAngle = Math.atan2(endY - targetY, endX - targetX);
+        const returnSide = returnAngle - Math.PI / 2;
+        const controlX = (targetX + endX) / 2 + Math.cos(returnSide) * offset * 0.62;
+        const controlY = (targetY + endY) / 2 + Math.sin(returnSide) * offset * 0.62;
+        nextX = (1 - t) ** 2 * targetX + 2 * (1 - t) * t * controlX + t ** 2 * endX;
+        nextY = (1 - t) ** 2 * targetY + 2 * (1 - t) * t * controlY + t ** 2 * endY;
+      }
+      zone.x = nextX;
+      zone.y = nextY;
+      zone.angle = Math.atan2(nextY - previousY, nextX - previousX);
+      zone.trail = zone.trail ?? [];
+      zone.trail.push({ x: nextX, y: nextY, life: 0.24 });
+      if (zone.trail.length > 12) zone.trail.shift();
+      for (const point of zone.trail) point.life -= delta;
+      zone.trail = zone.trail.filter((point) => point.life > 0);
+    }
     if (zone.vx || zone.vy) {
       if (zone.kind === "dansoBoomerang") {
         const turnProgress = 1 - zone.life / zone.maxLife;
@@ -4851,28 +4900,43 @@ function drawDamageZones() {
     }
 
     if (zone.kind === "dansoThrow" || zone.kind === "dansoBoomerang") {
+      if (zone.trail?.length > 1) {
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+        ctx.strokeStyle = "rgba(255, 243, 176, 0.28)";
+        ctx.lineWidth = Math.max(3, zone.radius * 0.08);
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        for (let i = 0; i < zone.trail.length; i += 1) {
+          const trailPoint = worldToScreen(zone.trail[i].x, zone.trail[i].y);
+          if (i === 0) ctx.moveTo(trailPoint.x, trailPoint.y);
+          else ctx.lineTo(trailPoint.x, trailPoint.y);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
       ctx.translate(p.x, p.y);
       ctx.rotate(zone.angle + progress * 18);
       ctx.globalCompositeOperation = "lighter";
-      ctx.globalAlpha = 0.22;
+      ctx.globalAlpha = 0.16;
       ctx.fillStyle = "rgba(249, 199, 79, 0.22)";
       ctx.beginPath();
-      ctx.arc(0, 0, zone.radius * 1.35, 0, TAU);
+      ctx.arc(0, 0, zone.radius * 1.08, 0, TAU);
       ctx.fill();
       ctx.globalAlpha = 0.96;
       ctx.strokeStyle = "#8d5524";
-      ctx.lineWidth = Math.max(10, zone.radius * 0.26);
+      ctx.lineWidth = Math.max(7, zone.radius * 0.17);
       ctx.lineCap = "round";
-      const stickLength = Math.max(68, zone.radius * 1.78);
+      const stickLength = Math.max(82, zone.radius * 1.92);
       ctx.beginPath();
       ctx.moveTo(-stickLength / 2, 0);
       ctx.lineTo(stickLength / 2, 0);
       ctx.stroke();
       ctx.strokeStyle = "#ffe066";
-      ctx.lineWidth = Math.max(3, zone.radius * 0.08);
+      ctx.lineWidth = Math.max(2, zone.radius * 0.045);
       ctx.beginPath();
-      ctx.moveTo(-stickLength * 0.42, -zone.radius * 0.1);
-      ctx.lineTo(stickLength * 0.42, -zone.radius * 0.1);
+      ctx.moveTo(-stickLength * 0.42, -zone.radius * 0.06);
+      ctx.lineTo(stickLength * 0.42, -zone.radius * 0.06);
       ctx.stroke();
       ctx.restore();
       continue;
@@ -5043,7 +5107,7 @@ function drawDamageZones() {
       ctx.rotate(zone.angle);
       ctx.globalCompositeOperation = "lighter";
       if (isDansoStab) {
-        const bodyWidth = 22;
+        const bodyWidth = 14;
         ctx.globalAlpha = 0.12 + thrust * 0.22;
         ctx.fillStyle = "rgba(249, 199, 79, 0.18)";
         roundedRect(8, -bodyWidth * 0.78, reach, bodyWidth * 1.56, 16);
@@ -5069,7 +5133,7 @@ function drawDamageZones() {
           const hx = holeStart + i * holeGap;
           if (hx > reach - 38) break;
           ctx.beginPath();
-          ctx.ellipse(hx, -bodyWidth * 0.12, 3.4, 4.4, 0, 0, TAU);
+          ctx.ellipse(hx, -bodyWidth * 0.12, 2.4, 3.2, 0, 0, TAU);
           ctx.fill();
         }
 
@@ -5083,11 +5147,11 @@ function drawDamageZones() {
         }
 
         ctx.fillStyle = "#6b3f1d";
-        roundedRect(0, -18, 26, 36, 9);
+        roundedRect(0, -13, 22, 26, 8);
         ctx.fill();
         ctx.fillStyle = "#f1c9a4";
         ctx.beginPath();
-        ctx.arc(-10, 0, 12, 0, TAU);
+        ctx.arc(-9, 0, 10, 0, TAU);
         ctx.fill();
 
         ctx.fillStyle = "#f1c56b";
