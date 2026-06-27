@@ -4134,6 +4134,7 @@ function drawProjectiles() {
   for (const taser of taserShots) {
     const start = worldToScreen(taser.originX ?? player.x, taser.originY ?? player.y);
     const end = worldToScreen(taser.x, taser.y);
+    const targetPoint = taser.target ? worldToScreen(taser.target.x, taser.target.y) : end;
     const wireAngle = Math.atan2(end.y - start.y, end.x - start.x);
     const wireLength = Math.hypot(end.x - start.x, end.y - start.y);
     const pulse = performance.now() * 0.018 + (taser.seed ?? 0);
@@ -4141,38 +4142,81 @@ function drawProjectiles() {
     ctx.globalCompositeOperation = "lighter";
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    for (let strand = -1; strand <= 1; strand += 2) {
+
+    ctx.shadowColor = "#fff3b0";
+    ctx.shadowBlur = 30;
+    const muzzlePulse = 1 + Math.sin(pulse * 1.45) * 0.16;
+    ctx.globalAlpha = 0.42;
+    ctx.fillStyle = "rgba(255, 243, 176, 0.45)";
+    ctx.beginPath();
+    ctx.arc(start.x, start.y, 18 * muzzlePulse, 0, TAU);
+    ctx.fill();
+    ctx.globalAlpha = 0.84;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 3.8;
+    ctx.beginPath();
+    ctx.moveTo(start.x - Math.cos(wireAngle) * 8, start.y - Math.sin(wireAngle) * 8);
+    ctx.lineTo(start.x + Math.cos(wireAngle) * 30, start.y + Math.sin(wireAngle) * 30);
+    ctx.stroke();
+
+    for (let strand = -2; strand <= 2; strand += 1) {
       ctx.beginPath();
-      for (let i = 0; i <= 9; i += 1) {
-        const t = i / 9;
-        const jitter = Math.sin(pulse + i * 1.8 + strand) * 6 + Math.cos(pulse * 0.7 + i * 2.4) * 3;
-        const x = start.x + Math.cos(wireAngle) * wireLength * t + Math.cos(wireAngle + Math.PI / 2) * (strand * 5 + jitter);
-        const y = start.y + Math.sin(wireAngle) * wireLength * t + Math.sin(wireAngle + Math.PI / 2) * (strand * 5 + jitter);
+      for (let i = 0; i <= 13; i += 1) {
+        const t = i / 13;
+        const jitter = Math.sin(pulse + i * 1.65 + strand * 0.7) * 9 + Math.cos(pulse * 0.72 + i * 2.15) * 5;
+        const sideOffset = strand === 0 ? jitter * 0.35 : strand * 6 + jitter;
+        const x = start.x + Math.cos(wireAngle) * wireLength * t + Math.cos(wireAngle + Math.PI / 2) * sideOffset;
+        const y = start.y + Math.sin(wireAngle) * wireLength * t + Math.sin(wireAngle + Math.PI / 2) * sideOffset;
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
-      ctx.shadowColor = "#80ffdb";
-      ctx.shadowBlur = 18;
-      ctx.strokeStyle = strand < 0 ? "rgba(128, 255, 219, 0.9)" : "rgba(255, 243, 176, 0.92)";
-      ctx.lineWidth = 3.2;
+      ctx.shadowColor = strand === 0 ? "#ffffff" : "#80ffdb";
+      ctx.shadowBlur = strand === 0 ? 34 : 22;
+      ctx.strokeStyle =
+        strand === 0 ? "rgba(255, 255, 255, 0.98)" : strand % 2 ? "rgba(128, 255, 219, 0.88)" : "rgba(255, 243, 176, 0.9)";
+      ctx.lineWidth = strand === 0 ? 5.8 : 3.5;
       ctx.stroke();
       ctx.shadowBlur = 0;
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.86)";
-      ctx.lineWidth = 1.2;
-      ctx.stroke();
     }
-    for (let i = 0; i < 5; i += 1) {
-      const t = (i + 0.5) / 5;
+
+    for (let i = 0; i < 11; i += 1) {
+      const t = (i + 0.5) / 11;
       const x = start.x + (end.x - start.x) * t + Math.sin(pulse + i) * 8;
       const y = start.y + (end.y - start.y) * t + Math.cos(pulse * 0.8 + i) * 8;
-      ctx.globalAlpha = 0.45 + Math.sin(pulse + i) * 0.12;
+      ctx.globalAlpha = 0.48 + Math.sin(pulse + i) * 0.18;
       ctx.strokeStyle = i % 2 ? "#fff3b0" : "#80ffdb";
-      ctx.lineWidth = 2.4;
+      ctx.lineWidth = i % 3 === 0 ? 3.8 : 2.4;
       ctx.beginPath();
-      ctx.moveTo(x - 8, y);
-      ctx.lineTo(x + 1, y - 5);
-      ctx.lineTo(x - 1, y + 5);
-      ctx.lineTo(x + 9, y);
+      ctx.moveTo(x - 11, y);
+      ctx.lineTo(x + 1, y - 7);
+      ctx.lineTo(x - 2, y + 7);
+      ctx.lineTo(x + 12, y);
+      ctx.stroke();
+    }
+
+    const impactPulse = 1 + Math.sin(pulse * 1.7) * 0.18;
+    ctx.globalAlpha = 0.74;
+    ctx.shadowColor = "#80ffdb";
+    ctx.shadowBlur = 34;
+    ctx.strokeStyle = "#80ffdb";
+    ctx.lineWidth = 4.2;
+    ctx.beginPath();
+    ctx.arc(targetPoint.x, targetPoint.y, 28 * impactPulse, 0, TAU);
+    ctx.stroke();
+    ctx.strokeStyle = "#fff3b0";
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.arc(targetPoint.x, targetPoint.y, 42 + Math.sin(pulse) * 5, pulse, pulse + Math.PI * 1.35);
+    ctx.stroke();
+    for (let i = 0; i < 8; i += 1) {
+      const a = pulse * 0.8 + (TAU * i) / 8;
+      const inner = 18 + Math.sin(pulse + i) * 3;
+      const outer = 48 + Math.cos(pulse * 1.3 + i) * 8;
+      ctx.strokeStyle = i % 2 ? "#ffffff" : "#fff3b0";
+      ctx.lineWidth = 2.6;
+      ctx.beginPath();
+      ctx.moveTo(targetPoint.x + Math.cos(a) * inner, targetPoint.y + Math.sin(a) * inner);
+      ctx.lineTo(targetPoint.x + Math.cos(a) * outer, targetPoint.y + Math.sin(a) * outer);
       ctx.stroke();
     }
     ctx.globalAlpha = 1;
@@ -4180,15 +4224,15 @@ function drawProjectiles() {
 
     for (const point of taser.trail) {
       const trailPoint = worldToScreen(point.x, point.y);
-      ctx.globalAlpha = clamp(point.life / 0.18, 0, 1) * 0.92;
+      ctx.globalAlpha = clamp(point.life / 0.18, 0, 1) * 0.96;
       ctx.fillStyle = "#fff3b0";
       ctx.beginPath();
-      ctx.arc(trailPoint.x, trailPoint.y, 8.5, 0, TAU);
+      ctx.arc(trailPoint.x, trailPoint.y, 10.5, 0, TAU);
       ctx.fill();
       ctx.strokeStyle = "#80ffdb";
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.arc(trailPoint.x, trailPoint.y, 14, 0, TAU);
+      ctx.arc(trailPoint.x, trailPoint.y, 18, 0, TAU);
       ctx.stroke();
       ctx.globalAlpha = 1;
     }
@@ -4198,9 +4242,9 @@ function drawProjectiles() {
     ctx.translate(p.x, p.y);
     ctx.rotate(angle);
     ctx.shadowColor = "#fff3b0";
-    ctx.shadowBlur = 38;
+    ctx.shadowBlur = 50;
     ctx.strokeStyle = "#fff3b0";
-    ctx.lineWidth = 7;
+    ctx.lineWidth = 9;
     ctx.beginPath();
     ctx.moveTo(-24, 0);
     ctx.lineTo(17, 0);
