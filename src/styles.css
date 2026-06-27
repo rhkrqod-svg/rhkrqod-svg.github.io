@@ -534,9 +534,83 @@ button {
     transform 180ms ease;
 }
 
+.boss-banner strong {
+  display: block;
+}
+
+.boss-banner span {
+  display: block;
+  margin-top: 3px;
+  color: rgba(255, 243, 176, 0.88);
+  font-size: 0.5em;
+  font-weight: 900;
+}
+
 .boss-banner.active {
   opacity: 1;
   transform: translate(-50%, 0);
+}
+
+.boss-banner.boss-alert {
+  top: 50%;
+  width: min(92%, 410px);
+  padding: 18px 16px 20px;
+  border: 2px solid rgba(255, 224, 102, 0.72);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(255, 71, 126, 0.18), rgba(255, 224, 102, 0.2), rgba(199, 125, 255, 0.18)),
+    rgba(6, 8, 12, 0.88);
+  box-shadow:
+    0 0 0 1px rgba(255, 71, 126, 0.28),
+    0 0 28px rgba(255, 71, 126, 0.42),
+    0 0 46px rgba(255, 224, 102, 0.28);
+  color: #fff3b0;
+  font-size: clamp(42px, 15vw, 72px);
+  line-height: 0.95;
+  letter-spacing: 0;
+  text-shadow:
+    0 3px 0 rgba(0, 0, 0, 0.72),
+    0 0 18px rgba(255, 71, 126, 0.75);
+  transform: translate(-50%, -50%) scale(0.72);
+}
+
+.boss-banner.boss-alert.active {
+  animation: boss-alert-pop 2500ms ease both;
+  opacity: 1;
+}
+
+.boss-banner.boss-alert span {
+  margin-top: 10px;
+  color: #ffb3c6;
+  font-size: clamp(16px, 5vw, 24px);
+  line-height: 1.05;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.65);
+}
+
+@keyframes boss-alert-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.58);
+    filter: brightness(1.45);
+  }
+  10% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+  18% {
+    transform: translate(-50%, -50%) scale(0.96);
+  }
+  28%,
+  78% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    filter: brightness(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.08);
+    filter: brightness(1.2);
+  }
 }
 
 .message {

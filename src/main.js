@@ -640,6 +640,7 @@ let pendingLeaderboardScore = null;
 let skillTooltipTimer = 0;
 let skillAnnouncement = null;
 let leaderboardSubmitting = false;
+let bossBannerTimer = 0;
 
 const keys = new Set();
 const enemies = [];
@@ -1506,7 +1507,7 @@ function spawnBoss() {
   boss.xp = Math.round(boss.xp * multiplier * hpBoost);
   boss.radius = (base.radius + Math.min(14, bossIndex * 2)) * BOSS_SIZE_SCALE;
   bossIndex += 1;
-  showBossBanner(base.name);
+  showBossBanner(base.name, { boss: true });
   addPopup("보스 등장", player.x, player.y - 90, "#ffe066", 1.8, 28);
   playSound("boss");
   updateBossMusic();
@@ -1534,10 +1535,17 @@ function updateBossSchedule() {
   }
 }
 
-function showBossBanner(name) {
-  refs.bossBanner.textContent = name;
+function showBossBanner(name, { boss = false } = {}) {
+  window.clearTimeout(bossBannerTimer);
+  refs.bossBanner.classList.toggle("boss-alert", boss);
+  refs.bossBanner.innerHTML = boss
+    ? `<strong>보스출현</strong><span>${name}</span>`
+    : `<strong>${name}</strong>`;
   refs.bossBanner.classList.add("active");
-  window.setTimeout(() => refs.bossBanner.classList.remove("active"), 2200);
+  bossBannerTimer = window.setTimeout(() => {
+    refs.bossBanner.classList.remove("active");
+    refs.bossBanner.classList.remove("boss-alert");
+  }, boss ? 2500 : 2200);
 }
 
 function getMoveVector() {
