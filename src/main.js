@@ -610,6 +610,7 @@ let bestScore = Number(localStorage.getItem(STORAGE_KEY) ?? 0);
 let leaderboardEntries = [];
 let pendingLeaderboardScore = null;
 let skillTooltipTimer = 0;
+let skillAnnouncement = null;
 let leaderboardSubmitting = false;
 
 const keys = new Set();
@@ -625,6 +626,7 @@ const cards = [];
 const missiles = [];
 const taserShots = [];
 const policeSquads = [];
+const skillAnnouncementCooldowns = new Map();
 
 const input = {
   x: 0,
@@ -817,6 +819,24 @@ function speakBossLine(text) {
   }
 }
 
+function speakSkillName(text) {
+  if (!sound.enabled || !sound.voiceEnabled || !("speechSynthesis" in window) || !soundAllowed("skillVoiceSpeech", 1150)) return;
+  const cleanText = String(text ?? "").replace(/Lv\.\d+/gi, "").replace(/[!?~]+/g, "").trim();
+  if (!cleanText || cleanText.length > 18 || /[�]/.test(cleanText)) return;
+  try {
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = "ko-KR";
+    utterance.rate = 1.14;
+    utterance.pitch = 1.02;
+    utterance.volume = 0.76;
+    const voices = window.speechSynthesis.getVoices?.() ?? [];
+    utterance.voice = voices.find((voice) => voice.lang?.toLowerCase().startsWith("ko")) ?? null;
+    window.speechSynthesis.speak(utterance);
+  } catch {
+    sound.voiceEnabled = false;
+  }
+}
+
 function playSound(id) {
   switch (id) {
     case "ui":
@@ -952,6 +972,8 @@ function resetGame() {
   damageZones.length = 0;
   popups.length = 0;
   speechBubbles.length = 0;
+  skillAnnouncement = null;
+  skillAnnouncementCooldowns.clear();
   cards.length = 0;
   missiles.length = 0;
   taserShots.length = 0;
@@ -1507,6 +1529,7 @@ function spawnCard() {
     hitTimers: new Map(),
     trail: [],
   });
+  announceSkill("교통카드", { color: "#80ffdb" });
   playSound("card");
 }
 
@@ -1542,7 +1565,10 @@ function strikeLightning() {
       boltSeed: Math.random() * TAU,
     });
   }
-  if (targets.length > 0) playSound("lightning");
+  if (targets.length > 0) {
+    announceSkill("민원 번개", { color: "#9bf6ff" });
+    playSound("lightning");
+  }
 }
 
 function pickClusterTarget(maxDistance = 900) {
@@ -1599,6 +1625,7 @@ function spawnLowKick() {
     kind: "lowKick",
   });
   addParticles(player.x + Math.cos(angle) * 116, player.y + Math.sin(angle) * 116, "#ffb703", 14);
+  announceSkill("응징 로우킥", { color: "#ffb703" });
   playSound("lowKick");
 }
 
@@ -1617,6 +1644,7 @@ function spawnAnnouncementWave() {
     hits: new Set(),
     kind: "announcementWave",
   });
+  announceSkill("안내방송파", { color: "#80ffdb" });
   playSound("announcement");
 }
 
@@ -1644,6 +1672,7 @@ function spawnExpressTrain() {
     hits: new Set(),
     kind: "train",
   });
+  announceSkill("급행열차", { color: "#f7d64a" });
   playSound("train");
 }
 
@@ -1688,6 +1717,7 @@ function spawnTransferGate() {
     hits: new Set(),
     kind: "gate",
   });
+  announceSkill("환승 게이트", { color: "#b197fc" });
   playSound("gate");
 }
 
@@ -1736,6 +1766,7 @@ function spawnCustomerMissiles() {
       color: "#80ffdb",
     });
   }
+  announceSkill("고객센터 유도탄", { color: "#80ffdb" });
   playSound("missile");
 }
 
@@ -2574,6 +2605,7 @@ function updateBlade(delta = 0) {
           if (!enemy.lastStrapHit || performance.now() - enemy.lastStrapHit > 170) {
             enemy.lastStrapHit = performance.now();
             damageEnemy(enemy, strapDamage, "#ffd6a5");
+            announceSkill("손잡이 회오리", { color: "#ffd6a5", minGap: 4300 });
             playSound("strap");
           }
         }
@@ -2594,7 +2626,10 @@ function updateBlade(delta = 0) {
       damageEnemy(enemy, gasDamage, "#b7ef64");
       gasHit = true;
     }
-    if (gasHit) playSound("gas");
+    if (gasHit) {
+      announceSkill("최류탄", { color: "#b7ef64", minGap: 4300 });
+      playSound("gas");
+    }
   }
 }
 
@@ -2689,6 +2724,7 @@ function getPoliceCallAngle() {
 function usePoliceCall() {
   if (game.state !== "playing" || game.paused || game.pendingHeroChoice || player.policeCalls <= 0) return;
   player.policeCalls -= 1;
+  announceSkill("지하철 경찰대", { color: "#b8dcff", minGap: 500 });
   const officers = [];
   const officerCount = 60;
   for (let i = 0; i < officerCount; i += 1) {
@@ -2741,6 +2777,7 @@ function useTaserGun() {
     return;
   }
   player.taserGuns -= 1;
+  announceSkill("테이저건", { color: "#fff3b0", minGap: 500 });
   const angle = angleTo(player, target);
   taserShots.push({
     x: player.x + Math.cos(angle) * 26,
@@ -2960,6 +2997,7 @@ function useFirstAidKit() {
   }
   player.firstAidKits -= 1;
   healPlayer(Math.round(player.maxHp * FIRST_AID_HEAL_RATIO));
+  announceSkill("역무원 구급팩", { color: "#b8ffe4", minGap: 500 });
   addPopup("구급팩 사용", player.x, player.y - 56, "#b8ffe4", 0.75, 15);
   playSound("heal");
   updateHud();
@@ -3223,6 +3261,22 @@ function addPopup(text, x, y, color, life, size) {
   popups.push({ text, x, y, color, life, maxLife: life, size });
 }
 
+function announceSkill(name, { color = "#fff3b0", minGap = 1700, voice = true } = {}) {
+  const now = performance.now();
+  const last = skillAnnouncementCooldowns.get(name) ?? 0;
+  if (now - last < minGap) return;
+  skillAnnouncementCooldowns.set(name, now);
+  skillAnnouncement = {
+    text: name,
+    color,
+    life: 1.02,
+    maxLife: 1.02,
+    seed: Math.random() * TAU,
+  };
+  playSound("ui");
+  if (voice) speakSkillName(name);
+}
+
 function addSpeechBubble(target, text, life = 1.35) {
   if (!target) return;
   speechBubbles.push({
@@ -3278,6 +3332,10 @@ function updateEffects(delta) {
     }
     bubble.life -= delta;
     if (bubble.life <= 0) speechBubbles.splice(speechBubbles.indexOf(bubble), 1);
+  }
+  if (skillAnnouncement) {
+    skillAnnouncement.life -= delta;
+    if (skillAnnouncement.life <= 0) skillAnnouncement = null;
   }
 }
 
@@ -5590,6 +5648,41 @@ function drawEffects() {
   }
 }
 
+function drawSkillAnnouncement() {
+  if (!skillAnnouncement || game.state !== "playing") return;
+  const progress = 1 - skillAnnouncement.life / skillAnnouncement.maxLife;
+  const alpha = clamp(Math.sin(progress * Math.PI) * 1.18, 0, 1);
+  const pop = 0.92 + Math.sin(clamp(progress * 1.25, 0, 1) * Math.PI) * 0.16;
+  const y = Math.max(108, height * 0.21);
+  const text = skillAnnouncement.text;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.translate(width / 2, y);
+  ctx.scale(pop, pop);
+  ctx.font = "900 25px system-ui";
+  const textWidth = Math.min(width - 38, ctx.measureText(text).width + 52);
+  const boxHeight = 46;
+  const glow = 0.4 + Math.sin(performance.now() * 0.012 + skillAnnouncement.seed) * 0.12;
+  ctx.shadowColor = skillAnnouncement.color;
+  ctx.shadowBlur = 24;
+  ctx.fillStyle = `rgba(8, 12, 18, ${0.58 + glow * 0.16})`;
+  ctx.strokeStyle = skillAnnouncement.color;
+  ctx.lineWidth = 2.4;
+  roundedRect(-textWidth / 2, -boxHeight / 2, textWidth, boxHeight, 14);
+  ctx.fill();
+  ctx.stroke();
+  ctx.shadowBlur = 20;
+  ctx.fillStyle = skillAnnouncement.color;
+  ctx.fillText(text, 0, 1);
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = "rgba(255,255,255,0.82)";
+  ctx.font = "900 12px system-ui";
+  ctx.fillText("SKILL", 0, -31);
+  ctx.restore();
+}
+
 function render() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.globalAlpha = 1;
@@ -5623,6 +5716,7 @@ function render() {
   drawPlayer();
   drawEffects();
   ctx.restore();
+  drawSkillAnnouncement();
 
   if (game.state === "menu") {
     ctx.fillStyle = "rgba(5,7,8,0.16)";
