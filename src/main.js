@@ -85,9 +85,9 @@ const ENEMY_XP_REWARD_MULTIPLIER = 1.35;
 const XP_ORB_LIFETIME = 18;
 const XP_ORB_FADE_TIME = 5;
 const NORMAL_MUSIC_SRC = "/assets/audio/neon-arcade-normal.mp3";
-const NORMAL_MUSIC_VOLUME = 0.2;
+const NORMAL_MUSIC_VOLUME = 0.16;
 const BOSS_MUSIC_SRC = "/assets/audio/neon-circuit-boss.mp3";
-const BOSS_MUSIC_VOLUME = 0.25;
+const BOSS_MUSIC_VOLUME = 0.2;
 
 const heroTypes = [
   {
