@@ -1941,11 +1941,12 @@ function updatePlayer(delta) {
 function updateEnemies(delta) {
   const minute = player.elapsed / 60;
   spawnTimer -= delta;
-  const earlyLevelSpawnBoost = player.level <= 5 ? 0.85 : 1;
-  const spawnGap = Math.max(0.379, (0.78 - minute * 0.024) * 1.71875 * earlyLevelSpawnBoost);
+  const earlyTimeSpawnBoost = minute < 1 ? 0.72 : minute < 2 ? 0.86 : 1;
+  const earlyLevelSpawnBoost = player.level <= 5 ? 0.92 : 1;
+  const spawnGap = Math.max(0.5, (0.82 - minute * 0.014) * 1.71875 * earlyTimeSpawnBoost * earlyLevelSpawnBoost);
   if (spawnTimer <= 0) {
-    const basePack = 1 + Math.floor(minute * 0.38) + (Math.random() < 0.18 + minute * 0.022 ? 1 : 0);
-    const levelSpawnMultiplier = 1 + Math.max(0, player.level - 1) * 0.07;
+    const basePack = 1 + Math.floor(minute * 0.32) + (Math.random() < 0.18 + minute * 0.016 ? 1 : 0);
+    const levelSpawnMultiplier = 1 + Math.max(0, player.level - 1) * 0.05;
     const scaledPack = basePack * levelSpawnMultiplier;
     const pack = Math.floor(scaledPack) + (Math.random() < scaledPack % 1 ? 1 : 0);
     for (let i = 0; i < pack; i += 1) spawnEnemy();
