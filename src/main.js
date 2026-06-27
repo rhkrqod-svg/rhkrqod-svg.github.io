@@ -53,6 +53,9 @@ const sound = {
   master: null,
   enabled: true,
   voiceEnabled: true,
+  normalMusic: null,
+  normalMusicTargetVolume: 0,
+  normalMusicFade: null,
   bossMusic: null,
   bossMusicTargetVolume: 0,
   bossMusicFade: null,
@@ -81,6 +84,8 @@ const ENEMY_HP_GLOBAL_MULTIPLIER = 1.6;
 const ENEMY_XP_REWARD_MULTIPLIER = 1.35;
 const XP_ORB_LIFETIME = 18;
 const XP_ORB_FADE_TIME = 5;
+const NORMAL_MUSIC_SRC = "/assets/audio/neon-arcade-normal.mp3";
+const NORMAL_MUSIC_VOLUME = 0.28;
 const BOSS_MUSIC_SRC = "/assets/audio/neon-circuit-boss.mp3";
 const BOSS_MUSIC_VOLUME = 0.42;
 
@@ -776,66 +781,81 @@ function ensureAudio() {
   return sound.ctx;
 }
 
-function ensureBossMusic() {
+function ensureMusicTrack(kind) {
   if (!sound.enabled) return null;
-  if (!sound.bossMusic) {
-    const music = new Audio(BOSS_MUSIC_SRC);
+  const isBoss = kind === "boss";
+  const key = isBoss ? "bossMusic" : "normalMusic";
+  if (!sound[key]) {
+    const music = new Audio(isBoss ? BOSS_MUSIC_SRC : NORMAL_MUSIC_SRC);
     music.loop = true;
     music.preload = "auto";
     music.volume = 0;
     music.playsInline = true;
-    sound.bossMusic = music;
+    sound[key] = music;
   }
-  return sound.bossMusic;
+  return sound[key];
 }
 
-function fadeBossMusic(targetVolume, { reset = false } = {}) {
-  const music = ensureBossMusic();
+function fadeMusicTrack(kind, targetVolume, { reset = false } = {}) {
+  const isBoss = kind === "boss";
+  const targetKey = isBoss ? "bossMusicTargetVolume" : "normalMusicTargetVolume";
+  const fadeKey = isBoss ? "bossMusicFade" : "normalMusicFade";
+  const maxVolume = isBoss ? BOSS_MUSIC_VOLUME : NORMAL_MUSIC_VOLUME;
+  const music = ensureMusicTrack(kind);
   if (!music) return;
-  sound.bossMusicTargetVolume = targetVolume;
-  window.clearInterval(sound.bossMusicFade);
+  sound[targetKey] = targetVolume;
+  window.clearInterval(sound[fadeKey]);
 
   if (reset) {
     music.pause();
     music.currentTime = 0;
     music.volume = 0;
+    sound[targetKey] = 0;
     return;
   }
 
-  sound.bossMusicFade = window.setInterval(() => {
-    const diff = sound.bossMusicTargetVolume - music.volume;
+  sound[fadeKey] = window.setInterval(() => {
+    const diff = sound[targetKey] - music.volume;
     if (Math.abs(diff) < 0.015) {
-      music.volume = sound.bossMusicTargetVolume;
+      music.volume = sound[targetKey];
       if (music.volume <= 0) {
         music.pause();
         music.currentTime = 0;
       }
-      window.clearInterval(sound.bossMusicFade);
-      sound.bossMusicFade = null;
+      window.clearInterval(sound[fadeKey]);
+      sound[fadeKey] = null;
       return;
     }
-    music.volume = clamp(music.volume + Math.sign(diff) * 0.035, 0, BOSS_MUSIC_VOLUME);
+    music.volume = clamp(music.volume + Math.sign(diff) * 0.035, 0, maxVolume);
   }, 45);
 }
 
-function updateBossMusic() {
-  const shouldPlay = game.state === "playing" && !game.paused && player.alive && enemies.some((enemy) => enemy.boss);
-  if (!shouldPlay && !sound.bossMusic) return;
-  const music = ensureBossMusic();
-  if (!music) return;
+function updateBgm() {
+  const canPlay = game.state === "playing" && !game.paused && player.alive;
+  const hasBoss = enemies.some((enemy) => enemy.boss);
+  const shouldPlayBoss = canPlay && hasBoss;
+  const shouldPlayNormal = canPlay && !hasBoss;
 
-  if (shouldPlay) {
-    if (music.paused) {
-      music.play().catch(() => {});
+  for (const [kind, shouldPlay, volume] of [
+    ["normal", shouldPlayNormal, NORMAL_MUSIC_VOLUME],
+    ["boss", shouldPlayBoss, BOSS_MUSIC_VOLUME],
+  ]) {
+    const isBoss = kind === "boss";
+    const music = shouldPlay || sound[isBoss ? "bossMusic" : "normalMusic"] ? ensureMusicTrack(kind) : null;
+    if (!music) continue;
+    const targetKey = isBoss ? "bossMusicTargetVolume" : "normalMusicTargetVolume";
+    if (shouldPlay) {
+      if (music.paused) music.play().catch(() => {});
+      if (sound[targetKey] !== volume) fadeMusicTrack(kind, volume);
+    } else if (!music.paused && sound[targetKey] !== 0) {
+      fadeMusicTrack(kind, 0);
     }
-    if (sound.bossMusicTargetVolume !== BOSS_MUSIC_VOLUME) fadeBossMusic(BOSS_MUSIC_VOLUME);
-  } else if (!music.paused && sound.bossMusicTargetVolume !== 0) {
-    fadeBossMusic(0);
   }
 }
 
-function stopBossMusic() {
-  fadeBossMusic(0, { reset: true });
+function stopAllMusic() {
+  if (sound.normalMusic) fadeMusicTrack("normal", 0, { reset: true });
+  if (sound.bossMusic) fadeMusicTrack("boss", 0, { reset: true });
 }
 
 function soundAllowed(id, gap = 0) {
@@ -1054,8 +1074,9 @@ function playSound(id) {
 
 function resetGame() {
   ensureAudio();
-  ensureBossMusic();
-  stopBossMusic();
+  ensureMusicTrack("normal");
+  ensureMusicTrack("boss");
+  stopAllMusic();
   playSound("ui");
   enemies.length = 0;
   bullets.length = 0;
@@ -1197,7 +1218,7 @@ function togglePause() {
   game.manualPaused = !game.manualPaused;
   game.paused = game.manualPaused;
   resetFloatingStickMove();
-  updateBossMusic();
+  updateBgm();
   playSound("ui");
   updateHud();
 }
@@ -1207,7 +1228,7 @@ function toggleUpgradePause() {
   game.manualPaused = !game.manualPaused;
   game.paused = game.manualPaused;
   resetFloatingStickMove();
-  updateBossMusic();
+  updateBgm();
   playSound("ui");
   updateUpgradePauseButton();
   updateHud();
@@ -1510,7 +1531,7 @@ function spawnBoss() {
   showBossBanner(base.name, { boss: true });
   addPopup("보스 등장", player.x, player.y - 90, "#ffe066", 1.8, 28);
   playSound("boss");
-  updateBossMusic();
+  updateBgm();
 }
 
 function updateBossSchedule() {
@@ -2755,7 +2776,7 @@ function killEnemy(enemy) {
     for (let i = 0; i < 16; i += 1) dropXp(enemy.x + rand(-45, 45), enemy.y + rand(-45, 45), 12);
     nextBossAt = player.elapsed + Math.max(34, 46 - Math.min(12, bossIndex * 2));
     bossWarningFor = 0;
-    updateBossMusic();
+    updateBgm();
   } else {
     playSound("kill");
   }
@@ -3593,7 +3614,7 @@ function update(delta) {
 
 function endGame(won) {
   playSound(won ? "levelUp" : "gameOver");
-  stopBossMusic();
+  stopAllMusic();
   player.alive = false;
   game.state = "ended";
   game.manualPaused = false;
@@ -5861,7 +5882,7 @@ function frame(now) {
   const delta = Math.min(0.035, (now - lastFrame) / 1000 || 0);
   lastFrame = now;
   update(delta);
-  updateBossMusic();
+  updateBgm();
   render();
   requestAnimationFrame(frame);
 }
