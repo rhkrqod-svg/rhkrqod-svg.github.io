@@ -2197,7 +2197,7 @@ function createDansoBoomerang(enemy) {
   const targetX = enemy.x + Math.cos(angle) * targetDistance;
   const targetY = enemy.y + Math.sin(angle) * targetDistance;
   const curveSide = Math.random() < 0.5 ? -1 : 1;
-  const curveOffset = curveSide * Math.min(360, Math.max(190, targetDistance * 0.42));
+  const curveOffset = curveSide * Math.min(414, Math.max(219, targetDistance * 0.48));
   damageZones.push({
     x: startX,
     y: startY,
@@ -2210,7 +2210,7 @@ function createDansoBoomerang(enemy) {
     curveOffset,
     angle,
     owner: enemy,
-    radius: 66,
+    radius: 86,
     damage: scaleBossDamage(enemy, 24),
     push: 58,
     stun: 0.28,
