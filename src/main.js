@@ -2003,7 +2003,7 @@ function updateEnemies(delta) {
             : enemy.special === "boss-jarvan"
               ? "젊은 것들 비켜라!"
               : enemy.special === "boss-danso"
-                ? "너 까불지마!!"
+                ? "Who are you~ 확!"
                 : enemy.special === "boss-praise"
                   ? "당신이 최고야?!"
                   : enemy.special === "boss-gum"
@@ -2038,7 +2038,7 @@ function createPulse(enemy, radius, damage) {
 
 function createDansoSwing(enemy) {
   const angle = angleTo(enemy, player);
-  addSpeechBubble(enemy, "확! 팍! 확!", 1.05);
+  addSpeechBubble(enemy, "Who are you~ 확!", 1.05);
   damageZones.push({
     x: enemy.x,
     y: enemy.y,
@@ -2061,7 +2061,7 @@ function createDansoSwing(enemy) {
 }
 
 function createDansoShockwave(enemy) {
-  addSpeechBubble(enemy, "WHO ARE YOU!", 1.45);
+  addSpeechBubble(enemy, "절이 싫으면 중이 떠나야지~", 1.45);
   damageZones.push({
     x: enemy.x,
     y: enemy.y,
@@ -2081,7 +2081,7 @@ function createDansoShockwave(enemy) {
 
 function createDansoBoomerang(enemy) {
   const angle = angleTo(enemy, player);
-  addSpeechBubble(enemy, "WHO ARE YOU!", 1.05);
+  addSpeechBubble(enemy, "절이 싫으면 중이 떠나야지~", 1.05);
   const startX = enemy.x + Math.cos(angle) * 54;
   const startY = enemy.y + Math.sin(angle) * 54;
   const targetDistance = Math.min(720, Math.max(260, Math.hypot(player.x - enemy.x, player.y - enemy.y) + 120));
