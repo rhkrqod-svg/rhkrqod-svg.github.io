@@ -1397,7 +1397,7 @@ function spawnCommuteProtestStage() {
   for (let i = 0; i < count; i += 1) {
     const angle = (TAU * i) / count + rand(-0.06, 0.06);
     const point = getEncircleOffscreenPoint(angle, 130 + (i % 5) * 18);
-    const hp = 520 * hpScale;
+    const hp = 416 * hpScale;
     enemies.push({
       id: "commute-protest",
       name: "출근길 시위대",
