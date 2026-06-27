@@ -1311,7 +1311,7 @@ function spawnCommuteProtestStage() {
       speed: rand(31, 43),
       damage: 6 * attackScale,
       attackScale,
-      radius: 62 * 0.68 * MONSTER_SIZE_SCALE,
+      radius: 62 * 0.68 * 0.8 * MONSTER_SIZE_SCALE,
       bodySize: 0.9,
       xp: Math.round(26 * hpScale),
       score: 34,
