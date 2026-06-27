@@ -327,16 +327,41 @@ const legacyMonsterTypes = [
   },
 ];
 
+function createGameImage(src) {
+  const image = new Image();
+  image.decoding = "async";
+  image.loading = "eager";
+  image.ready = false;
+  image.failed = false;
+  image.retryCount = 0;
+  image.onload = () => {
+    image.ready = true;
+    image.failed = false;
+  };
+  image.onerror = () => {
+    image.ready = false;
+    image.failed = true;
+    if (image.retryCount >= 3) return;
+    image.retryCount += 1;
+    window.setTimeout(() => {
+      const separator = src.includes("?") ? "&" : "?";
+      image.src = `${src}${separator}retry=${image.retryCount}-${Date.now()}`;
+    }, 450 * image.retryCount);
+  };
+  image.src = src;
+  image.decode?.().then(() => {
+    image.ready = true;
+    image.failed = false;
+  }).catch(() => {});
+  return image;
+}
+
 const monsterImages = new Map();
 for (const monster of monsterTypes) {
   if (!monster.image) continue;
-  const image = new Image();
-  image.src = monster.image;
-  monsterImages.set(monster.id, image);
+  monsterImages.set(monster.id, createGameImage(monster.image));
 }
-const commuteProtestImage = new Image();
-commuteProtestImage.src = "/assets/monsters/commute-protest-cart.png?v=20260627d";
-monsterImages.set("commute-protest", commuteProtestImage);
+monsterImages.set("commute-protest", createGameImage("/assets/monsters/commute-protest-cart.png?v=20260627d"));
 
 const legacyBossTypes = [
   {
@@ -442,9 +467,7 @@ const bossTypes = [
 
 const bossImages = new Map();
 for (const boss of bossTypes) {
-  const image = new Image();
-  image.src = boss.image;
-  bossImages.set(boss.id, image);
+  bossImages.set(boss.id, createGameImage(boss.image));
 }
 
 const upgradePool = [
@@ -1330,6 +1353,7 @@ function spawnCommuteProtestStage() {
       defenseBoostTimer: 0,
       defenseBoostPower: 0,
       stunTimer: 0,
+      spawnFlash: 0.7,
     });
   }
 }
@@ -1383,6 +1407,7 @@ function spawnEnemy(type = null, boss = false) {
     defenseBoostTimer: 0,
     defenseBoostPower: 0,
     stunTimer: 0,
+    spawnFlash: boss ? 1.0 : 0.7,
   };
   enemies.push(enemy);
   return enemy;
@@ -1851,6 +1876,7 @@ function updateEnemies(delta) {
   for (const enemy of [...enemies]) {
     enemy.stunTimer = Math.max(0, (enemy.stunTimer ?? 0) - delta);
     enemy.hitFlash = Math.max(0, enemy.hitFlash - delta);
+    enemy.spawnFlash = Math.max(0, (enemy.spawnFlash ?? 0) - delta);
     if (enemy.stunTimer > 0) {
       enemy.wobble += delta * 0.35;
       continue;
@@ -3928,12 +3954,14 @@ function drawBlades() {
 function drawEnemy(enemy) {
   const p = worldToScreen(enemy.x, enemy.y);
   const actorImage = enemy.boss ? bossImages.get(enemy.id) : monsterImages.get(enemy.id);
-  const useActorImage = Boolean(actorImage?.complete && actorImage.naturalWidth > 0);
-  const imageHeight = useActorImage ? Math.max(enemy.boss ? 72 : 46, enemy.radius * (enemy.boss ? 7.4 : 5.9)) : 0;
-  const imageWidth = useActorImage ? imageHeight * (actorImage.naturalWidth / actorImage.naturalHeight) : 0;
-  const visualTop = useActorImage ? imageHeight * 0.72 : enemy.radius;
-  const visualBottom = useActorImage ? imageHeight * 0.28 : enemy.radius;
-  const visualHalfWidth = useActorImage ? imageWidth / 2 : enemy.radius;
+  const useActorImage = Boolean(actorImage?.ready && actorImage.complete && actorImage.naturalWidth > 0);
+  const fallbackHeight = Math.max(enemy.boss ? 96 : 54, enemy.radius * (enemy.boss ? 5.4 : 4.35));
+  const fallbackWidth = fallbackHeight * (enemy.boss ? 0.72 : 0.58);
+  const imageHeight = useActorImage ? Math.max(enemy.boss ? 72 : 46, enemy.radius * (enemy.boss ? 7.4 : 5.9)) : fallbackHeight;
+  const imageWidth = useActorImage ? imageHeight * (actorImage.naturalWidth / actorImage.naturalHeight) : fallbackWidth;
+  const visualTop = imageHeight * 0.72;
+  const visualBottom = imageHeight * 0.28;
+  const visualHalfWidth = imageWidth / 2;
   const cullPadding = enemy.boss ? 96 : 42;
   const cullLeft = -visualHalfWidth - cullPadding;
   const cullRight = width + visualHalfWidth + cullPadding;
@@ -3944,6 +3972,24 @@ function drawEnemy(enemy) {
   ctx.translate(p.x, p.y);
   ctx.save();
   ctx.rotate(enemy.wobble * 0.25);
+  if (enemy.spawnFlash > 0) {
+    const flashProgress = clamp(enemy.spawnFlash / (enemy.boss ? 1.0 : 0.7), 0, 1);
+    const ring = 1 + (1 - flashProgress) * 0.58;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = 0.18 + flashProgress * 0.38;
+    ctx.strokeStyle = enemy.trim;
+    ctx.lineWidth = enemy.boss ? 5 : 3;
+    ctx.beginPath();
+    ctx.arc(0, 0, Math.max(enemy.radius * 1.7, imageWidth * 0.34) * ring, 0, TAU);
+    ctx.stroke();
+    ctx.globalAlpha = 0.12 + flashProgress * 0.16;
+    ctx.fillStyle = enemy.trim;
+    ctx.beginPath();
+    ctx.arc(0, 0, Math.max(enemy.radius * 1.28, imageWidth * 0.24) * ring, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+  }
   if (enemy.boostTimer > 0) {
     const boostPulse = 0.75 + Math.sin(performance.now() * 0.018) * 0.18;
     ctx.save();
@@ -3982,7 +4028,17 @@ function drawEnemy(enemy) {
   if (useActorImage) {
     ctx.shadowColor = enemy.trim;
     ctx.shadowBlur = enemy.hitFlash > 0 ? 18 : enemy.boss ? 10 : 6;
-    ctx.drawImage(actorImage, -imageWidth / 2, -imageHeight * 0.72, imageWidth, imageHeight);
+    try {
+      ctx.drawImage(actorImage, -imageWidth / 2, -imageHeight * 0.72, imageWidth, imageHeight);
+    } catch {
+      actorImage.ready = false;
+      ctx.fillStyle = enemy.hitFlash > 0 ? "#ffffff" : enemy.color;
+      ctx.strokeStyle = enemy.trim;
+      ctx.lineWidth = enemy.boss ? 3.5 : 2.2;
+      roundedRect(-fallbackWidth / 2, -fallbackHeight * 0.58, fallbackWidth, fallbackHeight * 0.78, Math.max(8, enemy.radius * 0.35));
+      ctx.fill();
+      ctx.stroke();
+    }
     ctx.shadowBlur = 0;
     if (enemy.hitFlash > 0) {
       ctx.globalAlpha = 0.35;
@@ -3993,6 +4049,7 @@ function drawEnemy(enemy) {
       ctx.globalAlpha = 1;
     }
   } else {
+    ctx.scale(enemy.boss ? 1.75 : 1.45, enemy.boss ? 1.75 : 1.45);
     ctx.fillStyle = enemy.hitFlash > 0 ? "#ffffff" : enemy.color;
     ctx.strokeStyle = enemy.trim;
     ctx.lineWidth = enemy.boss ? 2.8 : 1.8;
