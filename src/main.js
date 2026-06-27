@@ -1634,7 +1634,6 @@ function spawnCard() {
     hitTimers: new Map(),
     trail: [],
   });
-  announceSkill("교통카드", { color: "#80ffdb" });
   playSound("card");
 }
 
@@ -1671,7 +1670,6 @@ function strikeLightning() {
     });
   }
   if (targets.length > 0) {
-    announceSkill("민원 번개", { color: "#9bf6ff" });
     playSound("lightning");
   }
 }
@@ -1730,7 +1728,6 @@ function spawnLowKick() {
     kind: "lowKick",
   });
   addParticles(player.x + Math.cos(angle) * 116, player.y + Math.sin(angle) * 116, "#ffb703", 14);
-  announceSkill("응징 로우킥", { color: "#ffb703" });
   playSound("lowKick");
 }
 
@@ -1749,7 +1746,6 @@ function spawnAnnouncementWave() {
     hits: new Set(),
     kind: "announcementWave",
   });
-  announceSkill("안내방송파", { color: "#80ffdb" });
   playSound("announcement");
 }
 
@@ -1777,7 +1773,6 @@ function spawnExpressTrain() {
     hits: new Set(),
     kind: "train",
   });
-  announceSkill("급행열차", { color: "#f7d64a" });
   playSound("train");
 }
 
@@ -1822,7 +1817,6 @@ function spawnTransferGate() {
     hits: new Set(),
     kind: "gate",
   });
-  announceSkill("환승 게이트", { color: "#b197fc" });
   playSound("gate");
 }
 
@@ -1871,7 +1865,6 @@ function spawnCustomerMissiles() {
       color: "#80ffdb",
     });
   }
-  announceSkill("고객센터 유도탄", { color: "#80ffdb" });
   playSound("missile");
 }
 
@@ -2711,7 +2704,6 @@ function updateBlade(delta = 0) {
           if (!enemy.lastStrapHit || performance.now() - enemy.lastStrapHit > 170) {
             enemy.lastStrapHit = performance.now();
             damageEnemy(enemy, strapDamage, "#ffd6a5");
-            announceSkill("손잡이 회오리", { color: "#ffd6a5", minGap: 4300 });
             playSound("strap");
           }
         }
@@ -2733,7 +2725,6 @@ function updateBlade(delta = 0) {
       gasHit = true;
     }
     if (gasHit) {
-      announceSkill("최류탄", { color: "#b7ef64", minGap: 4300 });
       playSound("gas");
     }
   }
