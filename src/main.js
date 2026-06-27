@@ -1399,7 +1399,8 @@ function updateBossSchedule() {
   if (specialStageUntil > 0 && player.elapsed < specialStageUntil) return;
 
   if (player.elapsed >= nextBossAt) {
-    if (bossIndex === 2 && !specialStageBossMarks.has(bossIndex)) {
+    const shouldSpawnSpecialStage = bossIndex >= 2 && bossIndex <= 8 && bossIndex % 2 === 0;
+    if (shouldSpawnSpecialStage && !specialStageBossMarks.has(bossIndex)) {
       specialStageBossMarks.add(bossIndex);
       spawnCommuteProtestStage();
       specialStageUntil = player.elapsed + 24;
