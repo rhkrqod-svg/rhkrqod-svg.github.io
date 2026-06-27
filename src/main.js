@@ -2843,7 +2843,7 @@ function getPoliceCallAngle() {
 function usePoliceCall() {
   if (game.state !== "playing" || game.paused || game.pendingHeroChoice || player.policeCalls <= 0) return;
   player.policeCalls -= 1;
-  announceSkill("지하철 경찰대", { color: "#b8dcff", minGap: 500 });
+  announceSkill("지하철 경찰대", { color: "#b8dcff", minGap: 500, source: "item" });
   const officers = [];
   const officerCount = 60;
   for (let i = 0; i < officerCount; i += 1) {
@@ -2897,7 +2897,7 @@ function useTaserGun() {
     return;
   }
   player.taserGuns -= 1;
-  announceSkill("테이저건", { color: "#fff3b0", minGap: 500 });
+  announceSkill("테이저건", { color: "#fff3b0", minGap: 500, source: "item" });
   const angle = angleTo(player, target);
   taserShots.push({
     x: player.x + Math.cos(angle) * 26,
@@ -3119,7 +3119,7 @@ function useFirstAidKit() {
   }
   player.firstAidKits -= 1;
   healPlayer(Math.round(player.maxHp * FIRST_AID_HEAL_RATIO));
-  announceSkill("역무원 구급팩", { color: "#b8ffe4", minGap: 500 });
+  announceSkill("역무원 구급팩", { color: "#b8ffe4", minGap: 500, source: "item" });
   addPopup("구급팩 사용", player.x, player.y - 56, "#b8ffe4", 0.75, 15);
   playSound("heal");
   updateHud();
@@ -3383,7 +3383,8 @@ function addPopup(text, x, y, color, life, size) {
   popups.push({ text, x, y, color, life, maxLife: life, size });
 }
 
-function announceSkill(name, { color = "#fff3b0", minGap = 1700, voice = true } = {}) {
+function announceSkill(name, { color = "#fff3b0", minGap = 1700, voice = true, source = "skill" } = {}) {
+  if (source !== "item") return;
   const now = performance.now();
   const last = skillAnnouncementCooldowns.get(name) ?? 0;
   if (now - last < minGap) return;
@@ -3409,10 +3410,6 @@ function addSpeechBubble(target, text, life = 1.35) {
     life,
     maxLife: life,
   });
-  if (target.boss) {
-    playSound("bossVoice");
-    speakBossLine(text);
-  }
   if (speechBubbles.length > 8) speechBubbles.shift();
 }
 
