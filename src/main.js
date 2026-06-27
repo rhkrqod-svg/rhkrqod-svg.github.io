@@ -593,21 +593,11 @@ const upgradePool = [
       player.regenTimer = Math.min(player.regenTimer, 1.2);
     },
   },
-  {
-    id: "commuteSurvival",
-    name: "출근길 생존술",
-    desc: "최대 에너지 +20, 즉시 회복",
-    apply: () => {
-      player.maxHp = Math.min(MAX_PLAYER_HP_LIMIT, player.maxHp + 20);
-      player.hp = Math.min(player.maxHp, player.hp + 25);
-    },
-  },
 ];
 
 const passiveUpgradeIds = new Set([
   "nuisanceResist",
   "mentalRegen",
-  "commuteSurvival",
 ]);
 
 const weaponUpgradeIds = new Set([
@@ -1621,7 +1611,7 @@ function fireBullets() {
       damage: player.damage,
       radius: 10,
       life: 30,
-      pierce: Math.floor(player.shots / 3),
+      hitEnemies: new Set(),
       color: "#fff2a8",
     });
   }
@@ -1670,17 +1660,22 @@ function strikeLightning() {
     targets.push(enemy);
   }
   for (const enemy of targets) {
-    const damage = Math.round((63 + weapons.lightning.level * 58) * 1.105);
-    const strikeRadius = (58 + weapons.lightning.level * 7) * 1.183 * 1.3;
+    const damage = Math.round((63 + weapons.lightning.level * 58) * 1.105 * 1.3);
+    const strikeRadius = (58 + weapons.lightning.level * 7) * 1.183 * 1.3 * 1.2;
     damageEnemy(enemy, enemy.boss ? Math.round(damage * 1.25) : damage, "#9bf6ff");
+    enemy.stunTimer = Math.max(enemy.stunTimer ?? 0, enemy.boss ? 0.5 : 3);
     addParticles(enemy.x, enemy.y, "#9bf6ff", enemy.boss ? 14 : 9);
     damageZones.push({
       x: enemy.x,
       y: enemy.y,
       radius: strikeRadius,
+      damage: Math.round(damage * 0.45),
+      stun: 3,
+      bossStun: 0.5,
       life: 0.34,
       maxLife: 0.34,
       color: "#9bf6ff",
+      hits: new Set([enemy]),
       kind: "lightning",
       boltSeed: Math.random() * TAU,
     });
@@ -1839,16 +1834,13 @@ function spawnTransferGate() {
 function explodeCustomerMissile(missile) {
   const level = weapons.customerMissile.level;
   const radius = 54 + level * 12;
-  const damage = Math.round((32 + level * 24) * 1.3);
   damageZones.push({
     x: missile.x,
     y: missile.y,
     radius,
-    damage,
     life: 0.34,
     maxLife: 0.34,
     color: "#80ffdb",
-    hits: new Set(),
     kind: "missileExplosion",
   });
   addParticles(missile.x, missile.y, "#80ffdb", 14 + level * 2);
@@ -1872,7 +1864,7 @@ function spawnCustomerMissiles() {
       vy: Math.sin(angle) * speed,
       speed,
       turnRate: 7.2 + level * 0.5,
-      damage: Math.round((22 + level * 15) * 1.3),
+      damage: Math.round((22 + level * 15) * 1.04),
       radius: 8,
       life: 3.2,
       target,
@@ -2238,9 +2230,9 @@ function createAirportTaunt(enemy) {
   damageZones.push({
     x: enemy.x + Math.cos(angle) * 34,
     y: enemy.y + Math.sin(angle) * 34,
-    vx: Math.cos(angle) * 260,
-    vy: Math.sin(angle) * 260,
-    radius: 38,
+    vx: Math.cos(angle) * 338,
+    vy: Math.sin(angle) * 338,
+    radius: 46,
     damage: scaleBossDamage(enemy, 20),
     life: 2.15,
     maxLife: 2.15,
@@ -2561,11 +2553,10 @@ function updateProjectiles(delta) {
       continue;
     }
     for (const enemy of [...enemies]) {
+      if (bullet.hitEnemies?.has(enemy)) continue;
       if (Math.hypot(enemy.x - bullet.x, enemy.y - bullet.y) < enemy.radius + bullet.radius) {
+        bullet.hitEnemies?.add(enemy);
         damageEnemy(enemy, bullet.damage);
-        bullet.pierce -= 1;
-        if (bullet.pierce < 0) bullet.life = 0;
-        break;
       }
     }
     if (bullet.life <= 0) bullets.splice(bullets.indexOf(bullet), 1);
@@ -3345,6 +3336,13 @@ function updateDamageZones(delta) {
           if (!hit) continue;
           zone.hits?.add(enemy);
           damageEnemy(enemy, zone.damage, zone.color);
+          if (zone.stun || zone.bossStun) {
+            const stunDuration = enemy.boss ? zone.bossStun ?? zone.stun : zone.stun;
+            if (stunDuration) {
+              enemy.stunTimer = Math.max(enemy.stunTimer ?? 0, stunDuration);
+              addPopup("STUN", enemy.x, enemy.y - enemy.radius - 20, "#9bf6ff", 0.5, enemy.boss ? 15 : 13);
+            }
+          }
           if (zone.push) {
             const push = zone.kind === "gate" || zone.kind === "train" ? zone.angle ?? angleTo(zone, enemy) : angleTo(zone, enemy);
             const pushAmount = zone.push * (enemy.boss ? 1 / 3 : 1);
@@ -3700,7 +3698,7 @@ function updateHud() {
     weapons.strapOrbit.level > 0 ? { label: `손잡이 Lv.${weapons.strapOrbit.level}`, type: "attack", power: chipPower(weapons.strapOrbit.level), desc: "지하철 손잡이가 주위를 회전하며 닿은 적을 계속 공격합니다." } : null,
     weapons.tearGas.level > 0 ? { label: `최류탄 Lv.${weapons.tearGas.level}`, type: "attack", power: chipPower(weapons.tearGas.level), desc: "주인공 주변에 손잡이보다 넓은 가스 지대를 만들고 안에 들어온 적에게 지속 피해를 줍니다." } : null,
     weapons.expressTrain.level > 0 ? { label: `급행 Lv.${weapons.expressTrain.level}`, type: "attack", power: chipPower(weapons.expressTrain.level), desc: "급행열차가 보스를 우선 노려 지나가며 피해와 넉백을 줍니다." } : null,
-    weapons.customerMissile.level > 0 ? { label: `유도탄 Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level), desc: "고객센터 유도탄이 보스를 우선 추적하고 폭발 피해를 줍니다." } : null,
+    weapons.customerMissile.level > 0 ? { label: `유도탄 Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level), desc: "고객센터 유도탄이 보스를 우선 추적해 직접 피해를 줍니다." } : null,
     player.defenseBreakTimer > 0 ? { label: `방어저하 ${Math.ceil(player.defenseBreakTimer)}초`, type: "status", desc: "현재 방어력이 감소한 상태입니다." } : null,
     player.stunTimer > 0 ? { label: `경직 ${Math.ceil(player.stunTimer)}초`, type: "status", desc: "잠시 움직일 수 없는 상태입니다." } : null,
     player.slowTimer > 0 ? { label: `둔화 ${Math.ceil(player.slowTimer)}초`, type: "status", desc: "이동 속도가 느려진 상태입니다." } : null,
@@ -4316,22 +4314,28 @@ function drawProjectiles() {
     ctx.save();
     ctx.translate(p.x, p.y);
     ctx.rotate(card.rotation);
-    ctx.shadowColor = "#80ffdb";
-    ctx.shadowBlur = 16;
-    ctx.fillStyle = "#dffdf5";
-    ctx.strokeStyle = "#0b6b5e";
-    ctx.lineWidth = 3;
-    roundedRect(-22, -14, 44, 28, 6);
+    const cardWidth = 48;
+    const cardHeight = 30;
+    ctx.shadowColor = "#3dd6ff";
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = "#f7fbff";
+    ctx.strokeStyle = "#1149a8";
+    ctx.lineWidth = 2.8;
+    roundedRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 6);
     ctx.fill();
     ctx.stroke();
     ctx.shadowBlur = 0;
-    ctx.fillStyle = "#0052a4";
-    ctx.fillRect(-19, -10, 38, 5);
-    ctx.fillStyle = "#0b6b5e";
-    ctx.font = "900 11px system-ui";
+    ctx.fillStyle = "#00a6e8";
+    roundedRect(-20, -11, 19, 7, 3);
+    ctx.fill();
+    ctx.fillStyle = "#55c63f";
+    roundedRect(1, -11, 19, 7, 3);
+    ctx.fill();
+    ctx.fillStyle = "#1149a8";
+    ctx.font = "900 10px system-ui";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("TAP", 0, 4);
+    ctx.fillText("T-money", 0, 5);
     ctx.restore();
   }
 
