@@ -89,6 +89,8 @@ const NORMAL_MUSIC_VOLUME = 0.16;
 const BOSS_MUSIC_SRC = "/assets/audio/neon-circuit-boss.mp3";
 const BOSS_MUSIC_VOLUME = 0.2;
 const BOSS_ATTACK_COOLDOWN_MULTIPLIER = 1.3;
+const BOSS_BASIC_ATTACK_MIN_COOLDOWN = 2.2;
+const BOSS_BASIC_ATTACK_MAX_COOLDOWN = 3.2;
 
 const heroTypes = [
   {
@@ -759,6 +761,10 @@ function rand(min, max) {
 
 function bossAttackCooldown(min, max) {
   return rand(min, max) * BOSS_ATTACK_COOLDOWN_MULTIPLIER;
+}
+
+function bossBasicAttackCooldown() {
+  return bossAttackCooldown(BOSS_BASIC_ATTACK_MIN_COOLDOWN, BOSS_BASIC_ATTACK_MAX_COOLDOWN);
 }
 
 function distance(a, b) {
@@ -1461,16 +1467,16 @@ function spawnEnemy(type = null, boss = false) {
     hitFlash: 0,
     dash: 0,
     wobble: Math.random() * TAU,
-    swingCooldown: bossAttackCooldown(0.5, 1.2),
+    swingCooldown: bossBasicAttackCooldown(),
     shockCooldown: bossAttackCooldown(1.5, 2.4),
     soundCooldown: bossAttackCooldown(2.0, 3.2),
-    tauntCooldown: bossAttackCooldown(2.4, 3.8),
+    tauntCooldown: bossBasicAttackCooldown(),
     crisisCooldown: bossAttackCooldown(5.0, 6.8),
     flagCooldown: bossAttackCooldown(2.8, 4.2),
-    spearCooldown: bossAttackCooldown(2.4, 3.9),
-    praiseCooldown: bossAttackCooldown(1.0, 1.8),
+    spearCooldown: bossBasicAttackCooldown(),
+    praiseCooldown: bossBasicAttackCooldown(),
     praiseStunCooldown: bossAttackCooldown(3.2, 4.8),
-    bubbleCooldown: bossAttackCooldown(1.8, 3.1),
+    bubbleCooldown: bossBasicAttackCooldown(),
     gumMissileCooldown: bossAttackCooldown(4.5, 6.8),
     giantGumCooldown: bossAttackCooldown(7.2, 9.6),
     danceKickCooldown: bossAttackCooldown(0.7, 1.3),
@@ -1996,7 +2002,7 @@ function updateEnemies(delta) {
       enemy.soundCooldown -= delta;
       if (enemy.swingCooldown <= 0 && playerDistance < 880) {
         createDansoSwing(enemy);
-        enemy.swingCooldown = bossAttackCooldown(1.25, 1.85);
+        enemy.swingCooldown = bossBasicAttackCooldown();
       }
       if (enemy.soundCooldown <= 0 && playerDistance >= 160) {
         createDansoBoomerang(enemy);
@@ -2012,7 +2018,7 @@ function updateEnemies(delta) {
       enemy.crisisCooldown -= delta;
       if (enemy.tauntCooldown <= 0) {
         createAirportTaunt(enemy);
-        enemy.tauntCooldown = bossAttackCooldown(6.5, 8.4);
+        enemy.tauntCooldown = bossBasicAttackCooldown();
       }
       if (enemy.crisisCooldown <= 0) {
         createAirportCrisis(enemy);
@@ -2028,7 +2034,7 @@ function updateEnemies(delta) {
       }
       if (enemy.spearCooldown <= 0 && playerDistance < Math.hypot(viewWidth, viewHeight) * 1.1) {
         createJarvanSpear(enemy);
-        enemy.spearCooldown = bossAttackCooldown(3.9, 5.7);
+        enemy.spearCooldown = bossBasicAttackCooldown();
       }
     }
     if (enemy.special === "boss-praise") {
@@ -2036,7 +2042,7 @@ function updateEnemies(delta) {
       enemy.praiseStunCooldown -= delta;
       if (enemy.praiseCooldown <= 0) {
         createPraiseThumb(enemy);
-        enemy.praiseCooldown = bossAttackCooldown(1.4, 2.1);
+        enemy.praiseCooldown = bossBasicAttackCooldown();
       }
       if (enemy.praiseStunCooldown <= 0) {
         createPraiseStunWave(enemy);
@@ -2049,7 +2055,7 @@ function updateEnemies(delta) {
       enemy.giantGumCooldown -= delta;
       if (enemy.bubbleCooldown <= 0) {
         createGumBubble(enemy);
-        enemy.bubbleCooldown = bossAttackCooldown(2.5, 3.9);
+        enemy.bubbleCooldown = bossBasicAttackCooldown();
       }
       if (enemy.gumMissileCooldown <= 0) {
         createGumMissiles(enemy);
@@ -2211,7 +2217,7 @@ function createDansoBoomerang(enemy) {
     angle,
     owner: enemy,
     radius: 86,
-    damage: scaleBossDamage(enemy, 24),
+    damage: scaleBossDamage(enemy, 20),
     push: 58,
     stun: 0.28,
     returnAt: 0.56,
@@ -2355,7 +2361,7 @@ function createPraiseThumb(enemy) {
     vx: Math.cos(angle) * 620,
     vy: Math.sin(angle) * 620,
     radius: 48,
-    damage: scaleBossDamage(enemy, 18),
+    damage: scaleBossDamage(enemy, 20),
     life: 1.25,
     maxLife: 1.25,
     color: "#c77dff",
@@ -2375,7 +2381,7 @@ function createPraiseStunWave(enemy) {
     vx: Math.cos(angle) * 360,
     vy: Math.sin(angle) * 360,
     radius: 174,
-    damage: scaleBossDamage(enemy, 12),
+    damage: scaleBossDamage(enemy, 18),
     stun: 1.6,
     life: 1.6,
     maxLife: 1.6,
