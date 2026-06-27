@@ -335,7 +335,7 @@ for (const monster of monsterTypes) {
   monsterImages.set(monster.id, image);
 }
 const commuteProtestImage = new Image();
-commuteProtestImage.src = "/assets/monsters/commute-protest-cart.png?v=20260627";
+commuteProtestImage.src = "/assets/monsters/commute-protest-cart.png?v=20260627b";
 monsterImages.set("commute-protest", commuteProtestImage);
 
 const legacyBossTypes = [
