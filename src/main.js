@@ -2810,7 +2810,6 @@ function killEnemy(enemy) {
   if (enemy.boss) {
     playSound("bossKill");
     dropBossRewardItems(enemy);
-    for (let i = 0; i < 16; i += 1) dropXp(enemy.x + rand(-45, 45), enemy.y + rand(-45, 45), 12);
     nextBossAt = player.elapsed + Math.max(34, 46 - Math.min(12, bossIndex * 2));
     bossWarningFor = 0;
     updateBgm();
@@ -3058,20 +3057,17 @@ function dropPoliceRadio(enemy) {
 }
 
 function dropXp(x, y, amount) {
-  const pieces = Math.max(1, Math.ceil(amount / 9));
-  for (let i = 0; i < pieces; i += 1) {
-    const angle = Math.random() * TAU;
-    orbs.push({
-      x: x + Math.cos(angle) * rand(6, 24),
-      y: y + Math.sin(angle) * rand(6, 24),
-      value: amount / pieces,
-      radius: amount > 25 ? 4.2 : 3.2,
-      vx: Math.cos(angle) * rand(25, 70),
-      vy: Math.sin(angle) * rand(25, 70),
-      life: XP_ORB_LIFETIME,
-      maxLife: XP_ORB_LIFETIME,
-    });
-  }
+  const angle = Math.random() * TAU;
+  orbs.push({
+    x: x + Math.cos(angle) * rand(6, 24),
+    y: y + Math.sin(angle) * rand(6, 24),
+    value: amount,
+    radius: amount > 25 ? 4.2 : 3.2,
+    vx: Math.cos(angle) * rand(25, 70),
+    vy: Math.sin(angle) * rand(25, 70),
+    life: XP_ORB_LIFETIME,
+    maxLife: XP_ORB_LIFETIME,
+  });
 }
 
 function updateOrbs(delta) {
