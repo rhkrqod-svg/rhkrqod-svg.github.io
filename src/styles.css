@@ -483,6 +483,63 @@ button {
   cursor: default;
 }
 
+.stim-call {
+  left: 274px;
+  right: auto;
+  bottom: max(92px, calc(env(safe-area-inset-bottom) + 92px));
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 3px;
+  align-items: center;
+  justify-content: center;
+  width: 62px;
+  min-height: 28px;
+  border: 1px solid rgba(255, 107, 107, 0.48);
+  border-radius: 7px;
+  background: rgba(45, 11, 16, 0.82);
+  color: #ffb3c6;
+  cursor: pointer;
+  padding: 4px 3px;
+  pointer-events: auto;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(14px);
+}
+
+.stim-call::before {
+  content: "S";
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  background: #ff6b6b;
+  color: #fff3f3;
+  font-size: 12px;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.stim-call span {
+  color: rgba(248, 249, 250, 0.78);
+  font-size: 6.1px;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.stim-call strong {
+  min-width: 14px;
+  color: #fff3b0;
+  font-size: 13px;
+  line-height: 1;
+  text-align: right;
+}
+
+.stim-call:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
 .pause-button {
   top: max(7px, calc(env(safe-area-inset-top) + 7px));
   right: 12px;
@@ -1315,6 +1372,12 @@ button {
 
   .chicken-call {
     left: 202px;
+    bottom: max(88px, calc(env(safe-area-inset-bottom) + 88px));
+    width: 60px;
+  }
+
+  .stim-call {
+    left: 266px;
     bottom: max(88px, calc(env(safe-area-inset-bottom) + 88px));
     width: 60px;
   }

@@ -45,6 +45,8 @@ const refs = {
   taserCount: document.querySelector("#taserCount"),
   chickenButton: document.querySelector("#chickenButton"),
   chickenCount: document.querySelector("#chickenCount"),
+  stimButton: document.querySelector("#stimButton"),
+  stimCount: document.querySelector("#stimCount"),
   pauseButton: document.querySelector("#pauseButton"),
   moveStick: document.querySelector("#moveStick"),
   moveStickThumb: document.querySelector("#moveStickThumb"),
@@ -116,6 +118,10 @@ const CHICKEN_VISUAL_SCALE = 3;
 const CHICKEN_COLLISION_RADIUS_MULTIPLIER = 2.25;
 const CHICKEN_HIT_COOLDOWN = 0.36;
 const CHICKEN_KNOCKBACK = 132;
+const STIMPACK_DURATION = 10;
+const STIMPACK_ATTACK_SPEED_MULTIPLIER = 2;
+const STIMPACK_DRAIN_RATIO = 0.03;
+const STIMPACK_DRAIN_TICK = 1;
 
 const heroTypes = [
   {
@@ -123,6 +129,7 @@ const heroTypes = [
     name: "병우",
     image: "/assets/heroes/gae-hwanam-cutout.png",
     cardImage: "/assets/heroes/gae-hwanam-cutout.png",
+    chickenImage: "/assets/heroes/byeongu-chicken-form.png",
     quote: "정의는 방향이 아니라 선택.",
     hp: 120,
     maxHp: 120,
@@ -137,6 +144,7 @@ const heroTypes = [
     name: "희빈",
     image: "/assets/heroes/gae-hwani-cutout.png",
     cardImage: "/assets/heroes/gae-hwani-cutout.png",
+    chickenImage: "/assets/heroes/heebin-chicken-form.png",
     quote: "작은 용기로 길을 연다.",
     hp: 100,
     maxHp: 100,
@@ -149,10 +157,16 @@ const heroTypes = [
 ];
 
 const heroImages = new Map();
+const chickenHeroImages = new Map();
 for (const hero of heroTypes) {
   const image = new Image();
   image.src = hero.image;
   heroImages.set(hero.id, image);
+  if (hero.chickenImage) {
+    const chickenImage = new Image();
+    chickenImage.src = hero.chickenImage;
+    chickenHeroImages.set(hero.id, chickenImage);
+  }
 }
 
 const monsterTypes = [
@@ -754,6 +768,9 @@ const player = {
   taserGuns: 0,
   chickenBreasts: 0,
   chickenTimer: 0,
+  stimPacks: 0,
+  stimTimer: 0,
+  stimDrainTimer: STIMPACK_DRAIN_TICK,
   xpNeedMultiplier: 1,
   invuln: 0,
   alive: false,
@@ -1189,6 +1206,9 @@ function resetGame() {
     taserGuns: 0,
     chickenBreasts: 0,
     chickenTimer: 0,
+    stimPacks: 0,
+    stimTimer: 0,
+    stimDrainTimer: STIMPACK_DRAIN_TICK,
     xpNeedMultiplier: 1,
     invuln: 0,
     alive: true,
@@ -2036,6 +2056,16 @@ function updatePlayer(delta) {
   }
   player.invuln = Math.max(0, player.invuln - delta);
   player.chickenTimer = Math.max(0, (player.chickenTimer ?? 0) - delta);
+  if (player.stimTimer > 0) {
+    player.stimTimer = Math.max(0, player.stimTimer - delta);
+    player.stimDrainTimer = (player.stimDrainTimer ?? STIMPACK_DRAIN_TICK) - delta;
+    while (player.stimTimer > 0 && player.stimDrainTimer <= 0) {
+      applyStimpackDrain();
+      player.stimDrainTimer += STIMPACK_DRAIN_TICK;
+    }
+  } else {
+    player.stimDrainTimer = STIMPACK_DRAIN_TICK;
+  }
   player.stunTimer = Math.max(0, player.stunTimer - delta);
   if (player.defenseBreakTimer > 0) {
     player.defenseBreakTimer = Math.max(0, player.defenseBreakTimer - delta);
@@ -2048,20 +2078,21 @@ function updatePlayer(delta) {
       player.regenTimer = Math.max(2.2, 5.2 - player.regenLevel * 0.32);
     }
   }
-  player.fireCooldown -= delta;
+  const cooldownDelta = getStimCooldownDelta(delta);
+  player.fireCooldown -= cooldownDelta;
   if (!stunned && player.fireCooldown <= 0) {
     fireBullets();
     player.fireCooldown = player.fireRate;
   }
 
   weapons.strapOrbit.angle += delta * (5.3 + weapons.strapOrbit.level * 0.32);
-  weapons.lightning.cooldown -= delta;
+  weapons.lightning.cooldown -= cooldownDelta;
   if (weapons.lightning.cooldown <= 0) {
     strikeLightning();
     weapons.lightning.cooldown = Math.max(1.25, 3.17 - weapons.lightning.level * 0.17);
   }
 
-  weapons.card.cooldown -= delta;
+  weapons.card.cooldown -= cooldownDelta;
   if (weapons.card.level > 0 && weapons.card.cooldown <= 0) {
     spawnCard();
     weapons.card.cooldown = Math.max(0.8, (1.05 - weapons.card.level * 0.11) * 2.52);
@@ -2079,7 +2110,7 @@ function updatePlayer(delta) {
     weapons.transferGate.cooldown = Math.max(2.1, 6.8 - weapons.transferGate.level * 0.38);
   }
 
-  weapons.customerMissile.cooldown -= delta;
+  weapons.customerMissile.cooldown -= cooldownDelta;
   if (weapons.customerMissile.level > 0 && weapons.customerMissile.cooldown <= 0) {
     spawnCustomerMissiles();
     weapons.customerMissile.cooldown = Math.max(0.38, ((0.55 - weapons.customerMissile.level * 0.04) / 0.7) * 0.936);
@@ -2901,6 +2932,23 @@ function getChickenChargeDamage() {
   return Math.max(1, Math.round(lightningDamage * 0.5));
 }
 
+function isStimpackActive() {
+  return player.stimTimer > 0;
+}
+
+function getStimCooldownDelta(delta) {
+  return isStimpackActive() ? delta * STIMPACK_ATTACK_SPEED_MULTIPLIER : delta;
+}
+
+function applyStimpackDrain() {
+  const amount = Math.max(1, Math.round(player.maxHp * STIMPACK_DRAIN_RATIO));
+  player.hp = Math.max(0, player.hp - amount);
+  addPopup(`-${amount}`, player.x, player.y - 52, "#ff6b6b", 0.55, 14);
+  addParticles(player.x, player.y, "#ff6b6b", 8);
+  if (player.hp <= 0) endGame(false);
+  updateHud();
+}
+
 function killEnemy(enemy) {
   const index = enemies.indexOf(enemy);
   if (index >= 0) enemies.splice(index, 1);
@@ -2948,9 +2996,16 @@ function grantChickenBreast(count = 1, x = player.x, y = player.y) {
   updateHud();
 }
 
+function grantStimPack(count = 1, x = player.x, y = player.y) {
+  player.stimPacks += count;
+  addPopup(`스팀팩 +${count}`, x, y - 102, "#ff8a80", 0.9, 16);
+  playSound("levelUp");
+  updateHud();
+}
+
 function dropBossRewardItems(enemy) {
   if (!enemy.boss) return;
-  const rewardKinds = ["firstAid", "radio", "taser", "chicken"];
+  const rewardKinds = ["firstAid", "radio", "taser", "chicken", "stim"];
   for (let i = rewardKinds.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
     [rewardKinds[i], rewardKinds[j]] = [rewardKinds[j], rewardKinds[i]];
@@ -2969,7 +3024,7 @@ function dropBossRewardPickup(enemy, kind, index = 0, count = 1) {
     x: enemy.x + Math.cos(angle) * distance,
     y: enemy.y + Math.sin(angle) * distance,
     heal: 0,
-    radius: kind === "chicken" ? 14 : kind === "taser" ? 13 : kind === "radio" ? 14 : 13,
+    radius: kind === "chicken" || kind === "stim" ? 14 : kind === "taser" ? 13 : kind === "radio" ? 14 : 13,
     boss: true,
     pulse: Math.random() * TAU,
     vx: Math.cos(angle) * rand(28, 78),
@@ -3318,6 +3373,10 @@ function updateEnergyPickups(delta) {
         grantChickenBreast(1, pickup.x, pickup.y);
         addPopup("닭가슴살", pickup.x, pickup.y - 18, "#ffd166", 0.8, 14);
         addParticles(pickup.x, pickup.y, "#ffd166", 22);
+      } else if (pickup.kind === "stim") {
+        grantStimPack(1, pickup.x, pickup.y);
+        addPopup("스팀팩", pickup.x, pickup.y - 18, "#ff8a80", 0.8, 14);
+        addParticles(pickup.x, pickup.y, "#ff6b6b", 22);
       } else if (pickup.kind === "firstAid") {
         grantFirstAidKit(1, pickup.x, pickup.y);
         addPopup("구급팩", pickup.x, pickup.y - 18, "#b8ffe4", 0.8, 14);
@@ -3362,6 +3421,18 @@ function useChickenBreast() {
   addPopup("닭가슴살!", player.x, player.y - 78, "#ffd166", 0.9, 20);
   addParticles(player.x, player.y, "#ffd166", 34);
   addParticles(player.x, player.y, "#b7ef64", 24);
+  playSound("levelUp");
+  updateHud();
+}
+
+function useStimPack() {
+  if (game.state !== "playing" || game.paused || game.pendingHeroChoice || player.stimPacks <= 0 || player.stimTimer > 0) return;
+  player.stimPacks -= 1;
+  player.stimTimer = STIMPACK_DURATION;
+  player.stimDrainTimer = STIMPACK_DRAIN_TICK;
+  announceSkill("스팀팩", { color: "#ff8a80", minGap: 500, source: "item" });
+  addPopup("스팀팩!", player.x, player.y - 92, "#ff8a80", 0.9, 20);
+  addParticles(player.x, player.y, "#ff6b6b", 34);
   playSound("levelUp");
   updateHud();
 }
@@ -3953,6 +4024,11 @@ function updateHud() {
     refs.chickenButton.classList.toggle("item-hidden", player.chickenBreasts <= 0);
     refs.chickenButton.disabled = player.chickenBreasts <= 0 || game.state !== "playing" || game.paused || player.chickenTimer > 0;
   }
+  if (refs.stimCount) refs.stimCount.textContent = player.stimPacks;
+  if (refs.stimButton) {
+    refs.stimButton.classList.toggle("item-hidden", player.stimPacks <= 0);
+    refs.stimButton.disabled = player.stimPacks <= 0 || game.state !== "playing" || game.paused || player.stimTimer > 0;
+  }
   if (refs.pauseButton) {
     refs.pauseButton.disabled = game.state !== "playing" || game.pendingHeroChoice || game.pendingStarterChoices > 0 || (game.paused && !game.manualPaused);
     refs.pauseButton.textContent = game.manualPaused ? "▶" : "Ⅱ";
@@ -3974,6 +4050,7 @@ function updateHud() {
     player.damageReduction > 0 ? { label: `내성 ${Math.round(player.damageReduction * 100)}%`, type: "passive", power: chipPower(Math.round(player.damageReduction / 0.15)), desc: "받는 피해가 감소합니다." } : null,
     player.regenLevel > 0 ? { label: `회복 Lv.${player.regenLevel}`, type: "passive", power: chipPower(player.regenLevel), desc: `일정 시간마다 최대 체력의 ${Number(((1 + player.regenLevel) * 1.5).toFixed(1))}%를 회복합니다.` } : null,
     player.chickenTimer > 0 ? { label: `닭가슴살 ${Math.ceil(player.chickenTimer)}초`, type: "status", desc: "몸집이 커지고 접촉한 적에게 몸통박치기 피해와 넉백을 줍니다." } : null,
+    player.stimTimer > 0 ? { label: `스팀팩 ${Math.ceil(player.stimTimer)}초`, type: "status", desc: "일부 무기 쿨타임이 절반으로 줄지만 매초 최대 체력 3%를 잃습니다." } : null,
   ].filter(Boolean);
   renderLoadoutItems(loadoutItems);
 }
@@ -4208,9 +4285,11 @@ function drawStationSigns(centerX) {
 function drawPlayer() {
   const p = worldToScreen(player.x, player.y);
   const pulse = player.invuln > 0 ? Math.sin(performance.now() * 0.04) * 0.3 + 0.7 : 1;
-  const heroImage = heroImages.get(player.heroId);
-  const useHeroImage = Boolean(heroImage?.complete && heroImage.naturalWidth > 0);
   const chickenActive = player.chickenTimer > 0;
+  const stimActive = player.stimTimer > 0;
+  const transformedImage = chickenActive ? chickenHeroImages.get(player.heroId) : null;
+  const heroImage = transformedImage?.complete && transformedImage.naturalWidth > 0 ? transformedImage : heroImages.get(player.heroId);
+  const useHeroImage = Boolean(heroImage?.complete && heroImage.naturalWidth > 0);
   const chickenRatio = chickenActive ? clamp(player.chickenTimer / CHICKEN_BUFF_DURATION, 0, 1) : 0;
   const spriteScale = chickenActive ? CHICKEN_VISUAL_SCALE : 1;
   const spriteHeight = Math.max(32, player.radius * 7.2) * spriteScale;
@@ -4242,14 +4321,43 @@ function drawPlayer() {
     }
     ctx.restore();
   }
+  if (stimActive) {
+    const pulseTime = performance.now() * 0.006;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.strokeStyle = "rgba(255, 107, 107, 0.74)";
+    ctx.shadowColor = "#ff6b6b";
+    ctx.shadowBlur = 18;
+    ctx.lineWidth = 3;
+    for (let i = 0; i < 3; i += 1) {
+      const radius = player.radius * (2.1 + i * 0.52) + Math.sin(pulseTime + i) * 3;
+      ctx.globalAlpha = 0.42 - i * 0.08;
+      ctx.beginPath();
+      ctx.arc(0, 0, radius, pulseTime + i * 1.4, pulseTime + i * 1.4 + Math.PI * 1.35);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 0.5;
+    ctx.strokeStyle = "rgba(255, 227, 227, 0.72)";
+    for (let i = 0; i < 6; i += 1) {
+      const angle = pulseTime * 1.8 + (TAU * i) / 6;
+      const inner = player.radius * 1.6;
+      const outer = player.radius * 3.6;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+      ctx.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
   if (useHeroImage) {
     ctx.fillStyle = "rgba(0, 0, 0, 0.28)";
     ctx.beginPath();
     ctx.ellipse(0, spriteHeight * 0.37, spriteWidth * 0.34, 4.2, 0, 0, TAU);
     ctx.fill();
     ctx.shadowColor = player.heroAccent;
-    ctx.shadowBlur = chickenActive ? 26 : player.invuln > 0 ? 14 : 7;
+    ctx.shadowBlur = chickenActive ? 26 : stimActive ? 18 : player.invuln > 0 ? 14 : 7;
     if (chickenActive) ctx.filter = "saturate(1.25) contrast(1.08) hue-rotate(18deg)";
+    else if (stimActive) ctx.filter = "saturate(1.35) contrast(1.08)";
     ctx.drawImage(heroImage, -spriteWidth / 2, -spriteHeight * 0.58, spriteWidth, spriteHeight);
     ctx.filter = "none";
     ctx.shadowBlur = 0;
@@ -5141,6 +5249,33 @@ function drawEnergyPickups() {
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText("P", 0, size * 0.02);
+      ctx.shadowBlur = 0;
+      ctx.restore();
+      continue;
+    }
+    if (pickup.kind === "stim") {
+      ctx.shadowColor = "#ff6b6b";
+      ctx.shadowBlur = 20;
+      ctx.fillStyle = "#ffe3e3";
+      ctx.strokeStyle = "#c92a2a";
+      ctx.lineWidth = 2.5;
+      ctx.rotate(-0.5);
+      roundedRect(-size * 0.88, -size * 0.2, size * 1.45, size * 0.42, 4);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#ff6b6b";
+      ctx.fillRect(-size * 0.42, -size * 0.15, size * 0.68, size * 0.3);
+      ctx.strokeStyle = "#fff5f5";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(size * 0.56, 0);
+      ctx.lineTo(size * 1.06, 0);
+      ctx.stroke();
+      ctx.fillStyle = "#c92a2a";
+      ctx.font = `900 ${Math.max(7, size * 0.5)}px system-ui`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("S", -size * 0.12, size * 0.02);
       ctx.shadowBlur = 0;
       ctx.restore();
       continue;
@@ -6368,6 +6503,10 @@ window.addEventListener("keydown", (event) => {
     useChickenBreast();
     return;
   }
+  if (event.code === "KeyV") {
+    useStimPack();
+    return;
+  }
   keys.add(event.code);
 });
 window.addEventListener("keyup", (event) => keys.delete(event.code));
@@ -6377,6 +6516,7 @@ refs.firstAidButton?.addEventListener("click", useFirstAidKit);
 refs.policeButton?.addEventListener("click", usePoliceCall);
 refs.taserButton?.addEventListener("click", useTaserGun);
 refs.chickenButton?.addEventListener("click", useChickenBreast);
+refs.stimButton?.addEventListener("click", useStimPack);
 refs.pauseButton?.addEventListener("click", togglePause);
 refs.upgradePauseButton?.addEventListener("click", toggleUpgradePause);
 refs.rankForm?.addEventListener("submit", submitLeaderboardEntry);
