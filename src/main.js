@@ -3470,6 +3470,7 @@ function updateDamageZones(delta) {
       const warningProgress = clamp(progress / armedPoint, 0, 1);
       const activeProgress = clamp((progress - armedPoint) / Math.max(0.001, 1 - armedPoint), 0, 1);
       const pulse = 0.92 + Math.sin(performance.now() * 0.018 + (zone.seed ?? 0)) * 0.06;
+      const p = worldToScreen(zone.x, zone.y);
       ctx.save();
       ctx.translate(p.x, p.y);
       ctx.globalCompositeOperation = "lighter";
