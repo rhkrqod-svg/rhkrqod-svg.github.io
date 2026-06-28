@@ -82,6 +82,7 @@ const NORMAL_SPAWN_SAFE_RADIUS = 560;
 const BOSS_SPAWN_SAFE_RADIUS = 760;
 const PLAYER_RADIUS = 19 * CHARACTER_SIZE_SCALE;
 const FIRST_AID_HEAL_RATIO = 0.5;
+const BASE_REGEN_RATIO = 0.015;
 const ENEMY_HP_GLOBAL_MULTIPLIER = 1.6;
 const ENEMY_SPEED_GLOBAL_MULTIPLIER = 1.15;
 const ENEMY_DAMAGE_GLOBAL_MULTIPLIER = 1.3;
@@ -611,7 +612,7 @@ const upgradePool = [
   {
     id: "mentalRegen",
     name: "멘탈 회복력",
-    desc: "일정 시간마다 체력 소량 회복",
+    desc: "자동 회복량 +1.5%p",
     apply: () => {
       player.regenLevel += 1;
       player.regenTimer = Math.min(player.regenTimer, 1.2);
@@ -2047,7 +2048,7 @@ function updatePlayer(delta) {
   if (player.hp < player.maxHp) {
     player.regenTimer -= delta;
     if (player.regenTimer <= 0) {
-      healPlayer(1 + player.regenLevel, false);
+      healPlayer(getRegenHealAmount(), false);
       player.regenTimer = Math.max(2.2, 5.2 - player.regenLevel * 0.32);
     }
   }
@@ -2641,6 +2642,11 @@ function calculateIncomingDamage(amount) {
   const afterDefense = amount * (100 / effectiveDefense);
   const afterPassive = afterDefense * (1 - clamp(player.damageReduction, 0, 0.6));
   return Math.max(1, Math.round(afterPassive));
+}
+
+function getRegenHealAmount() {
+  const regenRatio = BASE_REGEN_RATIO * (1 + player.regenLevel);
+  return Math.max(1, Math.round(player.maxHp * regenRatio));
 }
 
 function increaseLevelStats() {
@@ -3908,7 +3914,7 @@ function updateHud() {
     player.stunTimer > 0 ? { label: `경직 ${Math.ceil(player.stunTimer)}초`, type: "status", desc: "잠시 움직일 수 없는 상태입니다." } : null,
     player.slowTimer > 0 ? { label: `둔화 ${Math.ceil(player.slowTimer)}초`, type: "status", desc: "이동 속도가 느려진 상태입니다." } : null,
     player.damageReduction > 0 ? { label: `내성 ${Math.round(player.damageReduction * 100)}%`, type: "passive", power: chipPower(Math.round(player.damageReduction / 0.15)), desc: "받는 피해가 감소합니다." } : null,
-    player.regenLevel > 0 ? { label: `회복 Lv.${player.regenLevel}`, type: "passive", power: chipPower(player.regenLevel), desc: "일정 시간마다 체력을 조금씩 회복합니다." } : null,
+    player.regenLevel > 0 ? { label: `회복 Lv.${player.regenLevel}`, type: "passive", power: chipPower(player.regenLevel), desc: `일정 시간마다 최대 체력의 ${Number(((1 + player.regenLevel) * 1.5).toFixed(1))}%를 회복합니다.` } : null,
   ].filter(Boolean);
   renderLoadoutItems(loadoutItems);
 }
