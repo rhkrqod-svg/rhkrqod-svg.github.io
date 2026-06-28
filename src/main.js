@@ -2387,21 +2387,24 @@ function createJarvanSpearVolley(enemy) {
 function createPraiseThumb(enemy) {
   const angle = angleTo(enemy, player);
   addSpeechBubble(enemy, "당신이 최고야?!", 1.1);
-  damageZones.push({
-    x: enemy.x + Math.cos(angle) * 42,
-    y: enemy.y + Math.sin(angle) * 42,
-    vx: Math.cos(angle) * 620,
-    vy: Math.sin(angle) * 620,
-    radius: 48,
-    damage: scaleBossDamage(enemy, 20),
-    life: 1.25,
-    maxLife: 1.25,
-    color: "#c77dff",
-    hostile: true,
-    consumeOnHit: true,
-    applied: false,
-    kind: "thumbShot",
-  });
+  for (const offset of [-0.13, 0.13]) {
+    const shotAngle = angle + offset;
+    damageZones.push({
+      x: enemy.x + Math.cos(shotAngle) * 42,
+      y: enemy.y + Math.sin(shotAngle) * 42,
+      vx: Math.cos(shotAngle) * 620,
+      vy: Math.sin(shotAngle) * 620,
+      radius: 48,
+      damage: scaleBossDamage(enemy, 20),
+      life: 1.25,
+      maxLife: 1.25,
+      color: "#c77dff",
+      hostile: true,
+      consumeOnHit: true,
+      applied: false,
+      kind: "thumbShot",
+    });
+  }
 }
 
 function createPraiseStunWave(enemy) {
