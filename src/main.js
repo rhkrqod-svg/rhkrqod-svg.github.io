@@ -68,7 +68,7 @@ const LEADERBOARD_API = import.meta.env.VITE_LEADERBOARD_API || "/api/leaderboar
 const LEADERBOARD_LIMIT = 10;
 const TAU = Math.PI * 2;
 const WORLD_SIZE = 2800;
-const MAX_RUN_TIME = 1200;
+const MAX_RUN_TIME = 3600;
 const DPR_LIMIT = 2;
 const START_HP = 100;
 const MAX_PLAYER_HP = 200;
@@ -3659,7 +3659,7 @@ function endGame(won) {
   localStorage.setItem(STORAGE_KEY, String(bestScore));
   refs.messageTitle.textContent = won ? "작전 성공" : "작전 종료";
   refs.messageText.textContent = won
-    ? `20분을 버텼습니다. 최종 점수 ${formatScore(player.score)}점.`
+    ? `1시간을 버텼습니다. 최종 점수 ${formatScore(player.score)}점.`
     : `최종 점수 ${formatScore(player.score)}점. 다시 출동할 수 있습니다.`;
   refs.startButton.textContent = "다시 출동";
   refs.message.classList.remove("start-screen");
