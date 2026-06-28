@@ -83,6 +83,7 @@ const BOSS_SPAWN_SAFE_RADIUS = 760;
 const PLAYER_RADIUS = 19 * CHARACTER_SIZE_SCALE;
 const FIRST_AID_HEAL_RATIO = 0.5;
 const ENEMY_HP_GLOBAL_MULTIPLIER = 1.6;
+const ENEMY_SPEED_GLOBAL_MULTIPLIER = 1.15;
 const ENEMY_XP_REWARD_MULTIPLIER = 1.35;
 const XP_ORB_LIFETIME = 18;
 const XP_ORB_FADE_TIME = 5;
@@ -1478,7 +1479,7 @@ function spawnCommuteProtestStage() {
       trim: "#fff3b0",
       hp,
       maxHp: hp,
-      speed: rand(31, 43),
+      speed: rand(31, 43) * ENEMY_SPEED_GLOBAL_MULTIPLIER,
       damage: 6 * attackScale,
       attackScale,
       radius: 62 * 0.68 * 0.8 * MONSTER_SIZE_SCALE,
@@ -1524,7 +1525,7 @@ function spawnEnemy(type = null, boss = false) {
     y,
     hp: chosen.hp * hpScale,
     maxHp: chosen.hp * hpScale,
-    speed: chosen.speed * (boss ? 1.42 : 1),
+    speed: chosen.speed * (boss ? 1.42 : 1) * ENEMY_SPEED_GLOBAL_MULTIPLIER,
     damage: chosen.damage * attackScale,
     attackScale,
     radius: chosen.radius * (boss ? BOSS_SIZE_SCALE : MONSTER_SIZE_SCALE),
