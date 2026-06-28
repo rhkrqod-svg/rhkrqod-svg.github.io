@@ -1828,7 +1828,7 @@ function spawnExpressTrain() {
   const level = weapons.expressTrain.level;
   if (level <= 0) return;
   const trainWidthScale = 1.56;
-  const trainLengthScale = 1.95;
+  const trainLengthScale = 3.9;
   const vertical = Math.random() < 0.5;
   const direction = Math.random() < 0.5 ? -1 : 1;
   const target = pickBossPriorityTarget(1300);
@@ -1838,7 +1838,7 @@ function spawnExpressTrain() {
     vertical,
     width: (92 + level * 13) * trainWidthScale,
     trainLength: (520 + level * 34) * trainLengthScale,
-    damage: (105 + level * 42) * 2,
+    damage: (105 + level * 42) * 3,
     push: 470 + level * 62,
     angle: vertical ? (direction > 0 ? Math.PI / 2 : -Math.PI / 2) : direction > 0 ? 0 : Math.PI,
     direction,
@@ -2428,23 +2428,26 @@ function createPraiseStunWave(enemy) {
 function createGumBubble(enemy) {
   const angle = angleTo(enemy, player);
   addSpeechBubble(enemy, "버블팝!", 1.0);
-  damageZones.push({
-    x: enemy.x + Math.cos(angle) * 42,
-    y: enemy.y + Math.sin(angle) * 42,
-    vx: Math.cos(angle) * 310,
-    vy: Math.sin(angle) * 310,
-    radius: 25,
-    damage: scaleBossDamage(enemy, 12),
-    slow: 5,
-    slowMultiplier: 0.55,
-    life: 1.6,
-    maxLife: 1.6,
-    color: "#ff8fab",
-    hostile: true,
-    consumeOnHit: true,
-    applied: false,
-    kind: "gumBubble",
-  });
+  for (const offset of [-0.13, 0.13]) {
+    const shotAngle = angle + offset;
+    damageZones.push({
+      x: enemy.x + Math.cos(shotAngle) * 42,
+      y: enemy.y + Math.sin(shotAngle) * 42,
+      vx: Math.cos(shotAngle) * 310,
+      vy: Math.sin(shotAngle) * 310,
+      radius: 32.5,
+      damage: scaleBossDamage(enemy, 12),
+      slow: 5,
+      slowMultiplier: 0.55,
+      life: 1.6,
+      maxLife: 1.6,
+      color: "#ff8fab",
+      hostile: true,
+      consumeOnHit: true,
+      applied: false,
+      kind: "gumBubble",
+    });
+  }
 }
 
 
