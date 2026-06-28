@@ -627,6 +627,15 @@ function getTearGasDamage() {
   return Math.round((9 + (level - 1) * 6) * 1.2);
 }
 
+function getStrapOrbitRadius() {
+  const level = Math.max(1, weapons.strapOrbit.level);
+  return (58 + level * 6) * 1.69 * (1 + (level - 1) * 0.04);
+}
+
+function getStrapHandleRadius() {
+  return 13 * 1.2;
+}
+
 let width = 1;
 let height = 1;
 let viewWidth = 1;
@@ -2718,14 +2727,15 @@ function updateProjectiles(delta) {
 function updateBlade(delta = 0) {
   if (weapons.strapOrbit.level > 0) {
     const strapCount = Math.min(7, weapons.strapOrbit.level + 2);
-    const strapRadius = (58 + weapons.strapOrbit.level * 6) * 1.69;
+    const strapRadius = getStrapOrbitRadius();
+    const strapHandleRadius = getStrapHandleRadius();
     const strapDamage = 14 + (weapons.strapOrbit.level - 1) * 8;
     for (let i = 0; i < strapCount; i += 1) {
       const strapAngle = weapons.strapOrbit.angle + (TAU * i) / strapCount;
       const strap = {
         x: player.x + Math.cos(strapAngle) * strapRadius,
         y: player.y + Math.sin(strapAngle) * strapRadius,
-        radius: 13,
+        radius: strapHandleRadius,
       };
       for (const enemy of [...enemies]) {
         if (Math.hypot(enemy.x - strap.x, enemy.y - strap.y) < enemy.radius + strap.radius) {
@@ -4035,7 +4045,8 @@ function drawBlades() {
 
   if (weapons.strapOrbit.level > 0) {
     const strapCount = Math.min(7, weapons.strapOrbit.level + 2);
-    const strapRadius = (58 + weapons.strapOrbit.level * 6) * 1.69;
+    const strapRadius = getStrapOrbitRadius();
+    const strapDrawScale = getStrapHandleRadius() / 13;
     ctx.save();
     for (let i = 0; i < strapCount; i += 1) {
       const strapAngle = weapons.strapOrbit.angle + (TAU * i) / strapCount;
@@ -4045,11 +4056,11 @@ function drawBlades() {
       ctx.rotate(strapAngle);
       ctx.strokeStyle = "#ffd6a5";
       ctx.fillStyle = "#5f4b32";
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 3 * strapDrawScale;
       ctx.beginPath();
-      ctx.arc(0, 0, 10, 0.2, TAU - 0.2);
+      ctx.arc(0, 0, 10 * strapDrawScale, 0.2, TAU - 0.2);
       ctx.stroke();
-      ctx.fillRect(-4, -15, 8, 9);
+      ctx.fillRect(-4 * strapDrawScale, -15 * strapDrawScale, 8 * strapDrawScale, 9 * strapDrawScale);
       ctx.restore();
     }
     ctx.restore();
