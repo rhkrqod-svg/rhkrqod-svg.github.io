@@ -616,7 +616,7 @@ function getTearGasRadius() {
 
 function getTearGasDamage() {
   const level = Math.max(1, weapons.tearGas.level);
-  return Math.round(9 + (level - 1) * 6);
+  return Math.round((9 + (level - 1) * 6) * 1.2);
 }
 
 let width = 1;
