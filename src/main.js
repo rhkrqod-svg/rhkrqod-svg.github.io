@@ -2287,27 +2287,30 @@ function createDansoBoomerang(enemy) {
 function createAirportTaunt(enemy) {
   const angle = angleTo(enemy, player);
   addSpeechBubble(enemy, "왜 나만 갈구냐고!", 1.25);
-  damageZones.push({
-    x: enemy.x + Math.cos(angle) * 34,
-    y: enemy.y + Math.sin(angle) * 34,
-    vx: Math.cos(angle) * 338,
-    vy: Math.sin(angle) * 338,
-    radius: 46,
-    damage: scaleBossDamage(enemy, 20),
-    life: 2.15,
-    maxLife: 2.15,
-    color: "#80ffdb",
-    hostile: true,
-    consumeOnHit: true,
-    applied: false,
-    kind: "dollarBill",
-  });
+  for (const offset of [-0.12, 0.12]) {
+    const shotAngle = angle + offset;
+    damageZones.push({
+      x: enemy.x + Math.cos(shotAngle) * 34,
+      y: enemy.y + Math.sin(shotAngle) * 34,
+      vx: Math.cos(shotAngle) * 338,
+      vy: Math.sin(shotAngle) * 338,
+      radius: 55.2,
+      damage: scaleBossDamage(enemy, 20),
+      life: 2.15,
+      maxLife: 2.15,
+      color: "#80ffdb",
+      hostile: true,
+      consumeOnHit: true,
+      applied: false,
+      kind: "dollarBill",
+    });
+  }
   addParticles(enemy.x + Math.cos(angle) * 48, enemy.y + Math.sin(angle) * 48, "#80ffdb", 10);
 }
 
 function createAirportCrisis(enemy) {
   addSpeechBubble(enemy, "금융 위기 모르냐 금융위기 거지야~", 1.45);
-  const dollarCount = 20;
+  const dollarCount = 30;
   for (let i = 0; i < dollarCount; i += 1) {
     const angle = (TAU * i) / dollarCount + rand(-0.16, 0.16);
     damageZones.push({
@@ -2315,7 +2318,7 @@ function createAirportCrisis(enemy) {
       y: enemy.y,
       vx: Math.cos(angle) * rand(190, 330),
       vy: Math.sin(angle) * rand(190, 330),
-      radius: 34,
+      radius: 40.8,
       damage: scaleBossDamage(enemy, 12),
       life: 1.8,
       maxLife: 1.8,
