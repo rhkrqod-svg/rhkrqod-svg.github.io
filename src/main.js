@@ -2434,7 +2434,7 @@ function createGumBubble(enemy) {
     vy: Math.sin(angle) * 310,
     radius: 25,
     damage: scaleBossDamage(enemy, 12),
-    slow: 10,
+    slow: 5,
     slowMultiplier: 0.55,
     life: 1.6,
     maxLife: 1.6,
