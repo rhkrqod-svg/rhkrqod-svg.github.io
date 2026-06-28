@@ -1742,16 +1742,19 @@ function strikeLightning() {
   for (const enemy of targets) {
     const damage = Math.round((63 + weapons.lightning.level * 58) * 1.105 * 1.3 * 0.8);
     const strikeRadius = (58 + weapons.lightning.level * 7) * 1.183 * 1.3 * 1.2 * 1.15;
+    const levelBonus = Math.max(0, weapons.lightning.level - 1);
+    const bossStun = 0.5 + levelBonus * 0.1;
+    const monsterStun = 3 + levelBonus * 0.3;
     damageEnemy(enemy, enemy.boss ? Math.round(damage * 1.25) : damage, "#9bf6ff");
-    enemy.stunTimer = Math.max(enemy.stunTimer ?? 0, enemy.boss ? 0.5 : 3);
+    enemy.stunTimer = Math.max(enemy.stunTimer ?? 0, enemy.boss ? bossStun : monsterStun);
     addParticles(enemy.x, enemy.y, "#9bf6ff", enemy.boss ? 14 : 9);
     damageZones.push({
       x: enemy.x,
       y: enemy.y,
       radius: strikeRadius,
       damage: Math.round(damage * 0.45),
-      stun: 3,
-      bossStun: 0.5,
+      stun: monsterStun,
+      bossStun,
       life: 0.34,
       maxLife: 0.34,
       color: "#9bf6ff",
