@@ -2247,7 +2247,7 @@ function createDansoBoomerang(enemy) {
     curveOffset,
     angle,
     owner: enemy,
-    radius: 86,
+    radius: 120,
     damage: scaleBossDamage(enemy, 20),
     push: 58,
     stun: 0.28,
