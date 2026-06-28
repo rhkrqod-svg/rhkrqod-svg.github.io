@@ -10,6 +10,14 @@
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://rhkrqod-svg.github.io/" />
     <meta property="og:image" content="https://rhkrqod-svg.github.io/assets/images/start-screen.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png" />
+    <meta name="theme-color" content="#6f38ff" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="빌런헌터" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="지하철 빌런헌터" />
     <meta name="twitter:description" content="지하철 빌런을 사냥하는 모바일 액션 생존 게임" />
@@ -140,5 +148,12 @@
         </div>
       </div>
     </div>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("/sw.js").catch(() => {});
+        });
+      }
+    </script>
   </body>
 </html>
