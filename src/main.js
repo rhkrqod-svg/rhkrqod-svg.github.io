@@ -84,6 +84,7 @@ const PLAYER_RADIUS = 19 * CHARACTER_SIZE_SCALE;
 const FIRST_AID_HEAL_RATIO = 0.5;
 const ENEMY_HP_GLOBAL_MULTIPLIER = 1.6;
 const ENEMY_SPEED_GLOBAL_MULTIPLIER = 1.15;
+const ENEMY_DAMAGE_GLOBAL_MULTIPLIER = 1.3;
 const BOSS_SPEED_GLOBAL_MULTIPLIER = 1.15;
 const ENEMY_XP_REWARD_MULTIPLIER = 1.35;
 const XP_ORB_LIFETIME = 18;
@@ -1338,7 +1339,7 @@ function getNormalEnemyHpLevelScale() {
 }
 
 function scaleBossDamage(enemy, damage) {
-  return Math.round(damage * (enemy.attackScale ?? 1));
+  return Math.round(damage * (enemy.attackScale ?? 1) * ENEMY_DAMAGE_GLOBAL_MULTIPLIER);
 }
 
 function getSpawnSafeRadius(boss = false) {
@@ -1496,7 +1497,7 @@ function spawnCommuteProtestStage() {
       hp,
       maxHp: hp,
       speed: rand(31, 43) * ENEMY_SPEED_GLOBAL_MULTIPLIER,
-      damage: 6 * attackScale,
+      damage: 6 * attackScale * ENEMY_DAMAGE_GLOBAL_MULTIPLIER,
       attackScale,
       radius: 62 * 0.68 * 0.8 * MONSTER_SIZE_SCALE,
       bodySize: 0.9,
@@ -1542,7 +1543,7 @@ function spawnEnemy(type = null, boss = false) {
     hp: chosen.hp * hpScale,
     maxHp: chosen.hp * hpScale,
     speed: chosen.speed * (boss ? 1.42 * BOSS_SPEED_GLOBAL_MULTIPLIER : 1) * ENEMY_SPEED_GLOBAL_MULTIPLIER,
-    damage: chosen.damage * attackScale,
+    damage: chosen.damage * attackScale * ENEMY_DAMAGE_GLOBAL_MULTIPLIER,
     attackScale,
     radius: chosen.radius * (boss ? BOSS_SIZE_SCALE : MONSTER_SIZE_SCALE),
     xp: calculateEnemyXp(chosen, hpScale),
