@@ -104,6 +104,11 @@ const BOSS_BASIC_ATTACK_SPEED_MULTIPLIER = 1.2;
 const BOSS_STAB_ATTACK_DURATION_MULTIPLIER = 1 / BOSS_BASIC_ATTACK_SPEED_MULTIPLIER;
 const BOSS_SPECIAL_ATTACK_MIN_COOLDOWN = 6.4;
 const BOSS_SPECIAL_ATTACK_MAX_COOLDOWN = 8.2;
+const TASER_DOT_TICK = 0.5;
+const TASER_DOT_DAMAGE_RATIO = 0.1;
+const SUBWAY_POLICE_DAMAGE_MULTIPLIER = 1.5;
+const SUBWAY_POLICE_SPLASH_RADIUS = 60;
+const SUBWAY_POLICE_SPLASH_DAMAGE_RATIO = 0.28;
 
 const heroTypes = [
   {
@@ -1649,6 +1654,8 @@ function updateBossSchedule() {
 function showBossBanner(name, { boss = false } = {}) {
   window.clearTimeout(bossBannerTimer);
   window.clearTimeout(bossBannerNameTimer);
+  const bossNameDelay = 550;
+  const bossNameDuration = 1800;
   refs.bossBanner.classList.toggle("boss-alert", boss);
   refs.bossBanner.classList.remove("name-phase");
   refs.bossBanner.classList.remove("boss-name-only");
@@ -1660,14 +1667,14 @@ function showBossBanner(name, { boss = false } = {}) {
       refs.bossBanner.classList.add("name-phase");
       refs.bossBanner.classList.add("boss-name-only");
       refs.bossBanner.innerHTML = `<strong>${name}</strong>`;
-    }, 550);
+    }, bossNameDelay);
   }
   bossBannerTimer = window.setTimeout(() => {
     refs.bossBanner.classList.remove("active");
     refs.bossBanner.classList.remove("boss-alert");
     refs.bossBanner.classList.remove("name-phase");
     refs.bossBanner.classList.remove("boss-name-only");
-  }, boss ? 1750 : 2200);
+  }, boss ? bossNameDelay + bossNameDuration : 2200);
 }
 function getMoveVector() {
   let x = input.x;
@@ -2134,6 +2141,17 @@ function updateEnemies(delta) {
   for (const enemy of [...enemies]) {
     enemy.stunTimer = Math.max(0, (enemy.stunTimer ?? 0) - delta);
     enemy.taserLinkTimer = Math.max(0, (enemy.taserLinkTimer ?? 0) - delta);
+    if (enemy.taserLinkTimer > 0) {
+      enemy.taserDamageTick = Math.max(0, (enemy.taserDamageTick ?? TASER_DOT_TICK) - delta);
+      if (enemy.taserDamageTick <= 0) {
+        damageEnemy(enemy, enemy.taserDotDamage ?? 22, "#fff3b0");
+        if (!enemies.includes(enemy)) continue;
+        enemy.taserDamageTick = TASER_DOT_TICK;
+      }
+    } else {
+      enemy.taserDamageTick = TASER_DOT_TICK;
+      enemy.taserDotDamage = 0;
+    }
     enemy.hitFlash = Math.max(0, enemy.hitFlash - delta);
     enemy.spawnFlash = Math.max(0, (enemy.spawnFlash ?? 0) - delta);
     if (enemy.stunTimer > 0) {
@@ -2732,6 +2750,8 @@ function updateProjectiles(delta) {
         target.stunTimer = Math.max(target.stunTimer ?? 0, taser.stun);
         target.taserLinkTimer = Math.max(target.taserLinkTimer ?? 0, taser.stun);
         target.taserLinkMax = Math.max(target.taserLinkMax ?? 0, taser.stun);
+        target.taserDamageTick = TASER_DOT_TICK;
+        target.taserDotDamage = Math.max(1, Math.round(taser.damage * TASER_DOT_DAMAGE_RATIO));
         addPopup("기절 5초", target.x, target.y - target.radius - 36, "#fff3b0", 1.0, 20);
         addParticles(target.x, target.y, "#fff3b0", 46);
         addParticles(target.x, target.y, "#80ffdb", 24);
@@ -3173,8 +3193,20 @@ function updateStationPolicePets(delta) {
     pet.attackCooldown = 0.58;
     pet.swingTimer = 0.22;
     pet.facing = angleTo(pet, target);
-    const damage = Math.round(29 + Math.max(0, weapons.subwayPolice.level - 1) * 3);
+    const damage = Math.round((29 + Math.max(0, weapons.subwayPolice.level - 1) * 3) * SUBWAY_POLICE_DAMAGE_MULTIPLIER);
     damageEnemy(target, damage, "#b8dcff");
+    const splashDamage = Math.max(1, Math.round(damage * SUBWAY_POLICE_SPLASH_DAMAGE_RATIO));
+    for (const enemy of [...enemies]) {
+      if (enemy === target) continue;
+      if (Math.hypot(enemy.x - target.x, enemy.y - target.y) > enemy.radius + SUBWAY_POLICE_SPLASH_RADIUS) continue;
+      damageEnemy(enemy, splashDamage, "#8ecae6");
+      if (enemies.includes(enemy)) {
+        const splashPush = angleTo(target, enemy);
+        const splashPushAmount = enemy.boss ? 3 : 9;
+        enemy.x = clamp(enemy.x + Math.cos(splashPush) * splashPushAmount, 35, WORLD_SIZE - 35);
+        enemy.y = clamp(enemy.y + Math.sin(splashPush) * splashPushAmount, 35, WORLD_SIZE - 35);
+      }
+    }
     const pushAmount = target.boss ? 7 : 22;
     target.x = clamp(target.x + Math.cos(pet.facing) * pushAmount, 35, WORLD_SIZE - 35);
     target.y = clamp(target.y + Math.sin(pet.facing) * pushAmount, 35, WORLD_SIZE - 35);
@@ -4000,7 +4032,7 @@ function updateHud() {
     weapons.expressTrain.level > 0 ? { label: `급행 Lv.${weapons.expressTrain.level}`, type: "attack", power: chipPower(weapons.expressTrain.level), desc: "급행열차가 보스를 우선 노려 지나가며 피해와 넉백을 줍니다." } : null,
     weapons.customerMissile.level > 0 ? { label: `유도탄 Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level), desc: "고객센터 유도탄이 보스를 우선 추적하고 약한 폭발 피해를 줍니다." } : null,
     weapons.stationCannon.level > 0 ? { label: `제압포 Lv.${weapons.stationCannon.level}`, type: "attack", power: chipPower(weapons.stationCannon.level), desc: "하늘에서 제압탄이 떨어져 붉은 장판을 만들고 적을 기절시킵니다." } : null,
-    weapons.subwayPolice.level > 0 ? { label: `지하철 경찰 Lv.${weapons.subwayPolice.level}`, type: "attack", power: chipPower(weapons.subwayPolice.level), desc: "지하철 경찰이 팻처럼 동행하며 보스를 우선 곤봉으로 공격합니다." } : null,
+    weapons.subwayPolice.level > 0 ? { label: `경찰 Lv.${weapons.subwayPolice.level}`, type: "attack", power: chipPower(weapons.subwayPolice.level), desc: "지하철 경찰이 팻처럼 동행하며 보스를 우선 곤봉으로 공격합니다." } : null,
     player.defenseBreakTimer > 0 ? { label: `방어저하 ${Math.ceil(player.defenseBreakTimer)}초`, type: "status", desc: "현재 방어력이 감소한 상태입니다." } : null,
     player.stunTimer > 0 ? { label: `경직 ${Math.ceil(player.stunTimer)}초`, type: "status", desc: "잠시 움직일 수 없는 상태입니다." } : null,
     player.slowTimer > 0 ? { label: `둔화 ${Math.ceil(player.slowTimer)}초`, type: "status", desc: "이동 속도가 느려진 상태입니다." } : null,
