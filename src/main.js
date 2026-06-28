@@ -2360,7 +2360,7 @@ function createJarvanSpear(enemy) {
 function createJarvanSpearVolley(enemy) {
   const baseAngle = angleTo(enemy, player);
   addSpeechBubble(enemy, "창을 받아라!", 1.15);
-  for (const offset of [-0.22, 0, 0.22]) {
+  for (const offset of [-0.36, -0.18, 0, 0.18, 0.36]) {
     const angle = baseAngle + offset;
     damageZones.push({
       x: enemy.x + Math.cos(angle) * 54,
