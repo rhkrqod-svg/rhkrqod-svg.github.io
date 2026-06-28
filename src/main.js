@@ -1499,6 +1499,8 @@ function spawnCommuteProtestStage() {
       defenseBoostTimer: 0,
       defenseBoostPower: 0,
       stunTimer: 0,
+      taserLinkTimer: 0,
+      taserLinkMax: 0,
       spawnFlash: 0.7,
     });
   }
@@ -1551,6 +1553,8 @@ function spawnEnemy(type = null, boss = false) {
     defenseBoostTimer: 0,
     defenseBoostPower: 0,
     stunTimer: 0,
+    taserLinkTimer: 0,
+    taserLinkMax: 0,
     spawnFlash: boss ? 1.0 : 0.7,
   };
   enemies.push(enemy);
@@ -2033,6 +2037,7 @@ function updateEnemies(delta) {
 
   for (const enemy of [...enemies]) {
     enemy.stunTimer = Math.max(0, (enemy.stunTimer ?? 0) - delta);
+    enemy.taserLinkTimer = Math.max(0, (enemy.taserLinkTimer ?? 0) - delta);
     enemy.hitFlash = Math.max(0, enemy.hitFlash - delta);
     enemy.spawnFlash = Math.max(0, (enemy.spawnFlash ?? 0) - delta);
     if (enemy.stunTimer > 0) {
@@ -2618,6 +2623,8 @@ function updateProjectiles(delta) {
       damageEnemy(target, taser.damage, "#fff3b0");
       if (enemies.includes(target)) {
         target.stunTimer = Math.max(target.stunTimer ?? 0, taser.stun);
+        target.taserLinkTimer = Math.max(target.taserLinkTimer ?? 0, taser.stun);
+        target.taserLinkMax = Math.max(target.taserLinkMax ?? 0, taser.stun);
         addPopup("기절 5초", target.x, target.y - target.radius - 36, "#fff3b0", 1.0, 20);
         addParticles(target.x, target.y, "#fff3b0", 46);
         addParticles(target.x, target.y, "#80ffdb", 24);
@@ -4369,6 +4376,66 @@ function drawProjectiles() {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText("T-money", 0, 5);
+    ctx.restore();
+  }
+
+  for (const enemy of enemies) {
+    if (!enemy.boss || (enemy.taserLinkTimer ?? 0) <= 0) continue;
+    const start = worldToScreen(player.x, player.y);
+    const end = worldToScreen(enemy.x, enemy.y);
+    const angle = Math.atan2(end.y - start.y, end.x - start.x);
+    const length = Math.hypot(end.x - start.x, end.y - start.y);
+    const pulse = performance.now() * 0.024 + enemy.wobble;
+    const lifeRatio = clamp((enemy.taserLinkTimer ?? 0) / Math.max(0.1, enemy.taserLinkMax ?? 5), 0, 1);
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.globalAlpha = 0.45 + lifeRatio * 0.5;
+
+    ctx.shadowColor = "#fff3b0";
+    ctx.shadowBlur = 36;
+    for (let strand = -2; strand <= 2; strand += 1) {
+      ctx.beginPath();
+      for (let i = 0; i <= 16; i += 1) {
+        const t = i / 16;
+        const jitter = Math.sin(pulse + i * 1.7 + strand) * 8 + Math.cos(pulse * 0.6 + i * 2.3) * 5;
+        const sideOffset = strand === 0 ? jitter * 0.25 : strand * 7 + jitter;
+        const x = start.x + Math.cos(angle) * length * t + Math.cos(angle + Math.PI / 2) * sideOffset;
+        const y = start.y + Math.sin(angle) * length * t + Math.sin(angle + Math.PI / 2) * sideOffset;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle =
+        strand === 0 ? "rgba(255, 255, 255, 0.98)" : strand % 2 ? "rgba(128, 255, 219, 0.86)" : "rgba(255, 243, 176, 0.92)";
+      ctx.lineWidth = strand === 0 ? 5.4 : 3.2;
+      ctx.stroke();
+    }
+
+    const impactPulse = 1 + Math.sin(pulse * 1.45) * 0.18;
+    ctx.globalAlpha = 0.58 + lifeRatio * 0.28;
+    ctx.strokeStyle = "#80ffdb";
+    ctx.lineWidth = 4.5;
+    ctx.beginPath();
+    ctx.arc(end.x, end.y, enemy.radius * 2.2 + 20 * impactPulse, 0, TAU);
+    ctx.stroke();
+    ctx.strokeStyle = "#fff3b0";
+    ctx.lineWidth = 2.8;
+    for (let i = 0; i < 9; i += 1) {
+      const a = pulse * 0.75 + (TAU * i) / 9;
+      const inner = enemy.radius * 0.85 + 8 + Math.sin(pulse + i) * 3;
+      const outer = enemy.radius * 2.2 + 34 + Math.cos(pulse * 1.2 + i) * 8;
+      ctx.beginPath();
+      ctx.moveTo(end.x + Math.cos(a) * inner, end.y + Math.sin(a) * inner);
+      ctx.lineTo(end.x + Math.cos(a) * outer, end.y + Math.sin(a) * outer);
+      ctx.stroke();
+    }
+
+    ctx.globalAlpha = 0.34 + lifeRatio * 0.26;
+    ctx.fillStyle = "rgba(255, 243, 176, 0.45)";
+    ctx.beginPath();
+    ctx.arc(start.x, start.y, 18 + Math.sin(pulse) * 3, 0, TAU);
+    ctx.fill();
     ctx.restore();
   }
 
