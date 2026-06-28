@@ -78,6 +78,8 @@ const CHARACTER_SIZE_SCALE = 0.5;
 const MONSTER_SIZE_SCALE = 0.42;
 const BOSS_SIZE_SCALE = 0.45;
 const FIXED_VIEW_SCALE = 0.5984;
+const NORMAL_SPAWN_SAFE_RADIUS = 560;
+const BOSS_SPAWN_SAFE_RADIUS = 760;
 const PLAYER_RADIUS = 19 * CHARACTER_SIZE_SCALE;
 const FIRST_AID_HEAL_RATIO = 0.5;
 const ENEMY_HP_GLOBAL_MULTIPLIER = 1.6;
@@ -1306,6 +1308,45 @@ function scaleBossDamage(enemy, damage) {
   return Math.round(damage * (enemy.attackScale ?? 1));
 }
 
+function getSpawnSafeRadius(boss = false) {
+  const viewportBased = Math.min(viewWidth, viewHeight) * (boss ? 0.62 : 0.48);
+  return Math.max(boss ? BOSS_SPAWN_SAFE_RADIUS : NORMAL_SPAWN_SAFE_RADIUS, viewportBased);
+}
+
+function isSafeSpawnDistance(point, boss = false) {
+  return Math.hypot(point.x - player.x, point.y - player.y) >= getSpawnSafeRadius(boss);
+}
+
+function keepSpawnAwayFromPlayer(point, boss = false, min = 50, max = WORLD_SIZE - 50) {
+  const safeRadius = getSpawnSafeRadius(boss);
+  let dx = point.x - player.x;
+  let dy = point.y - player.y;
+  let dist = Math.hypot(dx, dy);
+  if (dist >= safeRadius) return point;
+  if (dist < 0.001) {
+    dx = player.x < WORLD_SIZE / 2 ? -1 : 1;
+    dy = 0;
+    dist = 1;
+  }
+  const pushed = {
+    x: clamp(player.x + (dx / dist) * (safeRadius + 40), min, max),
+    y: clamp(player.y + (dy / dist) * (safeRadius + 40), min, max),
+  };
+  if (Math.hypot(pushed.x - player.x, pushed.y - player.y) >= safeRadius * 0.92) return pushed;
+
+  const fallbackPoints = [
+    { x: min, y: min },
+    { x: max, y: min },
+    { x: min, y: max },
+    { x: max, y: max },
+    { x: min, y: clamp(player.y, min, max) },
+    { x: max, y: clamp(player.y, min, max) },
+    { x: clamp(player.x, min, max), y: min },
+    { x: clamp(player.x, min, max), y: max },
+  ];
+  return fallbackPoints.sort((a, b) => Math.hypot(b.x - player.x, b.y - player.y) - Math.hypot(a.x - player.x, a.y - player.y))[0];
+}
+
 function getOffscreenSpawnPoint(boss = false) {
   const margin = boss ? 260 : 170;
   const min = 50;
@@ -1316,27 +1357,26 @@ function getOffscreenSpawnPoint(boss = false) {
   const top = camera.y;
   const bottom = camera.y + viewHeight;
   const candidates = [];
+  const allCandidates = [];
+  const addCandidate = (point) => {
+    allCandidates.push(point);
+    if (isSafeSpawnDistance(point, boss)) candidates.push(point);
+  };
 
-  if (left > min) {
-    candidates.push({
+  for (let sample = 0; sample < 6; sample += 1) {
+    if (left > min) addCandidate({
       x: Math.max(min, left - margin),
       y: clamp(rand(top - margin * 0.35, bottom + margin * 0.35), min, max),
     });
-  }
-  if (right < max) {
-    candidates.push({
+    if (right < max) addCandidate({
       x: Math.min(max, right + margin),
       y: clamp(rand(top - margin * 0.35, bottom + margin * 0.35), min, max),
     });
-  }
-  if (top > min) {
-    candidates.push({
+    if (top > min) addCandidate({
       x: clamp(rand(left - margin * 0.35, right + margin * 0.35), min, max),
       y: Math.max(min, top - margin),
     });
-  }
-  if (bottom < max) {
-    candidates.push({
+    if (bottom < max) addCandidate({
       x: clamp(rand(left - margin * 0.35, right + margin * 0.35), min, max),
       y: Math.min(max, bottom + margin),
     });
@@ -1345,6 +1385,8 @@ function getOffscreenSpawnPoint(boss = false) {
   let point;
   if (candidates.length > 0) {
     point = candidates[Math.floor(Math.random() * candidates.length)];
+  } else if (allCandidates.length > 0) {
+    point = allCandidates.sort((a, b) => Math.hypot(b.x - player.x, b.y - player.y) - Math.hypot(a.x - player.x, a.y - player.y))[0];
   } else {
     point = {
       x: player.x < WORLD_SIZE / 2 ? max : min,
@@ -1370,7 +1412,7 @@ function getOffscreenSpawnPoint(boss = false) {
     else if (side === "bottom") point.y = Math.min(max, bottom + edgeBuffer);
   }
 
-  return point;
+  return keepSpawnAwayFromPlayer(point, boss, min, max);
 }
 
 function getEncircleOffscreenPoint(angle, extraDistance = 120) {
@@ -1397,7 +1439,7 @@ function getEncircleOffscreenPoint(angle, extraDistance = 120) {
     point.y > camera.y - 64 &&
     point.y < camera.y + viewHeight + 64;
   if (visible) point = getOffscreenSpawnPoint(false);
-  return point;
+  return keepSpawnAwayFromPlayer(point, false, 50, WORLD_SIZE - 50);
 }
 
 function spawnCommuteProtestStage() {
