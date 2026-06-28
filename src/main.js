@@ -1518,7 +1518,6 @@ function spawnEnemy(type = null, boss = false) {
     dash: 0,
     wobble: Math.random() * TAU,
     swingCooldown: bossBasicAttackCooldown(),
-    shockCooldown: bossAttackCooldown(1.5, 2.4),
     soundCooldown: bossAttackCooldown(2.0, 3.2),
     tauntCooldown: bossBasicAttackCooldown(),
     crisisCooldown: bossAttackCooldown(5.0, 6.8),
@@ -2053,7 +2052,6 @@ function updateEnemies(delta) {
     }
     if (enemy.special === "boss-danso") {
       enemy.swingCooldown -= delta;
-      enemy.shockCooldown -= delta;
       enemy.soundCooldown -= delta;
       if (enemy.swingCooldown <= 0 && playerDistance < 880) {
         createDansoSwing(enemy);
@@ -2062,10 +2060,6 @@ function updateEnemies(delta) {
       if (enemy.soundCooldown <= 0 && playerDistance >= 160) {
         createDansoBoomerang(enemy);
         enemy.soundCooldown = bossAttackCooldown(2.6, 3.8);
-      }
-      if (enemy.shockCooldown <= 0) {
-        createDansoShockwave(enemy);
-        enemy.shockCooldown = bossAttackCooldown(3.8, 5.2);
       }
     }
     if (enemy.special === "boss-airport") {
@@ -2223,25 +2217,6 @@ function createDansoSwing(enemy) {
     kind: "dansoStab",
   });
   addParticles(enemy.x + Math.cos(angle) * 72, enemy.y + Math.sin(angle) * 72, "#f9c74f", 12);
-}
-
-function createDansoShockwave(enemy) {
-  addSpeechBubble(enemy, "절이 싫으면 중이 떠나야지~", 1.45);
-  damageZones.push({
-    x: enemy.x,
-    y: enemy.y,
-    radius: 178,
-    damage: scaleBossDamage(enemy, 22),
-    push: 64,
-    life: 0.72,
-    maxLife: 0.72,
-    color: "#f9c74f",
-    hostile: true,
-    applied: false,
-    kind: "dansoShock",
-  });
-  addParticles(enemy.x, enemy.y, "#f9c74f", 18);
-  addPopup("단소 충격파", enemy.x, enemy.y - 34, "#fff3b0", 0.65, 15);
 }
 
 function createDansoBoomerang(enemy) {
@@ -5103,57 +5078,6 @@ function drawDamageZones() {
       ctx.beginPath();
       ctx.moveTo(-32, -4);
       ctx.lineTo(32, -4);
-      ctx.stroke();
-      ctx.restore();
-      continue;
-    }
-
-    if (zone.kind === "dansoShock") {
-      const wave = Math.sin(progress * Math.PI);
-      ctx.translate(p.x, p.y);
-      ctx.globalCompositeOperation = "lighter";
-      ctx.globalAlpha = 0.12 + wave * 0.34;
-      ctx.fillStyle = "rgba(249, 199, 79, 0.2)";
-      ctx.beginPath();
-      ctx.arc(0, 0, zone.radius * (0.4 + progress * 0.72), 0, TAU);
-      ctx.fill();
-      ctx.globalAlpha = 0.9 - progress * 0.45;
-      ctx.strokeStyle = "#f9c74f";
-      ctx.lineWidth = 7;
-      ctx.beginPath();
-      ctx.arc(0, 0, zone.radius * (0.22 + progress * 0.78), 0, TAU);
-      ctx.stroke();
-      ctx.globalAlpha = 0.58 - progress * 0.18;
-      ctx.strokeStyle = "#fff3b0";
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.arc(0, 0, zone.radius * (0.46 + progress * 0.58), 0, TAU);
-      ctx.stroke();
-      ctx.globalAlpha = 0.78 * wave;
-      ctx.strokeStyle = "#8d5524";
-      ctx.lineWidth = 4;
-      ctx.lineCap = "round";
-      for (let i = 0; i < 10; i += 1) {
-        const angle = (TAU * i) / 10 + 0.12 * Math.sin(i);
-        const inner = zone.radius * (0.16 + progress * 0.12);
-        const outer = zone.radius * (0.44 + progress * 0.52) * rand(0.86, 1.08);
-        ctx.beginPath();
-        ctx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
-        ctx.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
-        ctx.stroke();
-      }
-      ctx.globalAlpha = 0.95;
-      ctx.strokeStyle = "#8d5524";
-      ctx.lineWidth = 10;
-      ctx.beginPath();
-      ctx.moveTo(-8, -zone.radius * 0.58);
-      ctx.lineTo(8, zone.radius * 0.12);
-      ctx.stroke();
-      ctx.strokeStyle = "#ffe066";
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(-3, -zone.radius * 0.52);
-      ctx.lineTo(5, zone.radius * 0.04);
       ctx.stroke();
       ctx.restore();
       continue;
