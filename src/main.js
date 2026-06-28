@@ -591,11 +591,12 @@ const upgradePool = [
     },
   },
   {
-    id: "stationPolicePet",
+    id: "stationCannon",
     name: "역무실 제압포",
-    desc: "지하철 경찰대 1명이 동행하며 곤봉으로 적을 제압",
+    desc: "하늘에서 제압탄이 떨어져 붉은 제압 장판 생성",
     apply: () => {
-      weapons.stationPolicePet.level += 1;
+      weapons.stationCannon.level += 1;
+      weapons.stationCannon.cooldown = Math.min(weapons.stationCannon.cooldown, 0.8);
     },
   },
   {
@@ -629,7 +630,7 @@ const weaponUpgradeIds = new Set([
   "tearGas",
   "expressTrain",
   "customerMissile",
-  "stationPolicePet",
+  "stationCannon",
 ]);
 
 function getTearGasRadius() {
@@ -686,7 +687,6 @@ const cards = [];
 const missiles = [];
 const taserShots = [];
 const policeSquads = [];
-const stationPolicePets = [];
 const skillAnnouncementCooldowns = new Map();
 
 const input = {
@@ -751,7 +751,7 @@ const weapons = {
   expressTrain: { level: 0, cooldown: 8.2 },
   transferGate: { level: 0, cooldown: 6.2 },
   customerMissile: { level: 0, cooldown: 0.45 },
-  stationPolicePet: { level: 0 },
+  stationCannon: { level: 0, cooldown: 6.5 },
 };
 
 const game = {
@@ -1120,7 +1120,6 @@ function resetGame() {
   missiles.length = 0;
   taserShots.length = 0;
   policeSquads.length = 0;
-  stationPolicePets.length = 0;
   bossIndex = 0;
   bossBag = [];
   nextBossAt = 20;
@@ -1183,7 +1182,7 @@ function resetGame() {
   Object.assign(weapons.expressTrain, { level: 0, cooldown: 8.2 });
   Object.assign(weapons.transferGate, { level: 0, cooldown: 6.2 });
   Object.assign(weapons.customerMissile, { level: 0, cooldown: 0.45 });
-  Object.assign(weapons.stationPolicePet, { level: 0 });
+  Object.assign(weapons.stationCannon, { level: 0, cooldown: 6.5 });
   game.state = "playing";
   game.paused = true;
   game.manualPaused = false;
@@ -1908,6 +1907,34 @@ function spawnExpressTrain() {
   playSound("train");
 }
 
+function spawnStationCannon() {
+  const level = weapons.stationCannon.level;
+  if (level <= 0) return;
+  const target = pickBossPriorityTarget(980);
+  if (!target) return;
+  const safePoint = clampPointToVisibleWorld(target.x, target.y, 140 + level * 8);
+  const radius = 118 + level * 13;
+  damageZones.push({
+    x: safePoint.x,
+    y: safePoint.y,
+    radius,
+    damage: 42 + (level - 1) * 12,
+    push: 46 + level * 6,
+    stun: 1,
+    bossStun: 0.3,
+    life: 3.05,
+    maxLife: 3.05,
+    armedAt: 0.55,
+    tickRate: 0.45,
+    color: "#ff6b6b",
+    hitTimers: new Map(),
+    kind: "stationCannon",
+    seed: Math.random() * TAU,
+  });
+  addParticles(safePoint.x, safePoint.y, "#ff9f1c", 8);
+  playSound("bomb");
+}
+
 function spawnTransferGate() {
   const level = weapons.transferGate.level;
   if (level <= 0 || enemies.length === 0) return;
@@ -2058,6 +2085,12 @@ function updatePlayer(delta) {
   if (weapons.customerMissile.level > 0 && weapons.customerMissile.cooldown <= 0) {
     spawnCustomerMissiles();
     weapons.customerMissile.cooldown = Math.max(0.38, ((0.55 - weapons.customerMissile.level * 0.04) / 0.7) * 0.936);
+  }
+
+  weapons.stationCannon.cooldown -= delta;
+  if (weapons.stationCannon.level > 0 && weapons.stationCannon.cooldown <= 0) {
+    spawnStationCannon();
+    weapons.stationCannon.cooldown = Math.max(4.6, 6.5 - weapons.stationCannon.level * 0.25);
   }
 
 }
@@ -3055,79 +3088,6 @@ function updatePoliceSquads(delta) {
   }
 }
 
-function syncStationPolicePets() {
-  const wanted = Math.max(0, weapons.stationPolicePet.level);
-  while (stationPolicePets.length < wanted) {
-    const index = stationPolicePets.length;
-    const angle = (TAU * index) / Math.max(1, wanted || 1);
-    stationPolicePets.push({
-      x: player.x + Math.cos(angle) * 64,
-      y: player.y + Math.sin(angle) * 64,
-      slot: index,
-      attackCooldown: rand(0.1, 0.45),
-      swingTimer: 0,
-      target: null,
-      bob: Math.random() * TAU,
-      facing: angle,
-    });
-  }
-  while (stationPolicePets.length > wanted) stationPolicePets.pop();
-  stationPolicePets.forEach((pet, index) => {
-    pet.slot = index;
-  });
-}
-
-function updateStationPolicePets(delta) {
-  syncStationPolicePets();
-  if (stationPolicePets.length === 0) return;
-  const count = stationPolicePets.length;
-  for (const pet of stationPolicePets) {
-    pet.attackCooldown = Math.max(0, pet.attackCooldown - delta);
-    pet.swingTimer = Math.max(0, pet.swingTimer - delta);
-    const slotAngle = -Math.PI / 2 + (TAU * pet.slot) / Math.max(1, count);
-    const idleRadius = 58 + Math.min(4, count) * 7;
-    const idleX = player.x + Math.cos(slotAngle + Math.sin(player.elapsed * 1.8 + pet.bob) * 0.12) * idleRadius;
-    const idleY = player.y + Math.sin(slotAngle + Math.sin(player.elapsed * 1.8 + pet.bob) * 0.12) * idleRadius;
-    const source = { x: pet.x, y: pet.y };
-    const target = findPriorityEnemyFrom(source, 780);
-    pet.target = target;
-
-    let goalX = idleX;
-    let goalY = idleY;
-    if (target) {
-      const angle = angleTo(target, pet);
-      const standOff = target.radius + 38;
-      goalX = target.x + Math.cos(angle) * standOff;
-      goalY = target.y + Math.sin(angle) * standOff;
-    }
-
-    const dx = goalX - pet.x;
-    const dy = goalY - pet.y;
-    const distance = Math.hypot(dx, dy) || 1;
-    const moveSpeed = target ? 355 : 245;
-    const step = Math.min(distance, moveSpeed * delta);
-    pet.x += (dx / distance) * step;
-    pet.y += (dy / distance) * step;
-    pet.x = clamp(pet.x, 25, WORLD_SIZE - 25);
-    pet.y = clamp(pet.y, 25, WORLD_SIZE - 25);
-    if (distance > 1) pet.facing = Math.atan2(dy, dx);
-
-    if (!target) continue;
-    const attackDistance = Math.hypot(target.x - pet.x, target.y - pet.y);
-    if (attackDistance > target.radius + 52 || pet.attackCooldown > 0) continue;
-    pet.attackCooldown = 0.62;
-    pet.swingTimer = 0.22;
-    pet.facing = angleTo(pet, target);
-    const damage = 19 + Math.max(0, weapons.stationPolicePet.level - 1) * 2;
-    damageEnemy(target, damage, "#b8dcff");
-    const pushAmount = target.boss ? 8 : 24;
-    target.x = clamp(target.x + Math.cos(pet.facing) * pushAmount, 35, WORLD_SIZE - 35);
-    target.y = clamp(target.y + Math.sin(pet.facing) * pushAmount, 35, WORLD_SIZE - 35);
-    addParticles(target.x, target.y, "#b8dcff", target.boss ? 8 : 5);
-    if (Math.random() < 0.55) playSound("police");
-  }
-}
-
 function dropEnergy(enemy) {
   if (!enemy.boss) return;
 
@@ -3348,6 +3308,13 @@ function updateDamageZones(delta) {
   for (const zone of [...damageZones]) {
     zone.life -= delta;
     const progress = 1 - zone.life / zone.maxLife;
+    if (zone.hitTimers) {
+      for (const [enemy, cooldown] of [...zone.hitTimers.entries()]) {
+        const nextCooldown = cooldown - delta;
+        if (nextCooldown <= 0 || !enemies.includes(enemy)) zone.hitTimers.delete(enemy);
+        else zone.hitTimers.set(enemy, nextCooldown);
+      }
+    }
     if (zone.kind === "dansoBoomerang" && zone.startX !== undefined) {
       const returnAt = zone.returnAt ?? 0.56;
       const owner = zone.owner ?? zone;
@@ -3403,6 +3370,81 @@ function updateDamageZones(delta) {
       zone.x += (zone.vx ?? 0) * delta;
       zone.y += (zone.vy ?? 0) * delta;
     }
+    if (zone.kind === "stationCannon") {
+      const armedPoint = zone.armedAt ?? 0.55;
+      const warningProgress = clamp(progress / armedPoint, 0, 1);
+      const activeProgress = clamp((progress - armedPoint) / Math.max(0.001, 1 - armedPoint), 0, 1);
+      const pulse = 0.92 + Math.sin(performance.now() * 0.018 + (zone.seed ?? 0)) * 0.06;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.globalCompositeOperation = "lighter";
+      if (progress < armedPoint) {
+        const fallY = -height * 0.38 + height * 0.38 * warningProgress;
+        ctx.globalAlpha = 0.2 + warningProgress * 0.34;
+        ctx.fillStyle = "rgba(255, 107, 107, 0.12)";
+        ctx.strokeStyle = "#ff6b6b";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(0, 0, zone.radius * (0.58 + warningProgress * 0.26) * pulse, 0, TAU);
+        ctx.fill();
+        ctx.stroke();
+        ctx.globalAlpha = 0.92;
+        ctx.shadowColor = "#ff9f1c";
+        ctx.shadowBlur = 18;
+        ctx.fillStyle = "#ff9f1c";
+        ctx.beginPath();
+        ctx.moveTo(0, fallY);
+        ctx.lineTo(-13, fallY - 42);
+        ctx.lineTo(13, fallY - 42);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = "#fff3b0";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, fallY - 46);
+        ctx.lineTo(0, -8);
+        ctx.stroke();
+      } else {
+        const flash = clamp((activeProgress < 0.16 ? activeProgress / 0.16 : (1 - activeProgress) / 0.84), 0, 1);
+        ctx.globalAlpha = 0.18 + flash * 0.18;
+        ctx.fillStyle = "#ff6b6b";
+        ctx.beginPath();
+        ctx.arc(0, 0, zone.radius * pulse, 0, TAU);
+        ctx.fill();
+        ctx.globalAlpha = 0.48;
+        ctx.strokeStyle = "#ff477e";
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.arc(0, 0, zone.radius * (0.78 + Math.sin(activeProgress * Math.PI * 6) * 0.04), 0, TAU);
+        ctx.stroke();
+        ctx.globalAlpha = 0.72;
+        ctx.strokeStyle = "#fff3b0";
+        ctx.lineWidth = 3;
+        for (let i = 0; i < 4; i += 1) {
+          const ring = zone.radius * (0.28 + i * 0.17 + ((activeProgress * 0.8) % 0.17));
+          ctx.globalAlpha = Math.max(0, 0.45 - i * 0.06);
+          ctx.beginPath();
+          ctx.arc(0, 0, ring, 0, TAU);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 0.9;
+        for (let i = 0; i < 12; i += 1) {
+          const angle = (TAU * i) / 12 + activeProgress * 1.7 + (zone.seed ?? 0);
+          const inner = zone.radius * 0.22;
+          const outer = zone.radius * (0.62 + Math.sin(activeProgress * Math.PI + i) * 0.08);
+          ctx.strokeStyle = i % 2 ? "#ff9f1c" : "#ff477e";
+          ctx.lineWidth = i % 2 ? 3 : 5;
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+          ctx.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+      ctx.restore();
+      continue;
+    }
+
     if (zone.kind === "bomb") {
       const safePoint = clampPointToVisibleWorld(zone.x, zone.y, Math.min(132, zone.radius + 26));
       zone.x = safePoint.x;
@@ -3491,6 +3533,10 @@ function updateDamageZones(delta) {
             hit = Math.hypot(enemy.x - zone.x, enemy.y - zone.y) < zone.radius + enemy.radius;
           }
           if (!hit) continue;
+          if (zone.kind === "stationCannon") {
+            if (zone.hitTimers?.has(enemy)) continue;
+            zone.hitTimers?.set(enemy, zone.tickRate ?? 0.45);
+          }
           zone.hits?.add(enemy);
           damageEnemy(enemy, zone.damage, zone.color);
           if (zone.stun || zone.bossStun) {
@@ -3751,7 +3797,6 @@ function update(delta) {
   updateEnemies(delta);
   updateProjectiles(delta);
   updatePoliceSquads(delta);
-  updateStationPolicePets(delta);
   updateOrbs(delta);
   updateEnergyPickups(delta);
   updateDamageZones(delta);
@@ -3857,7 +3902,7 @@ function updateHud() {
     weapons.tearGas.level > 0 ? { label: `최류탄 Lv.${weapons.tearGas.level}`, type: "attack", power: chipPower(weapons.tearGas.level), desc: "주인공 주변에 손잡이보다 넓은 가스 지대를 만들고 안에 들어온 적에게 지속 피해를 줍니다." } : null,
     weapons.expressTrain.level > 0 ? { label: `급행 Lv.${weapons.expressTrain.level}`, type: "attack", power: chipPower(weapons.expressTrain.level), desc: "급행열차가 보스를 우선 노려 지나가며 피해와 넉백을 줍니다." } : null,
     weapons.customerMissile.level > 0 ? { label: `유도탄 Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level), desc: "고객센터 유도탄이 보스를 우선 추적하고 약한 폭발 피해를 줍니다." } : null,
-    weapons.stationPolicePet.level > 0 ? { label: `제압포 Lv.${weapons.stationPolicePet.level}`, type: "attack", power: chipPower(weapons.stationPolicePet.level), desc: "지하철 경찰대가 팻처럼 동행하며 보스를 우선 곤봉으로 공격합니다." } : null,
+    weapons.stationCannon.level > 0 ? { label: `제압포 Lv.${weapons.stationCannon.level}`, type: "attack", power: chipPower(weapons.stationCannon.level), desc: "하늘에서 제압탄이 떨어져 붉은 장판을 만들고 적을 기절시킵니다." } : null,
     player.defenseBreakTimer > 0 ? { label: `방어저하 ${Math.ceil(player.defenseBreakTimer)}초`, type: "status", desc: "현재 방어력이 감소한 상태입니다." } : null,
     player.stunTimer > 0 ? { label: `경직 ${Math.ceil(player.stunTimer)}초`, type: "status", desc: "잠시 움직일 수 없는 상태입니다." } : null,
     player.slowTimer > 0 ? { label: `둔화 ${Math.ceil(player.slowTimer)}초`, type: "status", desc: "이동 속도가 느려진 상태입니다." } : null,
@@ -6100,7 +6145,6 @@ function render() {
   drawEnergyPickups();
   drawProjectiles();
   drawPoliceSquads();
-  drawStationPolicePets();
   for (const enemy of enemies) drawEnemy(enemy);
   drawBlades();
   drawPlayer();
