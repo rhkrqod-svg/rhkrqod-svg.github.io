@@ -1913,6 +1913,8 @@ function spawnExpressTrain() {
     trainLength: (520 + level * 34) * trainLengthScale,
     damage: (105 + level * 42) * 3,
     push: 470 + level * 62,
+    stun: 3,
+    bossStun: 0.5,
     angle: vertical ? (direction > 0 ? Math.PI / 2 : -Math.PI / 2) : direction > 0 ? 0 : Math.PI,
     direction,
     life: 3.07,
