@@ -2458,7 +2458,7 @@ function createGiantGumBubble(enemy) {
     radius: 92,
     damage: scaleBossDamage(enemy, 27),
     push: 46,
-    slow: 12,
+    slow: 8,
     slowMultiplier: 0.42,
     life: 3.1,
     maxLife: 3.1,
