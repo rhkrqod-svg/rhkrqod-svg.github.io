@@ -1467,7 +1467,6 @@ function spawnEnemy(type = null, boss = false) {
     praiseCooldown: bossBasicAttackCooldown(),
     praiseStunCooldown: bossAttackCooldown(3.2, 4.8),
     bubbleCooldown: bossBasicAttackCooldown(),
-    gumMissileCooldown: bossAttackCooldown(4.5, 6.8),
     giantGumCooldown: bossAttackCooldown(7.2, 9.6),
     danceKickCooldown: bossAttackCooldown(0.7, 1.3),
     danceStampCooldown: bossAttackCooldown(2.6, 4.0),
@@ -2047,15 +2046,10 @@ function updateEnemies(delta) {
     }
     if (enemy.special === "boss-gum") {
       enemy.bubbleCooldown -= delta;
-      enemy.gumMissileCooldown -= delta;
       enemy.giantGumCooldown -= delta;
       if (enemy.bubbleCooldown <= 0) {
         createGumBubble(enemy);
         enemy.bubbleCooldown = bossBasicAttackCooldown();
-      }
-      if (enemy.gumMissileCooldown <= 0) {
-        createGumMissiles(enemy);
-        enemy.gumMissileCooldown = bossAttackCooldown(7.8, 10.5);
       }
       if (enemy.giantGumCooldown <= 0) {
         createGiantGumBubble(enemy);
@@ -2411,31 +2405,6 @@ function createGumBubble(enemy) {
   });
 }
 
-function createGumMissiles(enemy) {
-  addSpeechBubble(enemy, "츄잉 츄잉!", 1.2);
-  const count = 1;
-  const baseAngle = angleTo(enemy, player);
-  for (let i = 0; i < count; i += 1) {
-    const angle = baseAngle + (i - (count - 1) / 2) * 0.24;
-    damageZones.push({
-      x: enemy.x + Math.cos(angle) * 38,
-      y: enemy.y + Math.sin(angle) * 38,
-      vx: Math.cos(angle) * 260,
-      vy: Math.sin(angle) * 260,
-      radius: 30,
-      damage: scaleBossDamage(enemy, 15),
-      slow: 10,
-      slowMultiplier: 0.5,
-      life: 2.0,
-      maxLife: 2.0,
-      color: "#ff8fab",
-      hostile: true,
-      consumeOnHit: true,
-      applied: false,
-      kind: "gumMissile",
-    });
-  }
-}
 
 function createGiantGumBubble(enemy) {
   const angle = angleTo(enemy, player);
@@ -5255,7 +5224,7 @@ function drawDamageZones() {
       continue;
     }
 
-    if (zone.kind === "gumBubble" || zone.kind === "gumMissile" || zone.kind === "giantGumBubble") {
+    if (zone.kind === "gumBubble" || zone.kind === "giantGumBubble") {
       const isGiant = zone.kind === "giantGumBubble";
       const shine = Math.sin(progress * Math.PI);
       ctx.translate(p.x, p.y);
