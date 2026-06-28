@@ -2479,7 +2479,7 @@ function createGiantGumBubble(enemy) {
     y: enemy.y + Math.sin(angle) * 54,
     vx: Math.cos(angle) * 185,
     vy: Math.sin(angle) * 185,
-    radius: 110,
+    radius: 132,
     damage: scaleBossDamage(enemy, 27),
     push: 46,
     slow: 8,
