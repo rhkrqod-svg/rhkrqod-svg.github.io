@@ -1661,7 +1661,7 @@ function strikeLightning() {
   }
   for (const enemy of targets) {
     const damage = Math.round((63 + weapons.lightning.level * 58) * 1.105 * 1.3);
-    const strikeRadius = (58 + weapons.lightning.level * 7) * 1.183 * 1.3 * 1.2;
+    const strikeRadius = (58 + weapons.lightning.level * 7) * 1.183 * 1.3 * 1.2 * 1.15;
     damageEnemy(enemy, enemy.boss ? Math.round(damage * 1.25) : damage, "#9bf6ff");
     enemy.stunTimer = Math.max(enemy.stunTimer ?? 0, enemy.boss ? 0.5 : 3);
     addParticles(enemy.x, enemy.y, "#9bf6ff", enemy.boss ? 14 : 9);
@@ -1912,7 +1912,7 @@ function updatePlayer(delta) {
   weapons.lightning.cooldown -= delta;
   if (weapons.lightning.cooldown <= 0) {
     strikeLightning();
-    weapons.lightning.cooldown = Math.max(1.25, 3.5 - weapons.lightning.level * 0.34);
+    weapons.lightning.cooldown = Math.max(1.25, 3.17 - weapons.lightning.level * 0.17);
   }
 
   weapons.card.cooldown -= delta;
