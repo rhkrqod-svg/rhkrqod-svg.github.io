@@ -1616,21 +1616,24 @@ function showBossBanner(name, { boss = false } = {}) {
   window.clearTimeout(bossBannerNameTimer);
   refs.bossBanner.classList.toggle("boss-alert", boss);
   refs.bossBanner.classList.remove("name-phase");
+  refs.bossBanner.classList.remove("boss-name-only");
   refs.bossBanner.innerHTML = boss ? "<strong>보스출현</strong>" : `<strong>${name}</strong>`;
   refs.bossBanner.classList.add("active");
   if (boss) {
     bossBannerNameTimer = window.setTimeout(() => {
+      refs.bossBanner.classList.remove("boss-alert");
       refs.bossBanner.classList.add("name-phase");
-      refs.bossBanner.innerHTML = `<strong>보스출현</strong><span>${name}</span>`;
+      refs.bossBanner.classList.add("boss-name-only");
+      refs.bossBanner.innerHTML = `<strong>${name}</strong>`;
     }, 550);
   }
   bossBannerTimer = window.setTimeout(() => {
     refs.bossBanner.classList.remove("active");
     refs.bossBanner.classList.remove("boss-alert");
     refs.bossBanner.classList.remove("name-phase");
+    refs.bossBanner.classList.remove("boss-name-only");
   }, boss ? 1750 : 2200);
 }
-
 function getMoveVector() {
   let x = input.x;
   let y = input.y;
@@ -6068,3 +6071,4 @@ loadLeaderboard().catch(() => {
 });
 updateHud();
 requestAnimationFrame(frame);
+
