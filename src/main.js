@@ -93,6 +93,8 @@ const BOSS_MUSIC_VOLUME = 0.2;
 const BOSS_ATTACK_COOLDOWN_MULTIPLIER = 1.3;
 const BOSS_BASIC_ATTACK_MIN_COOLDOWN = 2.2;
 const BOSS_BASIC_ATTACK_MAX_COOLDOWN = 3.2;
+const BOSS_SPECIAL_ATTACK_MIN_COOLDOWN = 6.4;
+const BOSS_SPECIAL_ATTACK_MAX_COOLDOWN = 8.2;
 
 const heroTypes = [
   {
@@ -773,6 +775,10 @@ function bossAttackCooldown(min, max) {
 
 function bossBasicAttackCooldown() {
   return bossAttackCooldown(BOSS_BASIC_ATTACK_MIN_COOLDOWN, BOSS_BASIC_ATTACK_MAX_COOLDOWN);
+}
+
+function bossSpecialAttackCooldown() {
+  return bossAttackCooldown(BOSS_SPECIAL_ATTACK_MIN_COOLDOWN, BOSS_SPECIAL_ATTACK_MAX_COOLDOWN);
 }
 
 function distance(a, b) {
@@ -1518,17 +1524,17 @@ function spawnEnemy(type = null, boss = false) {
     dash: 0,
     wobble: Math.random() * TAU,
     swingCooldown: bossBasicAttackCooldown(),
-    soundCooldown: bossAttackCooldown(2.0, 3.2),
+    soundCooldown: bossSpecialAttackCooldown(),
     tauntCooldown: bossBasicAttackCooldown(),
-    crisisCooldown: bossAttackCooldown(5.0, 6.8),
-    flagCooldown: bossAttackCooldown(2.8, 4.2),
+    crisisCooldown: bossSpecialAttackCooldown(),
+    flagCooldown: bossSpecialAttackCooldown(),
     spearCooldown: bossBasicAttackCooldown(),
     praiseCooldown: bossBasicAttackCooldown(),
-    praiseStunCooldown: bossAttackCooldown(3.2, 4.8),
+    praiseStunCooldown: bossSpecialAttackCooldown(),
     bubbleCooldown: bossBasicAttackCooldown(),
-    giantGumCooldown: bossAttackCooldown(7.2, 9.6),
+    giantGumCooldown: bossSpecialAttackCooldown(),
     danceKickCooldown: bossAttackCooldown(0.7, 1.3),
-    danceStampCooldown: bossAttackCooldown(2.6, 4.0),
+    danceStampCooldown: bossSpecialAttackCooldown(),
     retreatTimer: 0,
     attackSpeechCooldown: 0,
     boostTimer: 0,
@@ -2059,7 +2065,7 @@ function updateEnemies(delta) {
       }
       if (enemy.soundCooldown <= 0 && playerDistance >= 160) {
         createDansoBoomerang(enemy);
-        enemy.soundCooldown = bossAttackCooldown(2.6, 3.8);
+        enemy.soundCooldown = bossSpecialAttackCooldown();
       }
     }
     if (enemy.special === "boss-airport") {
@@ -2071,7 +2077,7 @@ function updateEnemies(delta) {
       }
       if (enemy.crisisCooldown <= 0) {
         createAirportCrisis(enemy);
-        enemy.crisisCooldown = bossAttackCooldown(9.0, 11.5);
+        enemy.crisisCooldown = bossSpecialAttackCooldown();
       }
     }
     if (enemy.special === "boss-jarvan") {
@@ -2079,7 +2085,7 @@ function updateEnemies(delta) {
       enemy.spearCooldown -= delta;
       if (enemy.flagCooldown <= 0) {
         createJarvanSpearVolley(enemy);
-        enemy.flagCooldown = bossAttackCooldown(6.4, 8.2);
+        enemy.flagCooldown = bossSpecialAttackCooldown();
       }
       if (enemy.spearCooldown <= 0 && playerDistance < Math.hypot(viewWidth, viewHeight) * 1.1) {
         createJarvanSpear(enemy);
@@ -2095,7 +2101,7 @@ function updateEnemies(delta) {
       }
       if (enemy.praiseStunCooldown <= 0) {
         createPraiseStunWave(enemy);
-        enemy.praiseStunCooldown = bossAttackCooldown(5.6, 7.4);
+        enemy.praiseStunCooldown = bossSpecialAttackCooldown();
       }
     }
     if (enemy.special === "boss-gum") {
@@ -2107,7 +2113,7 @@ function updateEnemies(delta) {
       }
       if (enemy.giantGumCooldown <= 0) {
         createGiantGumBubble(enemy);
-        enemy.giantGumCooldown = bossAttackCooldown(11.2, 15.0);
+        enemy.giantGumCooldown = bossSpecialAttackCooldown();
       }
     }
     if (enemy.special === "boss-dance") {
@@ -2120,7 +2126,7 @@ function updateEnemies(delta) {
       }
       if (enemy.danceStampCooldown <= 0) {
         createDanceStamp(enemy);
-        enemy.danceStampCooldown = bossAttackCooldown(5.5, 7.2);
+        enemy.danceStampCooldown = bossSpecialAttackCooldown();
       }
     }
     if (enemy.special === "luggage" || enemy.special === "boss-luggage") {
