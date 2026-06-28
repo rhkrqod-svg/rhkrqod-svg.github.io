@@ -3077,7 +3077,7 @@ function updatePoliceSquads(delta) {
       }
       for (const enemy of [...enemies]) {
         if (Math.hypot(enemy.x - officer.x, enemy.y - officer.y) > enemy.radius + squad.radius) continue;
-        if ((squad.hitCounts.get(enemy) ?? 0) >= 3) continue;
+        if ((squad.hitCounts.get(enemy) ?? 0) >= 4) continue;
         if (squad.hitTimers.has(enemy)) continue;
         squad.hitTimers.set(enemy, 0.22);
         squad.hitCounts.set(enemy, (squad.hitCounts.get(enemy) ?? 0) + 1);
