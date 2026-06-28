@@ -84,6 +84,7 @@ const PLAYER_RADIUS = 19 * CHARACTER_SIZE_SCALE;
 const FIRST_AID_HEAL_RATIO = 0.5;
 const ENEMY_HP_GLOBAL_MULTIPLIER = 1.6;
 const ENEMY_SPEED_GLOBAL_MULTIPLIER = 1.15;
+const BOSS_SPEED_GLOBAL_MULTIPLIER = 1.15;
 const ENEMY_XP_REWARD_MULTIPLIER = 1.35;
 const XP_ORB_LIFETIME = 18;
 const XP_ORB_FADE_TIME = 5;
@@ -94,6 +95,9 @@ const BOSS_MUSIC_VOLUME = 0.2;
 const BOSS_ATTACK_COOLDOWN_MULTIPLIER = 1.3;
 const BOSS_BASIC_ATTACK_MIN_COOLDOWN = 2.2;
 const BOSS_BASIC_ATTACK_MAX_COOLDOWN = 3.2;
+const BOSS_BASIC_ATTACK_COOLDOWN_MULTIPLIER = 0.8;
+const BOSS_BASIC_ATTACK_SPEED_MULTIPLIER = 1.2;
+const BOSS_STAB_ATTACK_DURATION_MULTIPLIER = 1 / BOSS_BASIC_ATTACK_SPEED_MULTIPLIER;
 const BOSS_SPECIAL_ATTACK_MIN_COOLDOWN = 6.4;
 const BOSS_SPECIAL_ATTACK_MAX_COOLDOWN = 8.2;
 
@@ -785,7 +789,7 @@ function bossAttackCooldown(min, max) {
 }
 
 function bossBasicAttackCooldown() {
-  return bossAttackCooldown(BOSS_BASIC_ATTACK_MIN_COOLDOWN, BOSS_BASIC_ATTACK_MAX_COOLDOWN);
+  return bossAttackCooldown(BOSS_BASIC_ATTACK_MIN_COOLDOWN, BOSS_BASIC_ATTACK_MAX_COOLDOWN) * BOSS_BASIC_ATTACK_COOLDOWN_MULTIPLIER;
 }
 
 function bossSpecialAttackCooldown() {
@@ -1525,7 +1529,7 @@ function spawnEnemy(type = null, boss = false) {
     y,
     hp: chosen.hp * hpScale,
     maxHp: chosen.hp * hpScale,
-    speed: chosen.speed * (boss ? 1.42 : 1) * ENEMY_SPEED_GLOBAL_MULTIPLIER,
+    speed: chosen.speed * (boss ? 1.42 * BOSS_SPEED_GLOBAL_MULTIPLIER : 1) * ENEMY_SPEED_GLOBAL_MULTIPLIER,
     damage: chosen.damage * attackScale,
     attackScale,
     radius: chosen.radius * (boss ? BOSS_SIZE_SCALE : MONSTER_SIZE_SCALE),
@@ -2236,11 +2240,11 @@ function createDansoSwing(enemy) {
     damage: scaleBossDamage(enemy, 20),
     push: 54,
     stun: 0.22,
-    life: 1.54,
-    maxLife: 1.54,
+    life: 1.54 * BOSS_STAB_ATTACK_DURATION_MULTIPLIER,
+    maxLife: 1.54 * BOSS_STAB_ATTACK_DURATION_MULTIPLIER,
     color: "#f9c74f",
     hostile: true,
-    armedAt: 0.22,
+    armedAt: 0.22 * BOSS_STAB_ATTACK_DURATION_MULTIPLIER,
     applied: false,
     kind: "dansoStab",
   });
@@ -2293,8 +2297,8 @@ function createAirportTaunt(enemy) {
     damageZones.push({
       x: enemy.x + Math.cos(shotAngle) * 34,
       y: enemy.y + Math.sin(shotAngle) * 34,
-      vx: Math.cos(shotAngle) * 338,
-      vy: Math.sin(shotAngle) * 338,
+      vx: Math.cos(shotAngle) * 338 * BOSS_BASIC_ATTACK_SPEED_MULTIPLIER,
+      vy: Math.sin(shotAngle) * 338 * BOSS_BASIC_ATTACK_SPEED_MULTIPLIER,
       radius: 55.2,
       damage: scaleBossDamage(enemy, 20),
       life: 2.15,
@@ -2371,11 +2375,11 @@ function createJarvanSpear(enemy) {
     damage: scaleBossDamage(enemy, 24),
     push: 86,
     stun: 0.46,
-    life: 1.54,
-    maxLife: 1.54,
+    life: 1.54 * BOSS_STAB_ATTACK_DURATION_MULTIPLIER,
+    maxLife: 1.54 * BOSS_STAB_ATTACK_DURATION_MULTIPLIER,
     color: "#ffe066",
     hostile: true,
-    armedAt: 0.46,
+    armedAt: 0.46 * BOSS_STAB_ATTACK_DURATION_MULTIPLIER,
     applied: false,
     kind: "jarvanSpear",
   });
@@ -2417,8 +2421,8 @@ function createPraiseThumb(enemy) {
     damageZones.push({
       x: enemy.x + Math.cos(shotAngle) * 42,
       y: enemy.y + Math.sin(shotAngle) * 42,
-      vx: Math.cos(shotAngle) * 620,
-      vy: Math.sin(shotAngle) * 620,
+      vx: Math.cos(shotAngle) * 620 * BOSS_BASIC_ATTACK_SPEED_MULTIPLIER,
+      vy: Math.sin(shotAngle) * 620 * BOSS_BASIC_ATTACK_SPEED_MULTIPLIER,
       radius: 48,
       damage: scaleBossDamage(enemy, 20),
       life: 1.25,
@@ -2461,8 +2465,8 @@ function createGumBubble(enemy) {
     damageZones.push({
       x: enemy.x + Math.cos(shotAngle) * 42,
       y: enemy.y + Math.sin(shotAngle) * 42,
-      vx: Math.cos(shotAngle) * 310,
-      vy: Math.sin(shotAngle) * 310,
+      vx: Math.cos(shotAngle) * 310 * BOSS_BASIC_ATTACK_SPEED_MULTIPLIER,
+      vy: Math.sin(shotAngle) * 310 * BOSS_BASIC_ATTACK_SPEED_MULTIPLIER,
       radius: 32.5,
       damage: scaleBossDamage(enemy, 12),
       slow: 5,
