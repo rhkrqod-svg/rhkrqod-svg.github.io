@@ -2648,7 +2648,7 @@ function increaseLevelStats() {
   player.attackPower *= 1.07;
   player.defensePower *= 1.07;
   player.speed *= 1.015;
-  player.maxHp = Math.min(MAX_PLAYER_HP_LIMIT, player.maxHp * 1.025);
+  player.maxHp = Math.min(MAX_PLAYER_HP_LIMIT, player.maxHp * 1.04);
   player.hp = Math.min(player.maxHp, player.hp + player.maxHp - previousMaxHp);
 }
 
