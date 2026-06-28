@@ -602,6 +602,14 @@ const upgradePool = [
     },
   },
   {
+    id: "subwayPolice",
+    name: "지하철 경찰",
+    desc: "지하철 경찰이 동행하며 보스를 우선 곤봉 공격",
+    apply: () => {
+      weapons.subwayPolice.level += 1;
+    },
+  },
+  {
     id: "nuisanceResist",
     name: "민폐 내성",
     desc: "받는 피해 15% 감소",
@@ -633,6 +641,7 @@ const weaponUpgradeIds = new Set([
   "expressTrain",
   "customerMissile",
   "stationCannon",
+  "subwayPolice",
 ]);
 
 function getTearGasRadius() {
@@ -689,6 +698,7 @@ const cards = [];
 const missiles = [];
 const taserShots = [];
 const policeSquads = [];
+const stationPolicePets = [];
 const skillAnnouncementCooldowns = new Map();
 
 const input = {
@@ -754,6 +764,7 @@ const weapons = {
   transferGate: { level: 0, cooldown: 6.2 },
   customerMissile: { level: 0, cooldown: 0.45 },
   stationCannon: { level: 0, cooldown: 6.5 },
+  subwayPolice: { level: 0 },
 };
 
 const game = {
@@ -1122,6 +1133,7 @@ function resetGame() {
   missiles.length = 0;
   taserShots.length = 0;
   policeSquads.length = 0;
+  stationPolicePets.length = 0;
   bossIndex = 0;
   bossBag = [];
   nextBossAt = 20;
@@ -1185,6 +1197,7 @@ function resetGame() {
   Object.assign(weapons.transferGate, { level: 0, cooldown: 6.2 });
   Object.assign(weapons.customerMissile, { level: 0, cooldown: 0.45 });
   Object.assign(weapons.stationCannon, { level: 0, cooldown: 6.5 });
+  Object.assign(weapons.subwayPolice, { level: 0 });
   game.state = "playing";
   game.paused = true;
   game.manualPaused = false;
@@ -3095,6 +3108,77 @@ function updatePoliceSquads(delta) {
   }
 }
 
+function syncStationPolicePets() {
+  const wanted = Math.max(0, weapons.subwayPolice.level);
+  while (stationPolicePets.length < wanted) {
+    const index = stationPolicePets.length;
+    const angle = -Math.PI / 2 + (TAU * index) / Math.max(1, wanted || 1);
+    stationPolicePets.push({
+      x: player.x + Math.cos(angle) * 72,
+      y: player.y + Math.sin(angle) * 72,
+      slot: index,
+      attackCooldown: rand(0.08, 0.36),
+      swingTimer: 0,
+      target: null,
+      bob: Math.random() * TAU,
+      facing: angle,
+    });
+  }
+  while (stationPolicePets.length > wanted) stationPolicePets.pop();
+  stationPolicePets.forEach((pet, index) => {
+    pet.slot = index;
+  });
+}
+
+function updateStationPolicePets(delta) {
+  syncStationPolicePets();
+  if (stationPolicePets.length === 0) return;
+  const count = stationPolicePets.length;
+  for (const pet of stationPolicePets) {
+    pet.attackCooldown = Math.max(0, pet.attackCooldown - delta);
+    pet.swingTimer = Math.max(0, pet.swingTimer - delta);
+    const slotAngle = -Math.PI / 2 + (TAU * pet.slot) / Math.max(1, count);
+    const orbit = 62 + Math.min(5, count) * 7;
+    const floatAngle = slotAngle + Math.sin(player.elapsed * 1.7 + pet.bob) * 0.12;
+    const idleX = player.x + Math.cos(floatAngle) * orbit;
+    const idleY = player.y + Math.sin(floatAngle) * orbit;
+    const target = findPriorityEnemyFrom(pet, 820);
+    pet.target = target;
+
+    let goalX = idleX;
+    let goalY = idleY;
+    if (target) {
+      const standAngle = angleTo(target, pet);
+      const standOff = target.radius + 40;
+      goalX = target.x + Math.cos(standAngle) * standOff;
+      goalY = target.y + Math.sin(standAngle) * standOff;
+    }
+
+    const dx = goalX - pet.x;
+    const dy = goalY - pet.y;
+    const distanceToGoal = Math.hypot(dx, dy) || 1;
+    const moveSpeed = target ? 375 : 255;
+    const step = Math.min(distanceToGoal, moveSpeed * delta);
+    pet.x = clamp(pet.x + (dx / distanceToGoal) * step, 25, WORLD_SIZE - 25);
+    pet.y = clamp(pet.y + (dy / distanceToGoal) * step, 25, WORLD_SIZE - 25);
+    if (distanceToGoal > 1) pet.facing = Math.atan2(dy, dx);
+
+    if (!target) continue;
+    const attackDistance = Math.hypot(target.x - pet.x, target.y - pet.y);
+    if (attackDistance > target.radius + 54 || pet.attackCooldown > 0) continue;
+    pet.attackCooldown = 0.58;
+    pet.swingTimer = 0.22;
+    pet.facing = angleTo(pet, target);
+    const damage = Math.round(29 + Math.max(0, weapons.subwayPolice.level - 1) * 3);
+    damageEnemy(target, damage, "#b8dcff");
+    const pushAmount = target.boss ? 7 : 22;
+    target.x = clamp(target.x + Math.cos(pet.facing) * pushAmount, 35, WORLD_SIZE - 35);
+    target.y = clamp(target.y + Math.sin(pet.facing) * pushAmount, 35, WORLD_SIZE - 35);
+    addParticles(target.x, target.y, "#b8dcff", target.boss ? 8 : 5);
+    if (Math.random() < 0.42) playSound("police");
+  }
+}
+
 function dropEnergy(enemy) {
   if (!enemy.boss) return;
 
@@ -3804,6 +3888,7 @@ function update(delta) {
   updateEnemies(delta);
   updateProjectiles(delta);
   updatePoliceSquads(delta);
+  updateStationPolicePets(delta);
   updateOrbs(delta);
   updateEnergyPickups(delta);
   updateDamageZones(delta);
@@ -3910,6 +3995,7 @@ function updateHud() {
     weapons.expressTrain.level > 0 ? { label: `급행 Lv.${weapons.expressTrain.level}`, type: "attack", power: chipPower(weapons.expressTrain.level), desc: "급행열차가 보스를 우선 노려 지나가며 피해와 넉백을 줍니다." } : null,
     weapons.customerMissile.level > 0 ? { label: `유도탄 Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level), desc: "고객센터 유도탄이 보스를 우선 추적하고 약한 폭발 피해를 줍니다." } : null,
     weapons.stationCannon.level > 0 ? { label: `제압포 Lv.${weapons.stationCannon.level}`, type: "attack", power: chipPower(weapons.stationCannon.level), desc: "하늘에서 제압탄이 떨어져 붉은 장판을 만들고 적을 기절시킵니다." } : null,
+    weapons.subwayPolice.level > 0 ? { label: `지하철 경찰 Lv.${weapons.subwayPolice.level}`, type: "attack", power: chipPower(weapons.subwayPolice.level), desc: "지하철 경찰이 팻처럼 동행하며 보스를 우선 곤봉으로 공격합니다." } : null,
     player.defenseBreakTimer > 0 ? { label: `방어저하 ${Math.ceil(player.defenseBreakTimer)}초`, type: "status", desc: "현재 방어력이 감소한 상태입니다." } : null,
     player.stunTimer > 0 ? { label: `경직 ${Math.ceil(player.stunTimer)}초`, type: "status", desc: "잠시 움직일 수 없는 상태입니다." } : null,
     player.slowTimer > 0 ? { label: `둔화 ${Math.ceil(player.slowTimer)}초`, type: "status", desc: "이동 속도가 느려진 상태입니다." } : null,
@@ -6152,6 +6238,7 @@ function render() {
   drawEnergyPickups();
   drawProjectiles();
   drawPoliceSquads();
+  drawStationPolicePets();
   for (const enemy of enemies) drawEnemy(enemy);
   drawBlades();
   drawPlayer();
