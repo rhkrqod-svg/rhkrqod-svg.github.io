@@ -84,9 +84,11 @@ const PLAYER_RADIUS = 19 * CHARACTER_SIZE_SCALE;
 const FIRST_AID_HEAL_RATIO = 0.5;
 const BASE_REGEN_RATIO = 0.015;
 const ENEMY_HP_GLOBAL_MULTIPLIER = 1.6;
-const ENEMY_SPEED_GLOBAL_MULTIPLIER = 1.15;
+const ENEMY_SPEED_GLOBAL_MULTIPLIER = 1.38;
 const ENEMY_DAMAGE_GLOBAL_MULTIPLIER = 1.3;
 const BOSS_SPEED_GLOBAL_MULTIPLIER = 1.15;
+const COMMUTE_PROTEST_SPEED_MULTIPLIER = 1.4 / 1.2;
+const COMMUTE_PROTEST_HP_MULTIPLIER = 1.1;
 const ENEMY_XP_REWARD_MULTIPLIER = 1.35;
 const XP_ORB_LIFETIME = 18;
 const XP_ORB_FADE_TIME = 5;
@@ -1496,7 +1498,7 @@ function spawnCommuteProtestStage() {
   playSound("boss");
 
   const count = 100;
-  const hpScale = getNormalEnemyHpLevelScale() * ENEMY_HP_GLOBAL_MULTIPLIER * 1.15;
+  const hpScale = getNormalEnemyHpLevelScale() * ENEMY_HP_GLOBAL_MULTIPLIER * 1.15 * COMMUTE_PROTEST_HP_MULTIPLIER;
   const attackScale = getNormalEnemyLevelScale();
   for (let i = 0; i < count; i += 1) {
     const angle = (TAU * i) / count + rand(-0.06, 0.06);
@@ -1510,7 +1512,7 @@ function spawnCommuteProtestStage() {
       trim: "#fff3b0",
       hp,
       maxHp: hp,
-      speed: rand(31, 43) * ENEMY_SPEED_GLOBAL_MULTIPLIER,
+      speed: rand(31, 43) * ENEMY_SPEED_GLOBAL_MULTIPLIER * COMMUTE_PROTEST_SPEED_MULTIPLIER,
       damage: 6 * attackScale * ENEMY_DAMAGE_GLOBAL_MULTIPLIER,
       attackScale,
       radius: 62 * 0.68 * 0.8 * MONSTER_SIZE_SCALE,
