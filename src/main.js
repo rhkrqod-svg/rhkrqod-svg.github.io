@@ -2286,8 +2286,9 @@ function createAirportTaunt(enemy) {
 
 function createAirportCrisis(enemy) {
   addSpeechBubble(enemy, "금융 위기 모르냐 금융위기 거지야~", 1.45);
-  for (let i = 0; i < 12; i += 1) {
-    const angle = (TAU * i) / 12 + rand(-0.16, 0.16);
+  const dollarCount = 20;
+  for (let i = 0; i < dollarCount; i += 1) {
+    const angle = (TAU * i) / dollarCount + rand(-0.16, 0.16);
     damageZones.push({
       x: enemy.x,
       y: enemy.y,
