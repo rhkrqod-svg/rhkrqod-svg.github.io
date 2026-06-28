@@ -43,6 +43,8 @@ const refs = {
   policeCount: document.querySelector("#policeCount"),
   taserButton: document.querySelector("#taserButton"),
   taserCount: document.querySelector("#taserCount"),
+  chickenButton: document.querySelector("#chickenButton"),
+  chickenCount: document.querySelector("#chickenCount"),
   pauseButton: document.querySelector("#pauseButton"),
   moveStick: document.querySelector("#moveStick"),
   moveStickThumb: document.querySelector("#moveStickThumb"),
@@ -109,6 +111,11 @@ const TASER_DOT_DAMAGE_RATIO = 0.1;
 const SUBWAY_POLICE_DAMAGE_MULTIPLIER = 1.5;
 const SUBWAY_POLICE_SPLASH_RADIUS = 60;
 const SUBWAY_POLICE_SPLASH_DAMAGE_RATIO = 0.28;
+const CHICKEN_BUFF_DURATION = 6;
+const CHICKEN_VISUAL_SCALE = 3;
+const CHICKEN_COLLISION_RADIUS_MULTIPLIER = 2.25;
+const CHICKEN_HIT_COOLDOWN = 0.36;
+const CHICKEN_KNOCKBACK = 132;
 
 const heroTypes = [
   {
@@ -745,6 +752,8 @@ const player = {
   firstAidKits: 1,
   policeCalls: 0,
   taserGuns: 0,
+  chickenBreasts: 0,
+  chickenTimer: 0,
   xpNeedMultiplier: 1,
   invuln: 0,
   alive: false,
@@ -1178,6 +1187,8 @@ function resetGame() {
     firstAidKits: 1,
     policeCalls: 0,
     taserGuns: 0,
+    chickenBreasts: 0,
+    chickenTimer: 0,
     xpNeedMultiplier: 1,
     invuln: 0,
     alive: true,
@@ -2024,6 +2035,7 @@ function updatePlayer(delta) {
     player.y = clamp(player.y + move.y * currentSpeed * delta, 24, WORLD_SIZE - 24);
   }
   player.invuln = Math.max(0, player.invuln - delta);
+  player.chickenTimer = Math.max(0, (player.chickenTimer ?? 0) - delta);
   player.stunTimer = Math.max(0, player.stunTimer - delta);
   if (player.defenseBreakTimer > 0) {
     player.defenseBreakTimer = Math.max(0, player.defenseBreakTimer - delta);
@@ -2237,11 +2249,26 @@ function updateEnemies(delta) {
       }
     }
     if (enemy.boostTimer > 0) speed *= enemy.speedBoostMultiplier ?? 1;
+    enemy.chickenHitCooldown = Math.max(0, (enemy.chickenHitCooldown ?? 0) - delta);
 
     enemy.x += Math.cos(angle) * speed * delta;
     enemy.y += Math.sin(angle) * speed * delta;
 
     const touchDistance = Math.hypot(enemy.x - player.x, enemy.y - player.y);
+    const chickenActive = player.chickenTimer > 0;
+    const playerBodyRadius = chickenActive ? player.radius * CHICKEN_COLLISION_RADIUS_MULTIPLIER : player.radius;
+    if (touchDistance < enemy.radius + playerBodyRadius && chickenActive && enemy.chickenHitCooldown <= 0) {
+      enemy.chickenHitCooldown = CHICKEN_HIT_COOLDOWN;
+      damageEnemy(enemy, getChickenChargeDamage(), "#ffd166");
+      if (!enemies.includes(enemy)) continue;
+      const push = angleTo(player, enemy);
+      const pushAmount = (enemy.boss ? CHICKEN_KNOCKBACK / 3 : CHICKEN_KNOCKBACK) * (1 + clamp(player.chickenTimer / CHICKEN_BUFF_DURATION, 0, 1) * 0.18);
+      enemy.x = clamp(enemy.x + Math.cos(push) * pushAmount, 35, WORLD_SIZE - 35);
+      enemy.y = clamp(enemy.y + Math.sin(push) * pushAmount, 35, WORLD_SIZE - 35);
+      addParticles(enemy.x, enemy.y, "#ffd166", enemy.boss ? 16 : 10);
+      addPopup("BODY!", enemy.x, enemy.y - enemy.radius - 16, "#ffd166", 0.45, enemy.boss ? 15 : 13);
+      continue;
+    }
     if (touchDistance < enemy.radius + player.radius && player.invuln <= 0) {
       if (enemy.boss && enemy.attackSpeechCooldown <= 0) {
         const line =
@@ -2868,6 +2895,12 @@ function damageEnemy(enemy, amount, color = "#fff2a8") {
   if (enemy.hp <= 0) killEnemy(enemy);
 }
 
+function getChickenChargeDamage() {
+  const lightningLevel = Math.max(1, weapons.lightning.level || 1);
+  const lightningDamage = Math.round((63 + lightningLevel * 58) * 1.105 * 1.3 * 0.8);
+  return Math.max(1, Math.round(lightningDamage * 0.5));
+}
+
 function killEnemy(enemy) {
   const index = enemies.indexOf(enemy);
   if (index >= 0) enemies.splice(index, 1);
@@ -2908,9 +2941,16 @@ function grantTaserGun(count = 1, x = player.x, y = player.y) {
   updateHud();
 }
 
+function grantChickenBreast(count = 1, x = player.x, y = player.y) {
+  player.chickenBreasts += count;
+  addPopup(`닭가슴살 +${count}`, x, y - 84, "#ffd166", 0.9, 16);
+  playSound("levelUp");
+  updateHud();
+}
+
 function dropBossRewardItems(enemy) {
   if (!enemy.boss) return;
-  const rewardKinds = ["firstAid", "radio", "taser"];
+  const rewardKinds = ["firstAid", "radio", "taser", "chicken"];
   for (let i = rewardKinds.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
     [rewardKinds[i], rewardKinds[j]] = [rewardKinds[j], rewardKinds[i]];
@@ -2929,7 +2969,7 @@ function dropBossRewardPickup(enemy, kind, index = 0, count = 1) {
     x: enemy.x + Math.cos(angle) * distance,
     y: enemy.y + Math.sin(angle) * distance,
     heal: 0,
-    radius: kind === "taser" ? 13 : kind === "radio" ? 14 : 13,
+    radius: kind === "chicken" ? 14 : kind === "taser" ? 13 : kind === "radio" ? 14 : 13,
     boss: true,
     pulse: Math.random() * TAU,
     vx: Math.cos(angle) * rand(28, 78),
@@ -3274,6 +3314,10 @@ function updateEnergyPickups(delta) {
         grantTaserGun(1, pickup.x, pickup.y);
         addPopup("테이저건", pickup.x, pickup.y - 18, "#fff3b0", 0.8, 14);
         addParticles(pickup.x, pickup.y, "#fff3b0", 20);
+      } else if (pickup.kind === "chicken") {
+        grantChickenBreast(1, pickup.x, pickup.y);
+        addPopup("닭가슴살", pickup.x, pickup.y - 18, "#ffd166", 0.8, 14);
+        addParticles(pickup.x, pickup.y, "#ffd166", 22);
       } else if (pickup.kind === "firstAid") {
         grantFirstAidKit(1, pickup.x, pickup.y);
         addPopup("구급팩", pickup.x, pickup.y - 18, "#b8ffe4", 0.8, 14);
@@ -3306,6 +3350,19 @@ function useFirstAidKit() {
   announceSkill("역무원 구급팩", { color: "#b8ffe4", minGap: 500, source: "item" });
   addPopup("구급팩 사용", player.x, player.y - 56, "#b8ffe4", 0.75, 15);
   playSound("heal");
+  updateHud();
+}
+
+function useChickenBreast() {
+  if (game.state !== "playing" || game.paused || game.pendingHeroChoice || player.chickenBreasts <= 0) return;
+  player.chickenBreasts -= 1;
+  player.chickenTimer = CHICKEN_BUFF_DURATION;
+  player.invuln = Math.max(player.invuln, 0.35);
+  announceSkill("닭가슴살", { color: "#ffd166", minGap: 500, source: "item" });
+  addPopup("닭가슴살!", player.x, player.y - 78, "#ffd166", 0.9, 20);
+  addParticles(player.x, player.y, "#ffd166", 34);
+  addParticles(player.x, player.y, "#b7ef64", 24);
+  playSound("levelUp");
   updateHud();
 }
 
@@ -3891,6 +3948,11 @@ function updateHud() {
     refs.taserButton.classList.toggle("item-hidden", player.taserGuns <= 0);
     refs.taserButton.disabled = player.taserGuns <= 0 || !enemies.some((enemy) => enemy.boss) || game.state !== "playing" || game.paused;
   }
+  if (refs.chickenCount) refs.chickenCount.textContent = player.chickenBreasts;
+  if (refs.chickenButton) {
+    refs.chickenButton.classList.toggle("item-hidden", player.chickenBreasts <= 0);
+    refs.chickenButton.disabled = player.chickenBreasts <= 0 || game.state !== "playing" || game.paused || player.chickenTimer > 0;
+  }
   if (refs.pauseButton) {
     refs.pauseButton.disabled = game.state !== "playing" || game.pendingHeroChoice || game.pendingStarterChoices > 0 || (game.paused && !game.manualPaused);
     refs.pauseButton.textContent = game.manualPaused ? "▶" : "Ⅱ";
@@ -3911,6 +3973,7 @@ function updateHud() {
     player.slowTimer > 0 ? { label: `둔화 ${Math.ceil(player.slowTimer)}초`, type: "status", desc: "이동 속도가 느려진 상태입니다." } : null,
     player.damageReduction > 0 ? { label: `내성 ${Math.round(player.damageReduction * 100)}%`, type: "passive", power: chipPower(Math.round(player.damageReduction / 0.15)), desc: "받는 피해가 감소합니다." } : null,
     player.regenLevel > 0 ? { label: `회복 Lv.${player.regenLevel}`, type: "passive", power: chipPower(player.regenLevel), desc: `일정 시간마다 최대 체력의 ${Number(((1 + player.regenLevel) * 1.5).toFixed(1))}%를 회복합니다.` } : null,
+    player.chickenTimer > 0 ? { label: `닭가슴살 ${Math.ceil(player.chickenTimer)}초`, type: "status", desc: "몸집이 커지고 접촉한 적에게 몸통박치기 피해와 넉백을 줍니다." } : null,
   ].filter(Boolean);
   renderLoadoutItems(loadoutItems);
 }
@@ -4147,19 +4210,48 @@ function drawPlayer() {
   const pulse = player.invuln > 0 ? Math.sin(performance.now() * 0.04) * 0.3 + 0.7 : 1;
   const heroImage = heroImages.get(player.heroId);
   const useHeroImage = Boolean(heroImage?.complete && heroImage.naturalWidth > 0);
-  const spriteHeight = Math.max(32, player.radius * 7.2);
+  const chickenActive = player.chickenTimer > 0;
+  const chickenRatio = chickenActive ? clamp(player.chickenTimer / CHICKEN_BUFF_DURATION, 0, 1) : 0;
+  const spriteScale = chickenActive ? CHICKEN_VISUAL_SCALE : 1;
+  const spriteHeight = Math.max(32, player.radius * 7.2) * spriteScale;
   const spriteWidth = useHeroImage ? spriteHeight * (heroImage.naturalWidth / heroImage.naturalHeight) : 0;
   ctx.save();
   ctx.translate(p.x, p.y);
   ctx.globalAlpha = pulse;
+  if (chickenActive) {
+    const steam = performance.now() * 0.002;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = 0.22 + chickenRatio * 0.12;
+    ctx.fillStyle = "rgba(183, 239, 100, 0.18)";
+    ctx.shadowColor = "#b7ef64";
+    ctx.shadowBlur = 26;
+    ctx.beginPath();
+    ctx.arc(0, 0, player.radius * 5.2, 0, TAU);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.42)";
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 7; i += 1) {
+      const angle = (TAU * i) / 7 + steam;
+      const sx = Math.cos(angle) * player.radius * 4.0;
+      const sy = Math.sin(angle) * player.radius * 3.2;
+      ctx.beginPath();
+      ctx.moveTo(sx, sy + 18);
+      ctx.bezierCurveTo(sx + Math.sin(steam + i) * 12, sy, sx - Math.cos(steam + i) * 10, sy - 18, sx + 3, sy - 34);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
   if (useHeroImage) {
     ctx.fillStyle = "rgba(0, 0, 0, 0.28)";
     ctx.beginPath();
     ctx.ellipse(0, spriteHeight * 0.37, spriteWidth * 0.34, 4.2, 0, 0, TAU);
     ctx.fill();
     ctx.shadowColor = player.heroAccent;
-    ctx.shadowBlur = player.invuln > 0 ? 14 : 7;
+    ctx.shadowBlur = chickenActive ? 26 : player.invuln > 0 ? 14 : 7;
+    if (chickenActive) ctx.filter = "saturate(1.25) contrast(1.08) hue-rotate(18deg)";
     ctx.drawImage(heroImage, -spriteWidth / 2, -spriteHeight * 0.58, spriteWidth, spriteHeight);
+    ctx.filter = "none";
     ctx.shadowBlur = 0;
   } else {
     ctx.fillStyle = "#eaf2ff";
@@ -5020,6 +5112,35 @@ function drawEnergyPickups() {
       ctx.lineTo(-size * 0.16, -size * 0.02);
       ctx.closePath();
       ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.restore();
+      continue;
+    }
+    if (pickup.kind === "chicken") {
+      ctx.shadowColor = "#ffd166";
+      ctx.shadowBlur = 20;
+      ctx.fillStyle = "#fff7d6";
+      ctx.strokeStyle = "#d97706";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, size * 0.95, size * 0.58, -0.22, 0, TAU);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#f59e0b";
+      ctx.beginPath();
+      ctx.ellipse(-size * 0.18, -size * 0.05, size * 0.55, size * 0.22, -0.25, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.globalAlpha = 0.68;
+      ctx.beginPath();
+      ctx.ellipse(size * 0.25, -size * 0.22, size * 0.22, size * 0.08, -0.3, 0, TAU);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = "#4a2800";
+      ctx.font = `900 ${Math.max(7, size * 0.52)}px system-ui`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("P", 0, size * 0.02);
       ctx.shadowBlur = 0;
       ctx.restore();
       continue;
@@ -6243,6 +6364,10 @@ window.addEventListener("keydown", (event) => {
     useTaserGun();
     return;
   }
+  if (event.code === "KeyC") {
+    useChickenBreast();
+    return;
+  }
   keys.add(event.code);
 });
 window.addEventListener("keyup", (event) => keys.delete(event.code));
@@ -6251,6 +6376,7 @@ refs.startButton.addEventListener("click", resetGame);
 refs.firstAidButton?.addEventListener("click", useFirstAidKit);
 refs.policeButton?.addEventListener("click", usePoliceCall);
 refs.taserButton?.addEventListener("click", useTaserGun);
+refs.chickenButton?.addEventListener("click", useChickenBreast);
 refs.pauseButton?.addEventListener("click", togglePause);
 refs.upgradePauseButton?.addEventListener("click", toggleUpgradePause);
 refs.rankForm?.addEventListener("submit", submitLeaderboardEntry);
