@@ -591,6 +591,14 @@ const upgradePool = [
     },
   },
   {
+    id: "stationPolicePet",
+    name: "역무실 제압포",
+    desc: "지하철 경찰대 1명이 동행하며 곤봉으로 적을 제압",
+    apply: () => {
+      weapons.stationPolicePet.level += 1;
+    },
+  },
+  {
     id: "nuisanceResist",
     name: "민폐 내성",
     desc: "받는 피해 15% 감소",
@@ -621,6 +629,7 @@ const weaponUpgradeIds = new Set([
   "tearGas",
   "expressTrain",
   "customerMissile",
+  "stationPolicePet",
 ]);
 
 function getTearGasRadius() {
@@ -677,6 +686,7 @@ const cards = [];
 const missiles = [];
 const taserShots = [];
 const policeSquads = [];
+const stationPolicePets = [];
 const skillAnnouncementCooldowns = new Map();
 
 const input = {
@@ -741,6 +751,7 @@ const weapons = {
   expressTrain: { level: 0, cooldown: 8.2 },
   transferGate: { level: 0, cooldown: 6.2 },
   customerMissile: { level: 0, cooldown: 0.45 },
+  stationPolicePet: { level: 0 },
 };
 
 const game = {
@@ -1109,6 +1120,7 @@ function resetGame() {
   missiles.length = 0;
   taserShots.length = 0;
   policeSquads.length = 0;
+  stationPolicePets.length = 0;
   bossIndex = 0;
   bossBag = [];
   nextBossAt = 20;
@@ -1171,6 +1183,7 @@ function resetGame() {
   Object.assign(weapons.expressTrain, { level: 0, cooldown: 8.2 });
   Object.assign(weapons.transferGate, { level: 0, cooldown: 6.2 });
   Object.assign(weapons.customerMissile, { level: 0, cooldown: 0.45 });
+  Object.assign(weapons.stationPolicePet, { level: 0 });
   game.state = "playing";
   game.paused = true;
   game.manualPaused = false;
@@ -1680,6 +1693,25 @@ function findCustomerMissileTarget(maxDistance = Infinity) {
     }
   }
   return nearestBoss ?? findNearestEnemy(maxDistance);
+}
+
+function findPriorityEnemyFrom(source, maxDistance = Infinity) {
+  let nearestBoss = null;
+  let nearestBossDistance = maxDistance;
+  let nearestEnemy = null;
+  let nearestEnemyDistance = maxDistance;
+  for (const enemy of enemies) {
+    const currentDistance = Math.hypot(enemy.x - source.x, enemy.y - source.y);
+    if (enemy.boss && currentDistance < nearestBossDistance) {
+      nearestBoss = enemy;
+      nearestBossDistance = currentDistance;
+    }
+    if (currentDistance < nearestEnemyDistance) {
+      nearestEnemy = enemy;
+      nearestEnemyDistance = currentDistance;
+    }
+  }
+  return nearestBoss ?? nearestEnemy;
 }
 
 function fireBullets() {
@@ -3023,6 +3055,79 @@ function updatePoliceSquads(delta) {
   }
 }
 
+function syncStationPolicePets() {
+  const wanted = Math.max(0, weapons.stationPolicePet.level);
+  while (stationPolicePets.length < wanted) {
+    const index = stationPolicePets.length;
+    const angle = (TAU * index) / Math.max(1, wanted || 1);
+    stationPolicePets.push({
+      x: player.x + Math.cos(angle) * 64,
+      y: player.y + Math.sin(angle) * 64,
+      slot: index,
+      attackCooldown: rand(0.1, 0.45),
+      swingTimer: 0,
+      target: null,
+      bob: Math.random() * TAU,
+      facing: angle,
+    });
+  }
+  while (stationPolicePets.length > wanted) stationPolicePets.pop();
+  stationPolicePets.forEach((pet, index) => {
+    pet.slot = index;
+  });
+}
+
+function updateStationPolicePets(delta) {
+  syncStationPolicePets();
+  if (stationPolicePets.length === 0) return;
+  const count = stationPolicePets.length;
+  for (const pet of stationPolicePets) {
+    pet.attackCooldown = Math.max(0, pet.attackCooldown - delta);
+    pet.swingTimer = Math.max(0, pet.swingTimer - delta);
+    const slotAngle = -Math.PI / 2 + (TAU * pet.slot) / Math.max(1, count);
+    const idleRadius = 58 + Math.min(4, count) * 7;
+    const idleX = player.x + Math.cos(slotAngle + Math.sin(player.elapsed * 1.8 + pet.bob) * 0.12) * idleRadius;
+    const idleY = player.y + Math.sin(slotAngle + Math.sin(player.elapsed * 1.8 + pet.bob) * 0.12) * idleRadius;
+    const source = { x: pet.x, y: pet.y };
+    const target = findPriorityEnemyFrom(source, 780);
+    pet.target = target;
+
+    let goalX = idleX;
+    let goalY = idleY;
+    if (target) {
+      const angle = angleTo(target, pet);
+      const standOff = target.radius + 38;
+      goalX = target.x + Math.cos(angle) * standOff;
+      goalY = target.y + Math.sin(angle) * standOff;
+    }
+
+    const dx = goalX - pet.x;
+    const dy = goalY - pet.y;
+    const distance = Math.hypot(dx, dy) || 1;
+    const moveSpeed = target ? 355 : 245;
+    const step = Math.min(distance, moveSpeed * delta);
+    pet.x += (dx / distance) * step;
+    pet.y += (dy / distance) * step;
+    pet.x = clamp(pet.x, 25, WORLD_SIZE - 25);
+    pet.y = clamp(pet.y, 25, WORLD_SIZE - 25);
+    if (distance > 1) pet.facing = Math.atan2(dy, dx);
+
+    if (!target) continue;
+    const attackDistance = Math.hypot(target.x - pet.x, target.y - pet.y);
+    if (attackDistance > target.radius + 52 || pet.attackCooldown > 0) continue;
+    pet.attackCooldown = 0.62;
+    pet.swingTimer = 0.22;
+    pet.facing = angleTo(pet, target);
+    const damage = 19 + Math.max(0, weapons.stationPolicePet.level - 1) * 2;
+    damageEnemy(target, damage, "#b8dcff");
+    const pushAmount = target.boss ? 8 : 24;
+    target.x = clamp(target.x + Math.cos(pet.facing) * pushAmount, 35, WORLD_SIZE - 35);
+    target.y = clamp(target.y + Math.sin(pet.facing) * pushAmount, 35, WORLD_SIZE - 35);
+    addParticles(target.x, target.y, "#b8dcff", target.boss ? 8 : 5);
+    if (Math.random() < 0.55) playSound("police");
+  }
+}
+
 function dropEnergy(enemy) {
   if (!enemy.boss) return;
 
@@ -3646,6 +3751,7 @@ function update(delta) {
   updateEnemies(delta);
   updateProjectiles(delta);
   updatePoliceSquads(delta);
+  updateStationPolicePets(delta);
   updateOrbs(delta);
   updateEnergyPickups(delta);
   updateDamageZones(delta);
@@ -3751,6 +3857,7 @@ function updateHud() {
     weapons.tearGas.level > 0 ? { label: `최류탄 Lv.${weapons.tearGas.level}`, type: "attack", power: chipPower(weapons.tearGas.level), desc: "주인공 주변에 손잡이보다 넓은 가스 지대를 만들고 안에 들어온 적에게 지속 피해를 줍니다." } : null,
     weapons.expressTrain.level > 0 ? { label: `급행 Lv.${weapons.expressTrain.level}`, type: "attack", power: chipPower(weapons.expressTrain.level), desc: "급행열차가 보스를 우선 노려 지나가며 피해와 넉백을 줍니다." } : null,
     weapons.customerMissile.level > 0 ? { label: `유도탄 Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level), desc: "고객센터 유도탄이 보스를 우선 추적하고 약한 폭발 피해를 줍니다." } : null,
+    weapons.stationPolicePet.level > 0 ? { label: `제압포 Lv.${weapons.stationPolicePet.level}`, type: "attack", power: chipPower(weapons.stationPolicePet.level), desc: "지하철 경찰대가 팻처럼 동행하며 보스를 우선 곤봉으로 공격합니다." } : null,
     player.defenseBreakTimer > 0 ? { label: `방어저하 ${Math.ceil(player.defenseBreakTimer)}초`, type: "status", desc: "현재 방어력이 감소한 상태입니다." } : null,
     player.stunTimer > 0 ? { label: `경직 ${Math.ceil(player.stunTimer)}초`, type: "status", desc: "잠시 움직일 수 없는 상태입니다." } : null,
     player.slowTimer > 0 ? { label: `둔화 ${Math.ceil(player.slowTimer)}초`, type: "status", desc: "이동 속도가 느려진 상태입니다." } : null,
@@ -4693,6 +4800,76 @@ function drawPoliceSquads() {
       ctx.fillText("POL", 0, -3);
       ctx.restore();
     }
+  }
+}
+
+function drawStationPolicePets() {
+  for (const pet of stationPolicePets) {
+    const p = worldToScreen(pet.x, pet.y);
+    const step = Math.sin(pet.bob + player.elapsed * 10);
+    const swing = clamp(pet.swingTimer / 0.22, 0, 1);
+    const batonAngle = -0.55 + Math.sin((1 - swing) * Math.PI) * 1.2;
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(pet.facing);
+    ctx.scale(1.22, 1.22);
+    ctx.shadowColor = "#77beff";
+    ctx.shadowBlur = 12;
+    ctx.fillStyle = "rgba(119, 190, 255, 0.18)";
+    ctx.beginPath();
+    ctx.ellipse(0, 12, 23, 12, 0, 0, TAU);
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#123f84";
+    roundedRect(-10, -14, 20, 28, 7);
+    ctx.fill();
+    ctx.strokeStyle = "#b8dcff";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = "#f1c9a4";
+    ctx.beginPath();
+    ctx.arc(0, -25, 9, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = "#183f7a";
+    roundedRect(-10, -34, 20, 8, 4);
+    ctx.fill();
+    ctx.fillStyle = "#ffd166";
+    ctx.fillRect(-3, -36, 6, 3);
+
+    ctx.strokeStyle = "#0b234a";
+    ctx.lineWidth = 4;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(-7, 13);
+    ctx.lineTo(-12, 23 + step * 3);
+    ctx.moveTo(7, 13);
+    ctx.lineTo(12, 23 - step * 3);
+    ctx.stroke();
+
+    ctx.save();
+    ctx.rotate(batonAngle);
+    ctx.strokeStyle = "#2a1608";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(10, -2);
+    ctx.lineTo(31, -15);
+    ctx.stroke();
+    ctx.strokeStyle = "#ffd166";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(15, -5);
+    ctx.lineTo(28, -13);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "900 7px system-ui";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("철경", 0, -3);
+    ctx.restore();
   }
 }
 
@@ -5923,6 +6100,7 @@ function render() {
   drawEnergyPickups();
   drawProjectiles();
   drawPoliceSquads();
+  drawStationPolicePets();
   for (const enemy of enemies) drawEnemy(enemy);
   drawBlades();
   drawPlayer();
