@@ -2569,9 +2569,12 @@ function calculateIncomingDamage(amount) {
 }
 
 function increaseLevelStats() {
+  const previousMaxHp = player.maxHp;
   player.attackPower *= 1.07;
   player.defensePower *= 1.07;
   player.speed *= 1.015;
+  player.maxHp = Math.min(MAX_PLAYER_HP_LIMIT, player.maxHp * 1.025);
+  player.hp = Math.min(player.maxHp, player.hp + player.maxHp - previousMaxHp);
 }
 
 function hurtPlayer(amount) {
@@ -3704,7 +3707,7 @@ function renderLoadoutItems(items) {
 }
 
 function updateHud() {
-  refs.hp.textContent = `${Math.ceil(player.hp)} / ${player.maxHp}`;
+  refs.hp.textContent = `${Math.ceil(player.hp)} / ${Math.ceil(player.maxHp)}`;
   refs.hpFill.style.transform = `scaleX(${clamp(player.hp / player.maxHp, 0, 1)})`;
   refs.level.textContent = player.level;
   refs.time.textContent = formatTime(player.elapsed);
