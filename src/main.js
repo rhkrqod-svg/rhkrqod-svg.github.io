@@ -369,6 +369,10 @@ function createGameImage(src) {
   return image;
 }
 
+function canDrawGameImage(image) {
+  return Boolean(image && !image.failed && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0);
+}
+
 const monsterImages = new Map();
 for (const monster of monsterTypes) {
   if (!monster.image) continue;
@@ -4011,7 +4015,7 @@ function drawBlades() {
 function drawEnemy(enemy) {
   const p = worldToScreen(enemy.x, enemy.y);
   const actorImage = enemy.boss ? bossImages.get(enemy.id) : monsterImages.get(enemy.id);
-  const useActorImage = Boolean(actorImage?.ready && actorImage.complete && actorImage.naturalWidth > 0);
+  const useActorImage = canDrawGameImage(actorImage);
   const fallbackHeight = Math.max(enemy.boss ? 96 : 54, enemy.radius * (enemy.boss ? 5.4 : 4.35));
   const fallbackWidth = fallbackHeight * (enemy.boss ? 0.72 : 0.58);
   const imageHeight = useActorImage ? Math.max(enemy.boss ? 72 : 46, enemy.radius * (enemy.boss ? 7.4 : 5.9)) : fallbackHeight;
@@ -4019,7 +4023,7 @@ function drawEnemy(enemy) {
   const visualTop = imageHeight * 0.72;
   const visualBottom = imageHeight * 0.28;
   const visualHalfWidth = imageWidth / 2;
-  const cullPadding = enemy.boss ? 96 : 42;
+  const cullPadding = enemy.boss ? Math.max(240, imageHeight * 0.9, imageWidth * 0.7) : 42;
   const cullLeft = -visualHalfWidth - cullPadding;
   const cullRight = width + visualHalfWidth + cullPadding;
   const cullTop = -visualTop - cullPadding;
@@ -4088,7 +4092,6 @@ function drawEnemy(enemy) {
     try {
       ctx.drawImage(actorImage, -imageWidth / 2, -imageHeight * 0.72, imageWidth, imageHeight);
     } catch {
-      actorImage.ready = false;
       ctx.fillStyle = enemy.hitFlash > 0 ? "#ffffff" : enemy.color;
       ctx.strokeStyle = enemy.trim;
       ctx.lineWidth = enemy.boss ? 3.5 : 2.2;
