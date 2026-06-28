@@ -738,11 +738,23 @@ function resize() {
   const rect = refs.app.getBoundingClientRect();
   width = Math.max(1, Math.floor(rect.width));
   height = Math.max(1, Math.floor(rect.height));
+  updateViewSize();
   canvas.width = Math.floor(width * dpr);
   canvas.height = Math.floor(height * dpr);
   canvas.style.width = `${width}px`;
   canvas.style.height = `${height}px`;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function updateViewSize() {
+  viewWidth = width / FIXED_VIEW_SCALE;
+  viewHeight = height / FIXED_VIEW_SCALE;
+}
+
+function snapCameraToPlayer() {
+  updateViewSize();
+  camera.x = clamp(player.x - viewWidth / 2, 0, WORLD_SIZE - viewWidth);
+  camera.y = clamp(player.y - viewHeight / 2, 0, WORLD_SIZE - viewHeight);
 }
 
 function clamp(value, min, max) {
@@ -1126,6 +1138,7 @@ function resetGame() {
     invuln: 0,
     alive: true,
   });
+  snapCameraToPlayer();
   Object.assign(weapons.lightning, { level: 0, cooldown: 3.4 });
   Object.assign(weapons.card, { level: 0, cooldown: 0.45 });
   Object.assign(weapons.lowKick, { level: 0, cooldown: 2.4 });
@@ -1187,6 +1200,7 @@ function selectHero(heroId) {
   player.defensePower = hero.def;
   player.speed = 205 * (hero.spd / 100);
   player.damageReduction = 0;
+  snapCameraToPlayer();
   refs.heroPanel.classList.add("hidden");
   game.pendingHeroChoice = false;
   game.pendingStarterChoices = 3;
@@ -4023,11 +4037,13 @@ function drawEnemy(enemy) {
   const visualTop = imageHeight * 0.72;
   const visualBottom = imageHeight * 0.28;
   const visualHalfWidth = imageWidth / 2;
-  const cullPadding = enemy.boss ? Math.max(240, imageHeight * 0.9, imageWidth * 0.7) : 42;
+  const cullPadding = enemy.boss
+    ? Math.max(240, imageHeight * 0.9, imageWidth * 0.7)
+    : Math.max(110, imageHeight * 0.9, imageWidth * 0.75, enemy.radius * 5);
   const cullLeft = -visualHalfWidth - cullPadding;
-  const cullRight = width + visualHalfWidth + cullPadding;
+  const cullRight = viewWidth + visualHalfWidth + cullPadding;
   const cullTop = -visualTop - cullPadding;
-  const cullBottom = height + visualBottom + cullPadding;
+  const cullBottom = viewHeight + visualBottom + cullPadding;
   if (p.x < cullLeft || p.x > cullRight || p.y < cullTop || p.y > cullBottom) return;
   ctx.save();
   ctx.translate(p.x, p.y);
@@ -5817,8 +5833,7 @@ function render() {
   ctx.setLineDash([]);
   ctx.clearRect(0, 0, width, height);
 
-  viewWidth = width / FIXED_VIEW_SCALE;
-  viewHeight = height / FIXED_VIEW_SCALE;
+  updateViewSize();
   const targetCameraX = player.x - viewWidth / 2;
   const targetCameraY = player.y - viewHeight / 2;
   camera.x += (targetCameraX - camera.x) * 0.12;
