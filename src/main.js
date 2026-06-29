@@ -119,6 +119,7 @@ const CHICKEN_VISUAL_SCALE = 3;
 const CHICKEN_COLLISION_RADIUS_MULTIPLIER = 2.25;
 const CHICKEN_HIT_COOLDOWN = 0.5;
 const CHICKEN_KNOCKBACK = 132;
+const CHICKEN_RELEASE_INVULN = 1;
 const STIMPACK_DURATION = 10;
 const STIMPACK_ATTACK_SPEED_MULTIPLIER = 3;
 const STIMPACK_DRAIN_RATIO = 0.03;
@@ -2071,7 +2072,12 @@ function updatePlayer(delta) {
     player.y = clamp(player.y + move.y * currentSpeed * delta, 24, WORLD_SIZE - 24);
   }
   player.invuln = Math.max(0, player.invuln - delta);
+  const wasChickenActive = player.chickenTimer > 0;
   player.chickenTimer = Math.max(0, (player.chickenTimer ?? 0) - delta);
+  if (wasChickenActive && player.chickenTimer <= 0) {
+    player.invuln = Math.max(player.invuln, CHICKEN_RELEASE_INVULN);
+    addPopup("무적 1초", player.x, player.y - 66, "#ffd166", 0.55, 15);
+  }
   if (player.stimTimer > 0) {
     player.stimTimer = Math.max(0, player.stimTimer - delta);
     player.stimDrainTimer = (player.stimDrainTimer ?? STIMPACK_DRAIN_TICK) - delta;
@@ -4529,6 +4535,34 @@ function drawPlayer() {
     ctx.beginPath();
     ctx.arc(0, 0, player.radius + 2, -0.2, Math.PI + 0.6);
     ctx.stroke();
+  }
+  if (chickenActive) {
+    const secondsLeft = Math.max(1, Math.ceil(player.chickenTimer));
+    const label = `${secondsLeft}초`;
+    const badgeY = useHeroImage ? -spriteHeight * 0.58 - 18 : -player.radius - 28;
+    ctx.save();
+    ctx.globalAlpha = 0.94;
+    ctx.font = "1000 15px system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    const metrics = ctx.measureText(label);
+    const badgeWidth = Math.max(46, metrics.width + 20);
+    const badgeHeight = 24;
+    const x = -badgeWidth / 2;
+    const y = badgeY - badgeHeight / 2;
+    ctx.shadowColor = "#ffd166";
+    ctx.shadowBlur = 14;
+    ctx.fillStyle = "rgba(18, 12, 5, 0.82)";
+    ctx.strokeStyle = "rgba(255, 209, 102, 0.92)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(x, y, badgeWidth, badgeHeight, 8);
+    ctx.fill();
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#fff3b0";
+    ctx.fillText(label, 0, badgeY + 1);
+    ctx.restore();
   }
   ctx.restore();
 }
