@@ -1086,13 +1086,18 @@ button {
   z-index: 9;
   inset: 0;
   display: grid;
-  place-items: start center;
   padding: 34px 14px 10px;
   background: rgba(5, 7, 8, 0.42);
   backdrop-filter: blur(4px);
 }
 
+.hero-panel {
+  place-items: start center;
+}
+
 .upgrade-panel {
+  place-items: center;
+  padding: max(68px, calc(env(safe-area-inset-top) + 68px)) 14px max(82px, calc(env(safe-area-inset-bottom) + 82px));
   background: rgba(5, 7, 8, 0.08);
   backdrop-filter: blur(0.4px);
 }
@@ -1108,7 +1113,8 @@ button {
 }
 
 .upgrade-shell {
-  max-width: 88%;
+  max-width: min(88%, 420px);
+  transform: translateY(2vh);
 }
 
 .hero-shell h2 {
