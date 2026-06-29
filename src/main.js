@@ -3210,10 +3210,14 @@ function updateStationPolicePets(delta) {
     let goalX = idleX;
     let goalY = idleY;
     if (target) {
-      const standAngle = angleTo(target, pet);
-      const standOff = target.radius + 40;
-      goalX = target.x + Math.cos(standAngle) * standOff;
-      goalY = target.y + Math.sin(standAngle) * standOff;
+      const baseAngle = angleTo(target, player);
+      const ringIndex = Math.floor(pet.slot / 6);
+      const ringSlot = pet.slot % Math.min(6, count);
+      const ringCount = Math.min(6, count);
+      const formationAngle = baseAngle + (TAU * ringSlot) / Math.max(1, ringCount) + ringIndex * 0.18;
+      const standOff = target.radius + 46 + ringIndex * 18;
+      goalX = target.x + Math.cos(formationAngle) * standOff;
+      goalY = target.y + Math.sin(formationAngle) * standOff;
     }
 
     const dx = goalX - pet.x;
@@ -3224,6 +3228,18 @@ function updateStationPolicePets(delta) {
     pet.x = clamp(pet.x + (dx / distanceToGoal) * step, 25, WORLD_SIZE - 25);
     pet.y = clamp(pet.y + (dy / distanceToGoal) * step, 25, WORLD_SIZE - 25);
     if (distanceToGoal > 1) pet.facing = Math.atan2(dy, dx);
+
+    for (const other of stationPolicePets) {
+      if (other === pet) continue;
+      const gapX = pet.x - other.x;
+      const gapY = pet.y - other.y;
+      const gap = Math.hypot(gapX, gapY) || 1;
+      const minGap = 42;
+      if (gap >= minGap) continue;
+      const push = (minGap - gap) * 0.5;
+      pet.x = clamp(pet.x + (gapX / gap) * push, 25, WORLD_SIZE - 25);
+      pet.y = clamp(pet.y + (gapY / gap) * push, 25, WORLD_SIZE - 25);
+    }
 
     if (!target) continue;
     const attackDistance = Math.hypot(target.x - pet.x, target.y - pet.y);
@@ -5087,7 +5103,8 @@ function drawPoliceSquads() {
 }
 
 function drawStationPolicePets() {
-  for (const pet of stationPolicePets) {
+  const sortedPets = [...stationPolicePets].sort((a, b) => a.y - b.y);
+  for (const pet of sortedPets) {
     const p = worldToScreen(pet.x, pet.y);
     const step = Math.sin(pet.bob + player.elapsed * 10);
     const swing = clamp(pet.swingTimer / 0.22, 0, 1);
