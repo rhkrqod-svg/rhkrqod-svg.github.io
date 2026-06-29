@@ -154,6 +154,24 @@ const heroTypes = [
     color: "#5a4632",
     accent: "#f0d7b7",
   },
+  {
+    id: "juyeon",
+    name: "주연",
+    image: "/assets/heroes/juyeon-cutout.png",
+    cardImage: "/assets/heroes/juyeon-cutout.png",
+    chickenImage: "/assets/heroes/juyeon-chicken-form.png",
+    quote: "빠른 발과 회피 감각으로 빈틈을 뚫습니다.",
+    hp: 90,
+    maxHp: 90,
+    atk: 140,
+    def: 70,
+    spd: 140,
+    dodgeChance: 0.2,
+    chickenScaleX: 2,
+    chickenScaleY: 4,
+    color: "#2f78c4",
+    accent: "#9fd3ff",
+  },
 ];
 
 const heroImages = new Map();
@@ -741,6 +759,7 @@ const player = {
   bulletSpeed: 452,
   magnet: START_MAGNET_RANGE,
   damageReduction: 0,
+  dodgeChance: 0,
   defenseBreakTimer: 0,
   defenseBreakPower: 0,
   stunTimer: 0,
@@ -1179,6 +1198,7 @@ function resetGame() {
     bulletSpeed: 452,
     magnet: START_MAGNET_RANGE,
     damageReduction: 0,
+    dodgeChance: 0,
     defenseBreakTimer: 0,
     defenseBreakPower: 0,
     stunTimer: 0,
@@ -1262,6 +1282,7 @@ function selectHero(heroId) {
   player.defensePower = hero.def;
   player.speed = 205 * (hero.spd / 100);
   player.damageReduction = 0;
+  player.dodgeChance = hero.dodgeChance ?? 0;
   snapCameraToPlayer();
   refs.heroPanel.classList.add("hidden");
   game.pendingHeroChoice = false;
@@ -2725,6 +2746,12 @@ function hurtPlayer(amount) {
     addPopup("무적", player.x, player.y - 44, "#ffd166", 0.45, 15);
     return;
   }
+  if ((player.dodgeChance ?? 0) > 0 && Math.random() < player.dodgeChance) {
+    player.invuln = Math.max(player.invuln, 0.22);
+    addPopup("회피", player.x, player.y - 44, "#9fd3ff", 0.55, 16);
+    playSound("ui");
+    return;
+  }
   const reducedAmount = calculateIncomingDamage(amount);
   player.hp = Math.max(0, player.hp - reducedAmount);
   player.invuln = 0.45;
@@ -4095,6 +4122,7 @@ function updateHud() {
     player.stunTimer > 0 ? { label: `경직 ${Math.ceil(player.stunTimer)}초`, type: "status", desc: "잠시 움직일 수 없는 상태입니다." } : null,
     player.slowTimer > 0 ? { label: `둔화 ${Math.ceil(player.slowTimer)}초`, type: "status", desc: "이동 속도가 느려진 상태입니다." } : null,
     player.damageReduction > 0 ? { label: `내성 ${Math.round(player.damageReduction * 100)}%`, type: "passive", power: chipPower(Math.round(player.damageReduction / 0.15)), desc: "받는 피해가 감소합니다." } : null,
+    player.dodgeChance > 0 ? { label: `회피 ${Math.round(player.dodgeChance * 100)}%`, type: "passive", power: chipPower(2), desc: "공격받을 때 일정 확률로 피해를 완전히 회피합니다." } : null,
     player.regenLevel > 0 ? { label: `회복 Lv.${player.regenLevel}`, type: "passive", power: chipPower(player.regenLevel), desc: `일정 시간마다 최대 체력의 ${Number(((1 + player.regenLevel) * 1.5).toFixed(1))}%를 회복합니다.` } : null,
     player.chickenTimer > 0 ? { label: `닭가슴살 ${Math.ceil(player.chickenTimer)}초`, type: "status", desc: "몸집이 커지고 접촉한 적에게 몸통박치기 피해와 넉백을 줍니다." } : null,
     player.stimTimer > 0 ? { label: `스팀팩 ${Math.ceil(player.stimTimer)}초`, type: "status", desc: "일부 무기 쿨타임이 1/3로 줄지만 매초 최대 체력 3%를 잃습니다." } : null,
@@ -4336,11 +4364,13 @@ function drawPlayer() {
   const stimActive = player.stimTimer > 0;
   const transformedImage = chickenActive ? chickenHeroImages.get(player.heroId) : null;
   const heroImage = transformedImage?.complete && transformedImage.naturalWidth > 0 ? transformedImage : heroImages.get(player.heroId);
+  const heroConfig = heroTypes.find((hero) => hero.id === player.heroId);
   const useHeroImage = Boolean(heroImage?.complete && heroImage.naturalWidth > 0);
   const chickenRatio = chickenActive ? clamp(player.chickenTimer / CHICKEN_BUFF_DURATION, 0, 1) : 0;
-  const spriteScale = chickenActive ? CHICKEN_VISUAL_SCALE : 1;
-  const spriteHeight = Math.max(32, player.radius * 7.2) * spriteScale;
-  const spriteWidth = useHeroImage ? spriteHeight * (heroImage.naturalWidth / heroImage.naturalHeight) : 0;
+  const spriteScaleX = chickenActive ? heroConfig?.chickenScaleX ?? CHICKEN_VISUAL_SCALE : 1;
+  const spriteScaleY = chickenActive ? heroConfig?.chickenScaleY ?? CHICKEN_VISUAL_SCALE : 1;
+  const spriteHeight = Math.max(32, player.radius * 7.2) * spriteScaleY;
+  const spriteWidth = useHeroImage ? spriteHeight * (heroImage.naturalWidth / heroImage.naturalHeight) * (spriteScaleX / Math.max(0.1, spriteScaleY)) : 0;
   ctx.save();
   ctx.translate(p.x, p.y);
   ctx.globalAlpha = pulse;
