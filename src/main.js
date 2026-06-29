@@ -3106,7 +3106,7 @@ function useTaserGun() {
     vx: Math.cos(angle) * 820,
     vy: Math.sin(angle) * 820,
     radius: 12,
-    damage: 220,
+    damage: 286,
     stun: 5,
     life: 1.8,
     maxLife: 1.8,
