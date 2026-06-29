@@ -122,6 +122,7 @@ const STIMPACK_DURATION = 10;
 const STIMPACK_ATTACK_SPEED_MULTIPLIER = 3;
 const STIMPACK_DRAIN_RATIO = 0.03;
 const STIMPACK_DRAIN_TICK = 1;
+const STIMPACK_VISUAL_SCALE_RATIO = 0.5;
 
 const heroTypes = [
   {
@@ -4369,8 +4370,14 @@ function drawPlayer() {
   const heroConfig = heroTypes.find((hero) => hero.id === player.heroId);
   const useHeroImage = Boolean(heroImage?.complete && heroImage.naturalWidth > 0);
   const chickenRatio = chickenActive ? clamp(player.chickenTimer / CHICKEN_BUFF_DURATION, 0, 1) : 0;
-  const spriteScaleX = chickenActive ? heroConfig?.chickenScaleX ?? CHICKEN_VISUAL_SCALE : heroConfig?.spriteScaleX ?? 1;
-  const spriteScaleY = chickenActive ? heroConfig?.chickenScaleY ?? CHICKEN_VISUAL_SCALE : heroConfig?.spriteScaleY ?? 1;
+  const baseSpriteScaleX = heroConfig?.spriteScaleX ?? 1;
+  const baseSpriteScaleY = heroConfig?.spriteScaleY ?? 1;
+  const chickenSpriteScaleX = heroConfig?.chickenScaleX ?? CHICKEN_VISUAL_SCALE;
+  const chickenSpriteScaleY = heroConfig?.chickenScaleY ?? CHICKEN_VISUAL_SCALE;
+  const stimSpriteScaleX = baseSpriteScaleX + (chickenSpriteScaleX - baseSpriteScaleX) * STIMPACK_VISUAL_SCALE_RATIO;
+  const stimSpriteScaleY = baseSpriteScaleY + (chickenSpriteScaleY - baseSpriteScaleY) * STIMPACK_VISUAL_SCALE_RATIO;
+  const spriteScaleX = chickenActive ? chickenSpriteScaleX : stimActive ? stimSpriteScaleX : baseSpriteScaleX;
+  const spriteScaleY = chickenActive ? chickenSpriteScaleY : stimActive ? stimSpriteScaleY : baseSpriteScaleY;
   const spriteHeight = Math.max(32, player.radius * 7.2) * spriteScaleY;
   const spriteWidth = useHeroImage ? spriteHeight * (heroImage.naturalWidth / heroImage.naturalHeight) * (spriteScaleX / Math.max(0.1, spriteScaleY)) : 0;
   ctx.save();
@@ -4406,67 +4413,81 @@ function drawPlayer() {
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
     ctx.save();
+    ctx.globalAlpha = 0.2 + Math.sin(pulseTime) * 0.04;
+    ctx.strokeStyle = "rgba(255, 72, 46, 0.72)";
+    ctx.shadowColor = "#ff4b35";
+    ctx.shadowBlur = 26;
+    ctx.lineWidth = 9;
+    for (let i = 0; i < 3; i += 1) {
+      const radiusX = player.radius * (3.9 + i * 0.78);
+      const radiusY = player.radius * (5.0 + i * 0.88);
+      ctx.beginPath();
+      ctx.ellipse(0, -player.radius * 0.8, radiusX, radiusY, Math.sin(pulseTime + i) * 0.12, pulseTime + i * 1.35, pulseTime + i * 1.35 + Math.PI * 1.25);
+      ctx.stroke();
+    }
+    ctx.restore();
+    ctx.save();
     ctx.shadowColor = "#ff6b6b";
-    ctx.shadowBlur = 28;
-    for (let i = 0; i < 12; i += 1) {
+    ctx.shadowBlur = 40;
+    for (let i = 0; i < 24; i += 1) {
       const seed = i * 1.73;
-      const rise = (steamTime * (0.42 + (i % 4) * 0.09) + i * 0.13) % 1;
+      const rise = (steamTime * (0.36 + (i % 4) * 0.08) + i * 0.071) % 1;
       const side = i % 2 === 0 ? -1 : 1;
-      const baseX = side * (player.radius * (1.1 + (i % 3) * 0.62));
-      const baseY = player.radius * (2.4 + (i % 2) * 0.42);
-      const curl = Math.sin(steamTime * 4.4 + seed) * player.radius * 0.58;
-      const x = baseX + curl * (0.45 + rise);
-      const y = baseY - rise * player.radius * 7.1;
-      const smokeRadius = player.radius * (0.62 + rise * 1.25);
-      const alpha = Math.sin(rise * Math.PI) * 0.24;
+      const baseX = side * (player.radius * (1.4 + (i % 4) * 0.54));
+      const baseY = player.radius * (2.8 + (i % 3) * 0.5);
+      const curl = Math.sin(steamTime * 4.8 + seed) * player.radius * 1.05;
+      const x = baseX + curl * (0.55 + rise);
+      const y = baseY - rise * player.radius * 9.4;
+      const smokeRadius = player.radius * (0.9 + rise * 1.85);
+      const alpha = Math.sin(rise * Math.PI) * 0.36;
       const gradient = ctx.createRadialGradient(x, y, smokeRadius * 0.12, x, y, smokeRadius);
-      gradient.addColorStop(0, `rgba(255, 245, 245, ${alpha})`);
-      gradient.addColorStop(0.42, `rgba(255, 148, 148, ${alpha * 0.55})`);
-      gradient.addColorStop(1, "rgba(255, 80, 80, 0)");
+      gradient.addColorStop(0, `rgba(255, 248, 240, ${alpha})`);
+      gradient.addColorStop(0.44, `rgba(255, 135, 96, ${alpha * 0.62})`);
+      gradient.addColorStop(1, "rgba(255, 68, 48, 0)");
       ctx.fillStyle = gradient;
       ctx.beginPath();
       ctx.ellipse(x, y, smokeRadius * 0.72, smokeRadius * 1.22, Math.sin(seed) * 0.45, 0, TAU);
       ctx.fill();
     }
-    ctx.strokeStyle = "rgba(255, 235, 235, 0.38)";
-    ctx.lineWidth = 3.2;
+    ctx.strokeStyle = "rgba(255, 238, 230, 0.56)";
+    ctx.lineWidth = 4.8;
     ctx.lineCap = "round";
-    for (let i = 0; i < 8; i += 1) {
+    for (let i = 0; i < 14; i += 1) {
       const side = i % 2 === 0 ? -1 : 1;
-      const startX = side * player.radius * (1.2 + (i % 3) * 0.55);
-      const startY = player.radius * (2.35 + (i % 2) * 0.26);
-      const wave = Math.sin(steamTime * 3.8 + i) * player.radius * 0.74;
-      ctx.globalAlpha = 0.36;
+      const startX = side * player.radius * (1.35 + (i % 4) * 0.48);
+      const startY = player.radius * (2.55 + (i % 3) * 0.32);
+      const wave = Math.sin(steamTime * 4.2 + i) * player.radius * 1.2;
+      ctx.globalAlpha = 0.48;
       ctx.beginPath();
       ctx.moveTo(startX, startY);
       ctx.bezierCurveTo(
         startX + wave,
-        startY - player.radius * 1.9,
-        startX - side * player.radius * 0.8,
-        startY - player.radius * 4.2,
+        startY - player.radius * 2.5,
+        startX - side * player.radius * 1.15,
+        startY - player.radius * 5.2,
         startX + wave * 0.55,
-        startY - player.radius * 6.1,
+        startY - player.radius * 7.5,
       );
       ctx.stroke();
     }
     ctx.restore();
-    ctx.strokeStyle = "rgba(255, 107, 107, 0.74)";
+    ctx.strokeStyle = "rgba(255, 92, 65, 0.8)";
     ctx.shadowColor = "#ff6b6b";
-    ctx.shadowBlur = 18;
-    ctx.lineWidth = 3;
+    ctx.shadowBlur = 24;
+    ctx.lineWidth = 4.4;
     for (let i = 0; i < 3; i += 1) {
-      const radius = player.radius * (2.1 + i * 0.52) + Math.sin(pulseTime + i) * 3;
-      ctx.globalAlpha = 0.42 - i * 0.08;
+      const radius = player.radius * (2.8 + i * 0.74) + Math.sin(pulseTime + i) * 4.5;
+      ctx.globalAlpha = 0.52 - i * 0.08;
       ctx.beginPath();
       ctx.arc(0, 0, radius, pulseTime + i * 1.4, pulseTime + i * 1.4 + Math.PI * 1.35);
       ctx.stroke();
     }
-    ctx.globalAlpha = 0.5;
-    ctx.strokeStyle = "rgba(255, 227, 227, 0.72)";
+    ctx.globalAlpha = 0.62;
+    ctx.strokeStyle = "rgba(255, 235, 225, 0.78)";
     for (let i = 0; i < 6; i += 1) {
       const angle = pulseTime * 1.8 + (TAU * i) / 6;
-      const inner = player.radius * 1.6;
-      const outer = player.radius * 3.6;
+      const inner = player.radius * 1.8;
+      const outer = player.radius * 4.6;
       ctx.beginPath();
       ctx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
       ctx.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
