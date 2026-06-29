@@ -679,11 +679,11 @@ function getTearGasDamage() {
 
 function getStrapOrbitRadius() {
   const level = Math.max(1, weapons.strapOrbit.level);
-  return (58 + level * 6) * 1.69 * (1 + (level - 1) * 0.04);
+  return (58 + level * 6) * 1.69 * 1.2 * (1 + (level - 1) * 0.04);
 }
 
 function getStrapHandleRadius() {
-  return 13 * 1.2;
+  return 13 * 1.44;
 }
 
 let width = 1;
