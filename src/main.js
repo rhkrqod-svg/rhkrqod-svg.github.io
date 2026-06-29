@@ -768,6 +768,10 @@ function getBasicBulletFireRate() {
   return player.fireRate / (player.bulletFireRateMultiplier || 1);
 }
 
+function getBasicBulletStyle() {
+  return player.heroId === "changwoo" ? "military" : "default";
+}
+
 let width = 1;
 let height = 1;
 let viewWidth = 1;
@@ -1874,6 +1878,7 @@ function fireBulletVolley(source, target, count, {
   speed = player.bulletSpeed,
   radius = 10,
   color = "#fff2a8",
+  style = "default",
 } = {}) {
   if (!target) return;
   const safeCount = Math.max(1, count);
@@ -1891,6 +1896,7 @@ function fireBulletVolley(source, target, count, {
       life: 30,
       hitEnemies: new Set(),
       color,
+      style,
     });
   }
 }
@@ -1898,7 +1904,10 @@ function fireBulletVolley(source, target, count, {
 function fireBullets() {
   const target = findPriorityEnemyFrom(player, 680);
   if (!target) return;
-  fireBulletVolley(player, target, player.shots);
+  fireBulletVolley(player, target, player.shots, {
+    style: getBasicBulletStyle(),
+    color: getBasicBulletStyle() === "military" ? "#ffd166" : "#fff2a8",
+  });
   playSound("shot");
 }
 
@@ -3498,7 +3507,8 @@ function updateComradePets(delta) {
       damage: player.damage * (player.bulletDamageMultiplier || 1),
       speed: player.bulletSpeed,
       radius: 8,
-      color: "#fff2a8",
+      color: "#ffd166",
+      style: getBasicBulletStyle(),
     });
     pet.attackCooldown = getBasicBulletFireRate();
     pet.swingTimer = 0.16;
@@ -5142,6 +5152,60 @@ function drawProjectiles() {
     ctx.save();
     ctx.translate(p.x, p.y);
     ctx.rotate(angle);
+    if (bullet.style === "military") {
+      const r = bullet.radius;
+      ctx.shadowColor = "#ffd166";
+      ctx.shadowBlur = 14;
+
+      const trail = ctx.createLinearGradient(-r * 4.4, 0, -r * 0.8, 0);
+      trail.addColorStop(0, "rgba(255, 209, 102, 0)");
+      trail.addColorStop(0.58, "rgba(255, 209, 102, 0.22)");
+      trail.addColorStop(1, "rgba(255, 243, 176, 0.52)");
+      ctx.fillStyle = trail;
+      ctx.beginPath();
+      ctx.moveTo(-r * 4.5, 0);
+      ctx.lineTo(-r * 0.9, -r * 0.58);
+      ctx.lineTo(-r * 0.9, r * 0.58);
+      ctx.closePath();
+      ctx.fill();
+
+      const body = ctx.createLinearGradient(-r * 1.55, -r * 0.72, r * 1.85, r * 0.72);
+      body.addColorStop(0, "#8a5a1f");
+      body.addColorStop(0.18, "#c58f36");
+      body.addColorStop(0.48, "#ffcf70");
+      body.addColorStop(0.72, "#f6f1df");
+      body.addColorStop(1, "#9b9b92");
+      ctx.fillStyle = body;
+      ctx.strokeStyle = "#3b2a16";
+      ctx.lineWidth = 1.7;
+      ctx.beginPath();
+      ctx.moveTo(r * 2.15, 0);
+      ctx.quadraticCurveTo(r * 1.34, -r * 0.82, r * 0.45, -r * 0.74);
+      ctx.lineTo(-r * 1.38, -r * 0.68);
+      ctx.quadraticCurveTo(-r * 1.72, 0, -r * 1.38, r * 0.68);
+      ctx.lineTo(r * 0.45, r * 0.74);
+      ctx.quadraticCurveTo(r * 1.34, r * 0.82, r * 2.15, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.82)";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.72, -r * 0.38);
+      ctx.lineTo(r * 0.78, -r * 0.3);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgba(80, 48, 12, 0.72)";
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(-r * 1.05, -r * 0.6);
+      ctx.lineTo(-r * 1.05, r * 0.6);
+      ctx.stroke();
+      ctx.restore();
+      continue;
+    }
     ctx.shadowColor = bullet.color ?? "#fff3b0";
     ctx.shadowBlur = 10;
     ctx.fillStyle = bullet.color === "#b8dcff" ? "#dff7ff" : "#f7d36f";
