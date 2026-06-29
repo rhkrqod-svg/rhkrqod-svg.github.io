@@ -1348,11 +1348,6 @@ function renderHeroChoices() {
         <span>SPD ${hero.spd}</span>
       </div>
       ${
-        hero.dodgeChance
-          ? `<p class="hero-stat-note">회피 ${Math.round(hero.dodgeChance * 100)}%</p>`
-          : ""
-      }
-      ${
         hero.specialLabels?.length
           ? `<div class="hero-specials">${hero.specialLabels.map((label) => `<span>${label}</span>`).join("")}</div>`
           : ""
