@@ -4323,8 +4323,54 @@ function drawPlayer() {
   }
   if (stimActive) {
     const pulseTime = performance.now() * 0.006;
+    const steamTime = performance.now() * 0.0028;
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
+    ctx.save();
+    ctx.shadowColor = "#ff6b6b";
+    ctx.shadowBlur = 28;
+    for (let i = 0; i < 12; i += 1) {
+      const seed = i * 1.73;
+      const rise = (steamTime * (0.42 + (i % 4) * 0.09) + i * 0.13) % 1;
+      const side = i % 2 === 0 ? -1 : 1;
+      const baseX = side * (player.radius * (1.1 + (i % 3) * 0.62));
+      const baseY = player.radius * (2.4 + (i % 2) * 0.42);
+      const curl = Math.sin(steamTime * 4.4 + seed) * player.radius * 0.58;
+      const x = baseX + curl * (0.45 + rise);
+      const y = baseY - rise * player.radius * 7.1;
+      const smokeRadius = player.radius * (0.62 + rise * 1.25);
+      const alpha = Math.sin(rise * Math.PI) * 0.24;
+      const gradient = ctx.createRadialGradient(x, y, smokeRadius * 0.12, x, y, smokeRadius);
+      gradient.addColorStop(0, `rgba(255, 245, 245, ${alpha})`);
+      gradient.addColorStop(0.42, `rgba(255, 148, 148, ${alpha * 0.55})`);
+      gradient.addColorStop(1, "rgba(255, 80, 80, 0)");
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.ellipse(x, y, smokeRadius * 0.72, smokeRadius * 1.22, Math.sin(seed) * 0.45, 0, TAU);
+      ctx.fill();
+    }
+    ctx.strokeStyle = "rgba(255, 235, 235, 0.38)";
+    ctx.lineWidth = 3.2;
+    ctx.lineCap = "round";
+    for (let i = 0; i < 8; i += 1) {
+      const side = i % 2 === 0 ? -1 : 1;
+      const startX = side * player.radius * (1.2 + (i % 3) * 0.55);
+      const startY = player.radius * (2.35 + (i % 2) * 0.26);
+      const wave = Math.sin(steamTime * 3.8 + i) * player.radius * 0.74;
+      ctx.globalAlpha = 0.36;
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.bezierCurveTo(
+        startX + wave,
+        startY - player.radius * 1.9,
+        startX - side * player.radius * 0.8,
+        startY - player.radius * 4.2,
+        startX + wave * 0.55,
+        startY - player.radius * 6.1,
+      );
+      ctx.stroke();
+    }
+    ctx.restore();
     ctx.strokeStyle = "rgba(255, 107, 107, 0.74)";
     ctx.shadowColor = "#ff6b6b";
     ctx.shadowBlur = 18;
