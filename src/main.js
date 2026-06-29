@@ -67,7 +67,7 @@ const sound = {
 };
 
 const STORAGE_KEY = "villain-commando-best";
-const LOCAL_LEADERBOARD_KEY = "villain-commando-local-leaderboard-v2";
+const LOCAL_LEADERBOARD_KEY = "villain-commando-local-leaderboard-v3";
 const LEADERBOARD_API = import.meta.env.VITE_LEADERBOARD_API || "/api/leaderboard";
 const LEADERBOARD_LIMIT = 10;
 const TAU = Math.PI * 2;
