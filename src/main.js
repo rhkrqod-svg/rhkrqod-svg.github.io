@@ -701,6 +701,7 @@ const missiles = [];
 const taserShots = [];
 const policeSquads = [];
 const stationPolicePets = [];
+const pendingDansoBoomerangs = [];
 const skillAnnouncementCooldowns = new Map();
 
 const input = {
@@ -1214,6 +1215,7 @@ function resetGame() {
   game.pendingHeroChoice = true;
   game.pendingStarterChoices = 0;
   game.pendingLevelChoices = 0;
+  pendingDansoBoomerangs.length = 0;
   input.pointers.clear();
   refs.message.classList.remove("start-screen");
   refs.message.classList.add("hidden");
@@ -2107,6 +2109,16 @@ function updatePlayer(delta) {
 
 }
 
+function updatePendingDansoBoomerangs(delta) {
+  for (const pending of [...pendingDansoBoomerangs]) {
+    pending.delay -= delta;
+    if (pending.delay > 0) continue;
+    pendingDansoBoomerangs.splice(pendingDansoBoomerangs.indexOf(pending), 1);
+    if (!pending.owner || !enemies.includes(pending.owner)) continue;
+    launchDansoBoomerang(pending.owner, pending.variant);
+  }
+}
+
 function updateEnemies(delta) {
   const minute = player.elapsed / 60;
   spawnTimer -= delta;
@@ -2358,15 +2370,26 @@ function createDansoSwing(enemy) {
 }
 
 function createDansoBoomerang(enemy) {
+  launchDansoBoomerang(enemy, 0);
+  pendingDansoBoomerangs.push({
+    owner: enemy,
+    delay: 2,
+    variant: 1,
+  });
+}
+
+function launchDansoBoomerang(enemy, variant = 0) {
+  if (!enemies.includes(enemy)) return;
   const angle = angleTo(enemy, player);
-  addSpeechBubble(enemy, "절이 싫으면 중이 떠나야지~", 1.05);
+  if (variant === 0) addSpeechBubble(enemy, "절이 싫으면 중이 떠나야지~", 1.05);
   const startX = enemy.x + Math.cos(angle) * 54;
   const startY = enemy.y + Math.sin(angle) * 54;
   const targetDistance = Math.min(720, Math.max(260, Math.hypot(player.x - enemy.x, player.y - enemy.y) + 120));
   const targetX = enemy.x + Math.cos(angle) * targetDistance;
   const targetY = enemy.y + Math.sin(angle) * targetDistance;
-  const curveSide = Math.random() < 0.5 ? -1 : 1;
+  const curveSide = variant % 2 === 0 ? (Math.random() < 0.5 ? -1 : 1) : -1;
   const curveOffset = curveSide * Math.min(414, Math.max(219, targetDistance * 0.48));
+  const life = 2.7 / 1.3;
   damageZones.push({
     x: startX,
     y: startY,
@@ -2384,8 +2407,8 @@ function createDansoBoomerang(enemy) {
     push: 58,
     stun: 0.28,
     returnAt: 0.56,
-    life: 2.7,
-    maxLife: 2.7,
+    life,
+    maxLife: life,
     color: "#fff3b0",
     hostile: true,
     applied: false,
@@ -3946,6 +3969,7 @@ function update(delta) {
   if (game.state !== "playing" || game.paused || !player.alive) return;
   player.elapsed += delta;
   updatePlayer(delta);
+  updatePendingDansoBoomerangs(delta);
   updateEnemies(delta);
   updateProjectiles(delta);
   updatePoliceSquads(delta);
