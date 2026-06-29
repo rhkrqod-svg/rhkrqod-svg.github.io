@@ -80,8 +80,9 @@ async function githubRequest(path, options = {}) {
 
 async function readLeaderboardFile() {
   const { owner, repo, branch, filePath } = getGithubConfig();
+  const encodedPath = filePath.split("/").map(encodeURIComponent).join("/");
   try {
-    const data = await githubRequest(`/repos/${owner}/${repo}/contents/${encodeURIComponent(filePath)}?ref=${encodeURIComponent(branch)}`);
+    const data = await githubRequest(`/repos/${owner}/${repo}/contents/${encodedPath}?ref=${encodeURIComponent(branch)}`);
     const raw = Buffer.from(data.content || "", "base64").toString("utf8");
     const parsed = JSON.parse(raw);
     return { entries: sortEntries(Array.isArray(parsed) ? parsed : []), sha: data.sha };
@@ -93,13 +94,14 @@ async function readLeaderboardFile() {
 
 async function writeLeaderboardFile(entries, sha) {
   const { owner, repo, branch, filePath } = getGithubConfig();
+  const encodedPath = filePath.split("/").map(encodeURIComponent).join("/");
   const body = {
     message: "Update leaderboard",
     branch,
     content: Buffer.from(`${JSON.stringify(sortEntries(entries), null, 2)}\n`, "utf8").toString("base64"),
   };
   if (sha) body.sha = sha;
-  await githubRequest(`/repos/${owner}/${repo}/contents/${encodeURIComponent(filePath)}`, {
+  await githubRequest(`/repos/${owner}/${repo}/contents/${encodedPath}`, {
     method: "PUT",
     body: JSON.stringify(body),
   });

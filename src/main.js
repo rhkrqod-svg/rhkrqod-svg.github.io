@@ -69,7 +69,10 @@ const sound = {
 
 const STORAGE_KEY = "villain-commando-best";
 const LOCAL_LEADERBOARD_KEY = "villain-commando-local-leaderboard-v3";
-const LEADERBOARD_API = import.meta.env.VITE_LEADERBOARD_API || "/api/leaderboard";
+const LEADERBOARD_API = (
+  import.meta.env.VITE_LEADERBOARD_API ||
+  (["localhost", "127.0.0.1"].includes(window.location.hostname) ? "/api/leaderboard" : "")
+).trim();
 const LEADERBOARD_LIMIT = 10;
 const TAU = Math.PI * 2;
 const WORLD_SIZE = 2800;
@@ -707,6 +710,7 @@ let pendingLeaderboardScore = null;
 let skillTooltipTimer = 0;
 let skillAnnouncement = null;
 let leaderboardSubmitting = false;
+let leaderboardServerOnline = false;
 let bossBannerTimer = 0;
 let bossBannerNameTimer = 0;
 
@@ -3938,13 +3942,23 @@ function renderLeaderboard() {
 }
 
 async function loadLeaderboard() {
+  if (!LEADERBOARD_API) {
+    leaderboardServerOnline = false;
+    applyLeaderboard(readLocalLeaderboard());
+    return false;
+  }
+
   try {
     const response = await fetch(LEADERBOARD_API, { cache: "no-store" });
     if (!response.ok) throw new Error("leaderboard_load_failed");
     const data = await response.json();
-    return applyLeaderboard(data.entries);
+    leaderboardServerOnline = true;
+    applyLeaderboard(data.entries);
+    return true;
   } catch {
-    return applyLeaderboard(readLocalLeaderboard());
+    leaderboardServerOnline = false;
+    applyLeaderboard(readLocalLeaderboard());
+    return false;
   }
 }
 
@@ -3954,7 +3968,14 @@ async function prepareLeaderboardEntry() {
   refs.rankForm?.classList.add("hidden");
   if (refs.rankHint) refs.rankHint.textContent = "랭킹 확인 중";
 
-  await loadLeaderboard();
+  const serverReady = await loadLeaderboard();
+
+  if (!serverReady) {
+    pendingLeaderboardScore = null;
+    refs.rankForm?.classList.add("hidden");
+    if (refs.rankHint) refs.rankHint.textContent = "서버 랭킹 미연결: 통합 랭킹 서버 설정이 필요합니다";
+    return;
+  }
 
   if (isTopTenScore(player.score)) {
     pendingLeaderboardScore = {
@@ -3973,6 +3994,10 @@ async function prepareLeaderboardEntry() {
 async function submitLeaderboardEntry(event) {
   event.preventDefault();
   if (!pendingLeaderboardScore || leaderboardSubmitting) return;
+  if (!LEADERBOARD_API || !leaderboardServerOnline) {
+    if (refs.rankHint) refs.rankHint.textContent = "서버 랭킹 미연결: 점수를 공유 저장할 수 없습니다";
+    return;
+  }
   leaderboardSubmitting = true;
   if (refs.submitScoreButton) refs.submitScoreButton.disabled = true;
   const name = refs.playerNameInput?.value.trim() || "이름없음";
@@ -3991,10 +4016,8 @@ async function submitLeaderboardEntry(event) {
     if (refs.rankHint) refs.rankHint.textContent = "서버 랭킹 등록 완료";
     renderLeaderboard();
   } catch {
-    leaderboardEntries = saveLocalLeaderboard([...leaderboardEntries, { ...pendingLeaderboardScore, name }]);
-    pendingLeaderboardScore = null;
-    refs.rankForm?.classList.add("hidden");
-    if (refs.rankHint) refs.rankHint.textContent = "기기 랭킹에 등록 완료";
+    leaderboardServerOnline = false;
+    if (refs.rankHint) refs.rankHint.textContent = "서버 연결 실패: 잠시 후 다시 등록하세요";
     renderLeaderboard();
     updateHud();
   } finally {
