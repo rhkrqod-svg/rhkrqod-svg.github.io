@@ -222,6 +222,20 @@ function isTankRadioHero() {
   return player.heroId === "changwoo";
 }
 
+function isComradeHero() {
+  return player.heroId === "changwoo";
+}
+
+function getCompanionSkillName() {
+  return isComradeHero() ? "전우" : "지하철 경찰";
+}
+
+function getCompanionSkillDesc() {
+  return isComradeHero()
+    ? "전우가 창우 옆에서 기본탄환을 함께 발사합니다."
+    : "지하철 경찰이 팻처럼 동행하며 보스를 우선 곤봉으로 공격합니다.";
+}
+
 function getChickenItemName() {
   return isTankRadioHero() ? "탱크무전기" : "닭가슴살";
 }
@@ -702,6 +716,19 @@ const weaponUpgradeIds = new Set([
   "customerMissile",
   "subwayPolice",
 ]);
+
+function getUpgradeDisplay(choice) {
+  if (choice?.id === "subwayPolice") {
+    return {
+      name: getCompanionSkillName(),
+      desc: getCompanionSkillDesc(),
+    };
+  }
+  return {
+    name: choice?.name ?? "",
+    desc: choice?.desc ?? "",
+  };
+}
 
 function getTearGasRadius() {
   const level = Math.max(1, weapons.tearGas.level);
@@ -1825,25 +1852,36 @@ function findPriorityEnemyFrom(source, maxDistance = Infinity) {
   return nearestBoss ?? nearestEnemy;
 }
 
+function fireBulletVolley(source, target, count, {
+  damage = player.damage * (player.bulletDamageMultiplier || 1),
+  speed = player.bulletSpeed,
+  radius = 10,
+  color = "#fff2a8",
+} = {}) {
+  if (!target) return;
+  const safeCount = Math.max(1, count);
+  const baseAngle = angleTo(source, target);
+  const spread = Math.min(0.72, 0.14 * (safeCount - 1));
+  for (let i = 0; i < safeCount; i += 1) {
+    const offset = safeCount === 1 ? 0 : -spread / 2 + (spread * i) / (safeCount - 1);
+    bullets.push({
+      x: source.x + Math.cos(baseAngle + offset) * 24,
+      y: source.y + Math.sin(baseAngle + offset) * 24,
+      vx: Math.cos(baseAngle + offset) * speed,
+      vy: Math.sin(baseAngle + offset) * speed,
+      damage,
+      radius,
+      life: 30,
+      hitEnemies: new Set(),
+      color,
+    });
+  }
+}
+
 function fireBullets() {
   const target = findNearestEnemy(680);
   if (!target) return;
-  const baseAngle = angleTo(player, target);
-  const spread = Math.min(0.72, 0.14 * (player.shots - 1));
-  for (let i = 0; i < player.shots; i += 1) {
-    const offset = player.shots === 1 ? 0 : -spread / 2 + (spread * i) / (player.shots - 1);
-    bullets.push({
-      x: player.x + Math.cos(baseAngle + offset) * 24,
-      y: player.y + Math.sin(baseAngle + offset) * 24,
-      vx: Math.cos(baseAngle + offset) * player.bulletSpeed,
-      vy: Math.sin(baseAngle + offset) * player.bulletSpeed,
-      damage: player.damage * (player.bulletDamageMultiplier || 1),
-      radius: 10,
-      life: 30,
-      hitEnemies: new Set(),
-      color: "#fff2a8",
-    });
-  }
+  fireBulletVolley(player, target, player.shots);
   playSound("shot");
 }
 
@@ -3324,6 +3362,10 @@ function isChickenBuffActive() {
 function updateStationPolicePets(delta) {
   syncStationPolicePets();
   if (stationPolicePets.length === 0) return;
+  if (isComradeHero()) {
+    updateComradePets(delta);
+    return;
+  }
   const count = stationPolicePets.length;
   for (const pet of stationPolicePets) {
     pet.attackCooldown = Math.max(0, pet.attackCooldown - delta);
@@ -3395,6 +3437,47 @@ function updateStationPolicePets(delta) {
     target.y = clamp(target.y + Math.sin(pet.facing) * pushAmount, 35, WORLD_SIZE - 35);
     addParticles(target.x, target.y, "#b8dcff", target.boss ? 8 : 5);
     if (Math.random() < 0.42) playSound("police");
+  }
+}
+
+function updateComradePets(delta) {
+  const count = stationPolicePets.length;
+  const cooldownDelta = getStimCooldownDelta(delta);
+  for (const pet of stationPolicePets) {
+    pet.attackCooldown = Math.max(0, pet.attackCooldown - cooldownDelta);
+    pet.swingTimer = Math.max(0, pet.swingTimer - delta);
+    const side = pet.slot % 2 === 0 ? -1 : 1;
+    const row = Math.floor(pet.slot / 2);
+    const followAngle = Math.atan2(input.y || 0, input.x || 0);
+    const hasMove = Math.hypot(input.x || 0, input.y || 0) > 0.1;
+    const baseAngle = hasMove ? followAngle + Math.PI / 2 : -Math.PI / 2;
+    const spacing = 34 + Math.min(4, count) * 2;
+    const backOffset = 20 + row * 26;
+    const idleX = player.x + Math.cos(baseAngle) * side * spacing - Math.cos(baseAngle - Math.PI / 2) * backOffset;
+    const idleY = player.y + Math.sin(baseAngle) * side * spacing - Math.sin(baseAngle - Math.PI / 2) * backOffset;
+
+    const dx = idleX - pet.x;
+    const dy = idleY - pet.y;
+    const distanceToGoal = Math.hypot(dx, dy) || 1;
+    const step = Math.min(distanceToGoal, 380 * delta);
+    pet.x = clamp(pet.x + (dx / distanceToGoal) * step, 25, WORLD_SIZE - 25);
+    pet.y = clamp(pet.y + (dy / distanceToGoal) * step, 25, WORLD_SIZE - 25);
+
+    const target = findPriorityEnemyFrom(pet, 760);
+    pet.target = target;
+    if (target) pet.facing = angleTo(pet, target);
+    else if (distanceToGoal > 1) pet.facing = Math.atan2(dy, dx);
+
+    if (!target || pet.attackCooldown > 0) continue;
+    fireBulletVolley(pet, target, 1, {
+      damage: player.damage * (player.bulletDamageMultiplier || 1),
+      speed: player.bulletSpeed,
+      radius: 8,
+      color: "#fff2a8",
+    });
+    pet.attackCooldown = player.fireRate;
+    pet.swingTimer = 0.16;
+    if (Math.random() < 0.35) playSound("shot");
   }
 }
 
@@ -3616,9 +3699,10 @@ function openUpgradePanel() {
   for (const choice of choices) {
     const button = document.createElement("button");
     const upgradeType = weaponUpgradeIds.has(choice.id) ? "attack" : passiveUpgradeIds.has(choice.id) ? "passive" : "basic";
+    const display = getUpgradeDisplay(choice);
     button.className = `upgrade-card ${upgradeType}`;
     button.type = "button";
-    button.innerHTML = `<strong>${choice.name}</strong><span>${choice.desc}</span>`;
+    button.innerHTML = `<strong>${display.name}</strong><span>${display.desc}</span>`;
     button.addEventListener("click", () => {
       playSound("ui");
       choice.apply();
@@ -4215,7 +4299,7 @@ function updateHud() {
     weapons.tearGas.level > 0 ? { label: `최류탄 Lv.${weapons.tearGas.level}`, type: "attack", power: chipPower(weapons.tearGas.level), desc: "주인공 주변에 손잡이보다 넓은 가스 지대를 만들고 안에 들어온 적에게 지속 피해를 줍니다." } : null,
     weapons.expressTrain.level > 0 ? { label: `급행 Lv.${weapons.expressTrain.level}`, type: "attack", power: chipPower(weapons.expressTrain.level), desc: "급행열차가 보스를 우선 노려 지나가며 피해와 넉백을 줍니다." } : null,
     weapons.customerMissile.level > 0 ? { label: `유도탄 Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level), desc: "고객센터 유도탄이 보스를 우선 추적하고 약한 폭발 피해를 줍니다." } : null,
-    weapons.subwayPolice.level > 0 ? { label: `경찰 Lv.${weapons.subwayPolice.level}`, type: "attack", power: chipPower(weapons.subwayPolice.level), desc: "지하철 경찰이 팻처럼 동행하며 보스를 우선 곤봉으로 공격합니다." } : null,
+    weapons.subwayPolice.level > 0 ? { label: `${isComradeHero() ? "전우" : "경찰"} Lv.${weapons.subwayPolice.level}`, type: "attack", power: chipPower(weapons.subwayPolice.level), desc: getCompanionSkillDesc() } : null,
     player.defenseBreakTimer > 0 ? { label: `방어저하 ${Math.ceil(player.defenseBreakTimer)}초`, type: "status", desc: "현재 방어력이 감소한 상태입니다." } : null,
     player.stunTimer > 0 ? { label: `경직 ${Math.ceil(player.stunTimer)}초`, type: "status", desc: "잠시 움직일 수 없는 상태입니다." } : null,
     player.slowTimer > 0 ? { label: `둔화 ${Math.ceil(player.slowTimer)}초`, type: "status", desc: "이동 속도가 느려진 상태입니다." } : null,
@@ -4975,9 +5059,9 @@ function drawProjectiles() {
     ctx.save();
     ctx.translate(p.x, p.y);
     ctx.rotate(angle);
-    ctx.shadowColor = "#fff3b0";
+    ctx.shadowColor = bullet.color ?? "#fff3b0";
     ctx.shadowBlur = 10;
-    ctx.fillStyle = "#f7d36f";
+    ctx.fillStyle = bullet.color === "#b8dcff" ? "#dff7ff" : "#f7d36f";
     ctx.strokeStyle = "#fff8d6";
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -5335,6 +5419,10 @@ function drawPoliceSquads() {
 }
 
 function drawStationPolicePets() {
+  if (isComradeHero()) {
+    drawComradePets();
+    return;
+  }
   const sortedPets = [...stationPolicePets].sort((a, b) => a.y - b.y);
   for (const pet of sortedPets) {
     const p = worldToScreen(pet.x, pet.y);
@@ -5401,6 +5489,85 @@ function drawStationPolicePets() {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText("철경", 0, -3);
+    ctx.restore();
+  }
+}
+
+function drawComradePets() {
+  const sortedPets = [...stationPolicePets].sort((a, b) => a.y - b.y);
+  for (const pet of sortedPets) {
+    const p = worldToScreen(pet.x, pet.y);
+    const step = Math.sin(pet.bob + player.elapsed * 9);
+    const recoil = clamp(pet.swingTimer / 0.16, 0, 1);
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(pet.facing);
+    ctx.scale(1.05, 1.05);
+    ctx.shadowColor = "#9fd3ff";
+    ctx.shadowBlur = 9;
+    ctx.fillStyle = "rgba(159, 211, 255, 0.14)";
+    ctx.beginPath();
+    ctx.ellipse(0, 12, 22, 11, 0, 0, TAU);
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#435240";
+    roundedRect(-10, -14, 20, 29, 6);
+    ctx.fill();
+    ctx.strokeStyle = "#9fb57a";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = "#6f7a4a";
+    roundedRect(-12, -19, 24, 9, 4);
+    ctx.fill();
+    ctx.fillStyle = "#d2a982";
+    ctx.beginPath();
+    ctx.arc(0, -25, 8, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = "#4b5737";
+    roundedRect(-10, -35, 20, 9, 4);
+    ctx.fill();
+    ctx.fillStyle = "#2f3929";
+    ctx.fillRect(-4, -39, 8, 5);
+
+    ctx.strokeStyle = "#263022";
+    ctx.lineWidth = 4;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(-7, 13);
+    ctx.lineTo(-11, 23 + step * 2);
+    ctx.moveTo(7, 13);
+    ctx.lineTo(11, 23 - step * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = "#151918";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(5, -8);
+    ctx.lineTo(27 - recoil * 5, -9);
+    ctx.stroke();
+    ctx.strokeStyle = "#9fb57a";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(18 - recoil * 5, -12);
+    ctx.lineTo(31 - recoil * 5, -12);
+    ctx.stroke();
+    if (recoil > 0.2) {
+      ctx.fillStyle = "rgba(255, 243, 176, 0.75)";
+      ctx.beginPath();
+      ctx.moveTo(33, -12);
+      ctx.lineTo(43, -16);
+      ctx.lineTo(39, -9);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    ctx.fillStyle = "#f8f9fa";
+    ctx.font = "900 7px system-ui";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("전우", 0, -3);
     ctx.restore();
   }
 }
