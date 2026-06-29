@@ -169,7 +169,7 @@ const heroTypes = [
     quote: "그날 빌런은 떠올렸다, 지배 당해왔던 공포를",
     hp: 90,
     maxHp: 90,
-    atk: 130,
+    atk: 135,
     def: 70,
     spd: 140,
     dodgeChance: 0.2,
