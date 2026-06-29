@@ -194,7 +194,8 @@ const heroTypes = [
     spd: 100,
     healMultiplier: 1.5,
     meleeDamageMultiplier: 1.5,
-    bulletDamageMultiplier: 1.5,
+    bulletDamageMultiplier: 1.95,
+    bulletFireRateMultiplier: 1.5,
     specialLabels: ["근접무기강화"],
     spriteScaleX: 1.08,
     spriteScaleY: 1.08,
@@ -759,6 +760,14 @@ function getStrapHandleRadius() {
   return 13 * 1.44;
 }
 
+function getStrapCount() {
+  return Math.min(14, Math.max(2, weapons.strapOrbit.level * 2));
+}
+
+function getBasicBulletFireRate() {
+  return player.fireRate / (player.bulletFireRateMultiplier || 1);
+}
+
 let width = 1;
 let height = 1;
 let viewWidth = 1;
@@ -841,6 +850,7 @@ const player = {
   healMultiplier: 1,
   meleeDamageMultiplier: 1,
   bulletDamageMultiplier: 1,
+  bulletFireRateMultiplier: 1,
   defenseBreakTimer: 0,
   defenseBreakPower: 0,
   stunTimer: 0,
@@ -1284,6 +1294,7 @@ function resetGame() {
     healMultiplier: 1,
     meleeDamageMultiplier: 1,
     bulletDamageMultiplier: 1,
+    bulletFireRateMultiplier: 1,
     defenseBreakTimer: 0,
     defenseBreakPower: 0,
     stunTimer: 0,
@@ -1377,6 +1388,7 @@ function selectHero(heroId) {
   player.healMultiplier = hero.healMultiplier ?? 1;
   player.meleeDamageMultiplier = hero.meleeDamageMultiplier ?? 1;
   player.bulletDamageMultiplier = hero.bulletDamageMultiplier ?? 1;
+  player.bulletFireRateMultiplier = hero.bulletFireRateMultiplier ?? 1;
   snapCameraToPlayer();
   refs.heroPanel.classList.add("hidden");
   game.pendingHeroChoice = false;
@@ -1884,7 +1896,7 @@ function fireBulletVolley(source, target, count, {
 }
 
 function fireBullets() {
-  const target = findNearestEnemy(680);
+  const target = findPriorityEnemyFrom(player, 680);
   if (!target) return;
   fireBulletVolley(player, target, player.shots);
   playSound("shot");
@@ -2204,7 +2216,7 @@ function updatePlayer(delta) {
   player.fireCooldown -= cooldownDelta;
   if (!stunned && player.fireCooldown <= 0) {
     fireBullets();
-    player.fireCooldown = player.fireRate;
+    player.fireCooldown = getBasicBulletFireRate();
   }
 
   weapons.strapOrbit.angle += delta * (5.3 + weapons.strapOrbit.level * 0.32);
@@ -3028,7 +3040,7 @@ function updateProjectiles(delta) {
 
 function updateBlade(delta = 0) {
   if (weapons.strapOrbit.level > 0) {
-    const strapCount = Math.min(7, weapons.strapOrbit.level + 2);
+    const strapCount = getStrapCount();
     const strapRadius = getStrapOrbitRadius();
     const strapHandleRadius = getStrapHandleRadius();
     const strapDamage = Math.round((14 + (weapons.strapOrbit.level - 1) * 8) * 1.5 * (player.meleeDamageMultiplier || 1));
@@ -3488,7 +3500,7 @@ function updateComradePets(delta) {
       radius: 8,
       color: "#fff2a8",
     });
-    pet.attackCooldown = player.fireRate;
+    pet.attackCooldown = getBasicBulletFireRate();
     pet.swingTimer = 0.16;
     if (Math.random() < 0.35) playSound("shot");
   }
@@ -4366,7 +4378,7 @@ function updateHud() {
     { label: `탄환 x${player.shots}`, type: "attack", power: chipPower(player.shots), desc: `가장 가까운 적에게 기본 탄환을 발사합니다. 현재 ${player.shots}발씩 발사.` },
     weapons.card.level > 0 ? { label: `교통카드 Lv.${weapons.card.level}`, type: "attack", power: chipPower(weapons.card.level), desc: "교통카드가 화면 벽에 최대 5번 튕기며 적을 관통 공격합니다." } : null,
     weapons.lightning.level > 0 ? { label: `번개 Lv.${weapons.lightning.level}`, type: "attack", power: chipPower(weapons.lightning.level), desc: "가까운 적 주변에 민원 번개를 내려 범위 피해를 줍니다." } : null,
-    weapons.strapOrbit.level > 0 ? { label: `손잡이 Lv.${weapons.strapOrbit.level}`, type: "attack", power: chipPower(weapons.strapOrbit.level), desc: "지하철 손잡이가 주위를 회전하며 닿은 적을 계속 공격합니다." } : null,
+    weapons.strapOrbit.level > 0 ? { label: `손잡이 Lv.${weapons.strapOrbit.level}`, type: "attack", power: chipPower(weapons.strapOrbit.level), desc: `지하철 손잡이 ${getStrapCount()}개가 주위를 회전하며 닿은 적을 계속 공격합니다.` } : null,
     weapons.tearGas.level > 0 ? { label: `최류탄 Lv.${weapons.tearGas.level}`, type: "attack", power: chipPower(weapons.tearGas.level), desc: "주인공 주변에 손잡이보다 넓은 가스 지대를 만들고 안에 들어온 적에게 지속 피해를 줍니다." } : null,
     weapons.expressTrain.level > 0 ? { label: `급행 Lv.${weapons.expressTrain.level}`, type: "attack", power: chipPower(weapons.expressTrain.level), desc: "급행열차가 보스를 우선 노려 지나가며 피해와 넉백을 줍니다." } : null,
     weapons.customerMissile.level > 0 ? { label: `유도탄 Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level), desc: "고객센터 유도탄이 보스를 우선 추적하고 약한 폭발 피해를 줍니다." } : null,
@@ -4843,7 +4855,7 @@ function drawBlades() {
   }
 
   if (weapons.strapOrbit.level > 0) {
-    const strapCount = Math.min(7, weapons.strapOrbit.level + 2);
+    const strapCount = getStrapCount();
     const strapRadius = getStrapOrbitRadius();
     const strapDrawScale = getStrapHandleRadius() / 13;
     ctx.save();
