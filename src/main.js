@@ -226,14 +226,24 @@ function isComradeHero() {
   return player.heroId === "changwoo";
 }
 
+function isRunnerCompanionHero() {
+  return player.heroId === "juyeon";
+}
+
+function getStationPoliceDamage() {
+  return Math.round((29 + Math.max(0, weapons.subwayPolice.level - 1) * 3) * SUBWAY_POLICE_DAMAGE_MULTIPLIER);
+}
+
 function getCompanionSkillName() {
-  return isComradeHero() ? "전우" : "지하철 경찰";
+  if (isComradeHero()) return "전우";
+  if (isRunnerCompanionHero()) return "동료";
+  return "지하철 경찰";
 }
 
 function getCompanionSkillDesc() {
-  return isComradeHero()
-    ? "전우가 창우 옆에서 기본탄환을 함께 발사합니다."
-    : "지하철 경찰이 팻처럼 동행하며 보스를 우선 곤봉으로 공격합니다.";
+  if (isComradeHero()) return "전우가 창우 옆에서 기본탄환을 함께 발사합니다.";
+  if (isRunnerCompanionHero()) return "마라토너 동료가 달려가 몸통박치기와 스플래시 피해를 줍니다.";
+  return "지하철 경찰이 팻처럼 동행하며 보스를 우선 곤봉으로 공격합니다.";
 }
 
 function getChickenItemName() {
@@ -3366,6 +3376,10 @@ function updateStationPolicePets(delta) {
     updateComradePets(delta);
     return;
   }
+  if (isRunnerCompanionHero()) {
+    updateRunnerCompanionPets(delta);
+    return;
+  }
   const count = stationPolicePets.length;
   for (const pet of stationPolicePets) {
     pet.attackCooldown = Math.max(0, pet.attackCooldown - delta);
@@ -3418,25 +3432,29 @@ function updateStationPolicePets(delta) {
     pet.attackCooldown = 0.58;
     pet.swingTimer = 0.22;
     pet.facing = angleTo(pet, target);
-    const damage = Math.round((29 + Math.max(0, weapons.subwayPolice.level - 1) * 3) * SUBWAY_POLICE_DAMAGE_MULTIPLIER);
+    const damage = getStationPoliceDamage();
     damageEnemy(target, damage, "#b8dcff");
-    const splashDamage = Math.max(1, Math.round(damage * SUBWAY_POLICE_SPLASH_DAMAGE_RATIO));
-    for (const enemy of [...enemies]) {
-      if (enemy === target) continue;
-      if (Math.hypot(enemy.x - target.x, enemy.y - target.y) > enemy.radius + SUBWAY_POLICE_SPLASH_RADIUS) continue;
-      damageEnemy(enemy, splashDamage, "#8ecae6");
-      if (enemies.includes(enemy)) {
-        const splashPush = angleTo(target, enemy);
-        const splashPushAmount = enemy.boss ? 3 : 9;
-        enemy.x = clamp(enemy.x + Math.cos(splashPush) * splashPushAmount, 35, WORLD_SIZE - 35);
-        enemy.y = clamp(enemy.y + Math.sin(splashPush) * splashPushAmount, 35, WORLD_SIZE - 35);
-      }
-    }
+    applyCompanionSplashDamage(target, damage);
     const pushAmount = target.boss ? 7 : 22;
     target.x = clamp(target.x + Math.cos(pet.facing) * pushAmount, 35, WORLD_SIZE - 35);
     target.y = clamp(target.y + Math.sin(pet.facing) * pushAmount, 35, WORLD_SIZE - 35);
     addParticles(target.x, target.y, "#b8dcff", target.boss ? 8 : 5);
     if (Math.random() < 0.42) playSound("police");
+  }
+}
+
+function applyCompanionSplashDamage(target, damage, color = "#8ecae6") {
+  const splashDamage = Math.max(1, Math.round(damage * SUBWAY_POLICE_SPLASH_DAMAGE_RATIO));
+  for (const enemy of [...enemies]) {
+    if (enemy === target) continue;
+    if (Math.hypot(enemy.x - target.x, enemy.y - target.y) > enemy.radius + SUBWAY_POLICE_SPLASH_RADIUS) continue;
+    damageEnemy(enemy, splashDamage, color);
+    if (enemies.includes(enemy)) {
+      const splashPush = angleTo(target, enemy);
+      const splashPushAmount = enemy.boss ? 3 : 9;
+      enemy.x = clamp(enemy.x + Math.cos(splashPush) * splashPushAmount, 35, WORLD_SIZE - 35);
+      enemy.y = clamp(enemy.y + Math.sin(splashPush) * splashPushAmount, 35, WORLD_SIZE - 35);
+    }
   }
 }
 
@@ -3478,6 +3496,64 @@ function updateComradePets(delta) {
     pet.attackCooldown = player.fireRate;
     pet.swingTimer = 0.16;
     if (Math.random() < 0.35) playSound("shot");
+  }
+}
+
+function updateRunnerCompanionPets(delta) {
+  const count = stationPolicePets.length;
+  for (const pet of stationPolicePets) {
+    pet.attackCooldown = Math.max(0, pet.attackCooldown - delta);
+    pet.swingTimer = Math.max(0, pet.swingTimer - delta);
+    const slotAngle = -Math.PI / 2 + (TAU * pet.slot) / Math.max(1, count);
+    const orbit = 52 + Math.min(5, count) * 6;
+    const idleX = player.x + Math.cos(slotAngle) * orbit;
+    const idleY = player.y + Math.sin(slotAngle) * orbit;
+    const target = findPriorityEnemyFrom(pet, 860);
+    pet.target = target;
+
+    let goalX = idleX;
+    let goalY = idleY;
+    if (target) {
+      const chargeAngle = angleTo(pet, target);
+      goalX = target.x - Math.cos(chargeAngle) * (target.radius + 12);
+      goalY = target.y - Math.sin(chargeAngle) * (target.radius + 12);
+      pet.facing = chargeAngle;
+    }
+
+    const dx = goalX - pet.x;
+    const dy = goalY - pet.y;
+    const distanceToGoal = Math.hypot(dx, dy) || 1;
+    const moveSpeed = target ? 515 : 340;
+    const step = Math.min(distanceToGoal, moveSpeed * delta);
+    pet.x = clamp(pet.x + (dx / distanceToGoal) * step, 25, WORLD_SIZE - 25);
+    pet.y = clamp(pet.y + (dy / distanceToGoal) * step, 25, WORLD_SIZE - 25);
+    if (!target && distanceToGoal > 1) pet.facing = Math.atan2(dy, dx);
+
+    for (const other of stationPolicePets) {
+      if (other === pet) continue;
+      const gapX = pet.x - other.x;
+      const gapY = pet.y - other.y;
+      const gap = Math.hypot(gapX, gapY) || 1;
+      const minGap = 34;
+      if (gap >= minGap) continue;
+      const push = (minGap - gap) * 0.5;
+      pet.x = clamp(pet.x + (gapX / gap) * push, 25, WORLD_SIZE - 25);
+      pet.y = clamp(pet.y + (gapY / gap) * push, 25, WORLD_SIZE - 25);
+    }
+
+    if (!target || pet.attackCooldown > 0) continue;
+    if (Math.hypot(target.x - pet.x, target.y - pet.y) > target.radius + 24) continue;
+    pet.attackCooldown = 0.58;
+    pet.swingTimer = 0.24;
+    pet.facing = angleTo(pet, target);
+    const damage = getStationPoliceDamage();
+    damageEnemy(target, damage, "#9fd3ff");
+    applyCompanionSplashDamage(target, damage, "#6ecbff");
+    const pushAmount = target.boss ? 9 : 28;
+    target.x = clamp(target.x + Math.cos(pet.facing) * pushAmount, 35, WORLD_SIZE - 35);
+    target.y = clamp(target.y + Math.sin(pet.facing) * pushAmount, 35, WORLD_SIZE - 35);
+    addParticles(target.x, target.y, "#9fd3ff", target.boss ? 10 : 7);
+    if (Math.random() < 0.38) playSound("hit");
   }
 }
 
@@ -4299,7 +4375,7 @@ function updateHud() {
     weapons.tearGas.level > 0 ? { label: `최류탄 Lv.${weapons.tearGas.level}`, type: "attack", power: chipPower(weapons.tearGas.level), desc: "주인공 주변에 손잡이보다 넓은 가스 지대를 만들고 안에 들어온 적에게 지속 피해를 줍니다." } : null,
     weapons.expressTrain.level > 0 ? { label: `급행 Lv.${weapons.expressTrain.level}`, type: "attack", power: chipPower(weapons.expressTrain.level), desc: "급행열차가 보스를 우선 노려 지나가며 피해와 넉백을 줍니다." } : null,
     weapons.customerMissile.level > 0 ? { label: `유도탄 Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level), desc: "고객센터 유도탄이 보스를 우선 추적하고 약한 폭발 피해를 줍니다." } : null,
-    weapons.subwayPolice.level > 0 ? { label: `${isComradeHero() ? "전우" : "경찰"} Lv.${weapons.subwayPolice.level}`, type: "attack", power: chipPower(weapons.subwayPolice.level), desc: getCompanionSkillDesc() } : null,
+    weapons.subwayPolice.level > 0 ? { label: `${getCompanionSkillName()} Lv.${weapons.subwayPolice.level}`, type: "attack", power: chipPower(weapons.subwayPolice.level), desc: getCompanionSkillDesc() } : null,
     player.defenseBreakTimer > 0 ? { label: `방어저하 ${Math.ceil(player.defenseBreakTimer)}초`, type: "status", desc: "현재 방어력이 감소한 상태입니다." } : null,
     player.stunTimer > 0 ? { label: `경직 ${Math.ceil(player.stunTimer)}초`, type: "status", desc: "잠시 움직일 수 없는 상태입니다." } : null,
     player.slowTimer > 0 ? { label: `둔화 ${Math.ceil(player.slowTimer)}초`, type: "status", desc: "이동 속도가 느려진 상태입니다." } : null,
@@ -5423,6 +5499,10 @@ function drawStationPolicePets() {
     drawComradePets();
     return;
   }
+  if (isRunnerCompanionHero()) {
+    drawRunnerCompanionPets();
+    return;
+  }
   const sortedPets = [...stationPolicePets].sort((a, b) => a.y - b.y);
   for (const pet of sortedPets) {
     const p = worldToScreen(pet.x, pet.y);
@@ -5568,6 +5648,89 @@ function drawComradePets() {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText("전우", 0, -3);
+    ctx.restore();
+  }
+}
+
+function drawRunnerCompanionPets() {
+  const sortedPets = [...stationPolicePets].sort((a, b) => a.y - b.y);
+  for (const pet of sortedPets) {
+    const p = worldToScreen(pet.x, pet.y);
+    const step = Math.sin(pet.bob + player.elapsed * 12);
+    const impact = clamp(pet.swingTimer / 0.24, 0, 1);
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(pet.facing);
+    ctx.scale(1.03 + impact * 0.08, 1.03);
+    ctx.shadowColor = "#9fd3ff";
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = "rgba(159, 211, 255, 0.16)";
+    ctx.beginPath();
+    ctx.ellipse(0, 13, 23, 10, 0, 0, TAU);
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#f8f9fa";
+    roundedRect(-9, -15, 18, 28, 6);
+    ctx.fill();
+    ctx.strokeStyle = "#2f78c4";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = "#2f78c4";
+    roundedRect(-7, -11, 14, 11, 4);
+    ctx.fill();
+    ctx.fillStyle = "#d9f2ff";
+    ctx.fillRect(-2, -12, 4, 24);
+
+    ctx.fillStyle = "#d2a982";
+    ctx.beginPath();
+    ctx.arc(0, -25, 8, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    roundedRect(-10, -34, 20, 7, 4);
+    ctx.fill();
+    ctx.strokeStyle = "#2f78c4";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-9, -30);
+    ctx.lineTo(-17, -29);
+    ctx.stroke();
+
+    ctx.strokeStyle = "#d2a982";
+    ctx.lineWidth = 4;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(-8, -6);
+    ctx.lineTo(-16, 4 + step * 2);
+    ctx.moveTo(8, -6);
+    ctx.lineTo(19 + impact * 7, -10);
+    ctx.stroke();
+
+    ctx.strokeStyle = "#172033";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(-6, 12);
+    ctx.lineTo(-13, 24 - step * 3);
+    ctx.moveTo(6, 12);
+    ctx.lineTo(16, 23 + step * 3);
+    ctx.stroke();
+
+    if (impact > 0.18) {
+      ctx.globalAlpha = 0.55 * impact;
+      ctx.strokeStyle = "#9fd3ff";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(18, 0, 18 + impact * 18, -0.72, 0.72);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    ctx.fillStyle = "#f8f9fa";
+    ctx.font = "900 7px system-ui";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("동료", 0, -3);
     ctx.restore();
   }
 }
