@@ -1311,6 +1311,11 @@ function renderHeroChoices() {
         <span>SPD ${hero.spd}</span>
       </div>
       ${
+        hero.dodgeChance
+          ? `<p class="hero-stat-note">회피 ${Math.round(hero.dodgeChance * 100)}%</p>`
+          : ""
+      }
+      ${
         hero.specialLabels?.length
           ? `<div class="hero-specials">${hero.specialLabels.map((label) => `<span>${label}</span>`).join("")}</div>`
           : ""
@@ -4215,7 +4220,6 @@ function updateHud() {
     player.stunTimer > 0 ? { label: `경직 ${Math.ceil(player.stunTimer)}초`, type: "status", desc: "잠시 움직일 수 없는 상태입니다." } : null,
     player.slowTimer > 0 ? { label: `둔화 ${Math.ceil(player.slowTimer)}초`, type: "status", desc: "이동 속도가 느려진 상태입니다." } : null,
     player.damageReduction > 0 ? { label: `내성 ${Math.round(player.damageReduction * 100)}%`, type: "passive", power: chipPower(Math.round(player.damageReduction / 0.15)), desc: "받는 피해가 감소합니다." } : null,
-    player.dodgeChance > 0 ? { label: `회피 ${Math.round(player.dodgeChance * 100)}%`, type: "passive", power: chipPower(2), desc: "공격받을 때 일정 확률로 피해를 완전히 회피합니다." } : null,
     player.regenLevel > 0 ? { label: `회복 Lv.${player.regenLevel}`, type: "passive", power: chipPower(player.regenLevel), desc: `일정 시간마다 최대 체력의 ${Number(((1 + player.regenLevel) * 1.5).toFixed(1))}%를 회복합니다.` } : null,
     player.chickenTimer > 0 ? { label: `${getChickenItemName()} ${Math.ceil(player.chickenTimer)}초`, type: "status", desc: "몸집이 커지고 접촉한 적에게 몸통박치기 피해와 넉백을 줍니다." } : null,
     player.stimTimer > 0 ? { label: `스팀팩 ${Math.ceil(player.stimTimer)}초`, type: "status", desc: "일부 무기 쿨타임이 1/3로 줄지만 매초 최대 체력 3%를 잃습니다." } : null,

@@ -1254,6 +1254,15 @@ button {
   text-align: center;
 }
 
+.hero-card .hero-stat-note {
+  margin: 4px 0 0;
+  color: #9fd3ff;
+  font-size: 9px;
+  font-weight: 1000;
+  line-height: 1.15;
+  text-align: center;
+}
+
 .hero-specials {
   display: grid;
   grid-template-columns: 1fr;
