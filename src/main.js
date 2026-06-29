@@ -3010,9 +3010,9 @@ function dropBossRewardItems(enemy) {
     const j = Math.floor(Math.random() * (i + 1));
     [rewardKinds[i], rewardKinds[j]] = [rewardKinds[j], rewardKinds[i]];
   }
-  const rewardCount = Math.random() < 0.5 ? 2 : 1;
-  for (let i = 0; i < rewardCount; i += 1) {
-    dropBossRewardPickup(enemy, rewardKinds[i], i, rewardCount);
+  const selectedRewards = rewardKinds.filter(() => Math.random() < 0.35).slice(0, 2);
+  for (let i = 0; i < selectedRewards.length; i += 1) {
+    dropBossRewardPickup(enemy, selectedRewards[i], i, selectedRewards.length);
   }
 }
 
