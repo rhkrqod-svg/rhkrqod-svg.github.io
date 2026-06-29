@@ -160,7 +160,7 @@ const heroTypes = [
     image: "/assets/heroes/juyeon-cutout.png",
     cardImage: "/assets/heroes/juyeon-card.png",
     chickenImage: "/assets/heroes/juyeon-chicken-form.png",
-    quote: "빠른 발과 회피 감각으로 빈틈을 뚫습니다.",
+    quote: "그날 빌런은 떠올렸다, 지배 당해왔던 공포를",
     hp: 90,
     maxHp: 90,
     atk: 140,
