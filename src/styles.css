@@ -281,14 +281,14 @@ button {
   gap: 3px;
   align-items: center;
   justify-content: center;
-  width: 62px;
-  min-height: 28px;
+  width: 70px;
+  min-height: 34px;
   border: 1px solid rgba(184, 255, 228, 0.36);
   border-radius: 7px;
   background: rgba(12, 15, 18, 0.74);
   color: #b8ffe4;
   cursor: pointer;
-  padding: 4px 3px;
+  padding: 5px 5px;
   pointer-events: auto;
   box-shadow: 0 12px 34px rgba(0, 0, 0, 0.24);
   backdrop-filter: blur(14px);
@@ -298,8 +298,8 @@ button {
   content: "+";
   display: grid;
   place-items: center;
-  width: 16px;
-  height: 16px;
+  width: 19px;
+  height: 19px;
   border-radius: 5px;
   background: #f8f9fa;
   color: #1f7a68;
@@ -329,7 +329,7 @@ button {
 }
 
 .police-call {
-  left: 76px;
+  left: 84px;
   right: auto;
   bottom: max(92px, calc(env(safe-area-inset-bottom) + 92px));
   display: grid;
@@ -337,14 +337,14 @@ button {
   gap: 3px;
   align-items: center;
   justify-content: center;
-  width: 62px;
-  min-height: 28px;
+  width: 70px;
+  min-height: 34px;
   border: 1px solid rgba(119, 190, 255, 0.42);
   border-radius: 7px;
   background: rgba(10, 19, 36, 0.78);
   color: #b8dcff;
   cursor: pointer;
-  padding: 4px 3px;
+  padding: 5px 5px;
   pointer-events: auto;
   box-shadow: 0 12px 34px rgba(0, 0, 0, 0.24);
   backdrop-filter: blur(14px);
@@ -354,8 +354,8 @@ button {
   content: "P";
   display: grid;
   place-items: center;
-  width: 16px;
-  height: 16px;
+  width: 19px;
+  height: 19px;
   border-radius: 5px;
   background: #eaf5ff;
   color: #174f9a;
@@ -386,7 +386,7 @@ button {
 }
 
 .taser-call {
-  left: 142px;
+  left: 158px;
   right: auto;
   bottom: max(92px, calc(env(safe-area-inset-bottom) + 92px));
   display: grid;
@@ -394,14 +394,14 @@ button {
   gap: 3px;
   align-items: center;
   justify-content: center;
-  width: 62px;
-  min-height: 28px;
+  width: 70px;
+  min-height: 34px;
   border: 1px solid rgba(255, 243, 176, 0.42);
   border-radius: 7px;
   background: rgba(32, 24, 7, 0.78);
   color: #fff3b0;
   cursor: pointer;
-  padding: 4px 3px;
+  padding: 5px 5px;
   pointer-events: auto;
   box-shadow: 0 12px 34px rgba(0, 0, 0, 0.24);
   backdrop-filter: blur(14px);
@@ -411,8 +411,8 @@ button {
   content: "⚡";
   display: grid;
   place-items: center;
-  width: 16px;
-  height: 16px;
+  width: 19px;
+  height: 19px;
   border-radius: 5px;
   background: #fff3b0;
   color: #3b2500;
@@ -443,7 +443,7 @@ button {
 }
 
 .chicken-call {
-  left: 208px;
+  left: 232px;
   right: auto;
   bottom: max(92px, calc(env(safe-area-inset-bottom) + 92px));
   display: grid;
@@ -451,14 +451,14 @@ button {
   gap: 3px;
   align-items: center;
   justify-content: center;
-  width: 62px;
-  min-height: 28px;
+  width: 70px;
+  min-height: 34px;
   border: 1px solid rgba(255, 186, 73, 0.44);
   border-radius: 7px;
   background: rgba(42, 27, 8, 0.8);
   color: #ffd166;
   cursor: pointer;
-  padding: 4px 3px;
+  padding: 5px 5px;
   pointer-events: auto;
   box-shadow: 0 12px 34px rgba(0, 0, 0, 0.24);
   backdrop-filter: blur(14px);
@@ -468,8 +468,8 @@ button {
   content: "C";
   display: grid;
   place-items: center;
-  width: 16px;
-  height: 16px;
+  width: 19px;
+  height: 19px;
   border-radius: 5px;
   background: #ffd166;
   color: #4a2800;
@@ -481,7 +481,7 @@ button {
 .chicken-call.tank-radio-mode::before {
   content: "";
   background:
-    url("/assets/items/tank-radio.png") center / 16px 16px no-repeat,
+    url("/assets/items/tank-radio.png") center / 19px 19px no-repeat,
     rgba(255, 209, 102, 0.14);
   color: transparent;
 }
@@ -508,7 +508,7 @@ button {
 }
 
 .stim-call {
-  left: 274px;
+  left: 306px;
   right: auto;
   bottom: max(92px, calc(env(safe-area-inset-bottom) + 92px));
   display: grid;
@@ -516,14 +516,14 @@ button {
   gap: 3px;
   align-items: center;
   justify-content: center;
-  width: 62px;
-  min-height: 28px;
+  width: 70px;
+  min-height: 34px;
   border: 1px solid rgba(255, 107, 107, 0.48);
   border-radius: 7px;
   background: rgba(45, 11, 16, 0.82);
   color: #ffb3c6;
   cursor: pointer;
-  padding: 4px 3px;
+  padding: 5px 5px;
   pointer-events: auto;
   box-shadow: 0 12px 34px rgba(0, 0, 0, 0.24);
   backdrop-filter: blur(14px);
@@ -533,8 +533,8 @@ button {
   content: "S";
   display: grid;
   place-items: center;
-  width: 16px;
-  height: 16px;
+  width: 19px;
+  height: 19px;
   border-radius: 5px;
   background: #ff6b6b;
   color: #fff3f3;
@@ -1415,31 +1415,36 @@ button {
 
   .first-aid {
     bottom: max(88px, calc(env(safe-area-inset-bottom) + 88px));
-    width: 60px;
+    width: 66px;
+    min-height: 32px;
   }
 
   .police-call {
-    left: 74px;
+    left: 80px;
     bottom: max(88px, calc(env(safe-area-inset-bottom) + 88px));
-    width: 60px;
+    width: 66px;
+    min-height: 32px;
   }
 
   .taser-call {
-    left: 138px;
+    left: 150px;
     bottom: max(88px, calc(env(safe-area-inset-bottom) + 88px));
-    width: 60px;
+    width: 66px;
+    min-height: 32px;
   }
 
   .chicken-call {
-    left: 202px;
+    left: 220px;
     bottom: max(88px, calc(env(safe-area-inset-bottom) + 88px));
-    width: 60px;
+    width: 66px;
+    min-height: 32px;
   }
 
   .stim-call {
-    left: 266px;
+    left: 290px;
     bottom: max(88px, calc(env(safe-area-inset-bottom) + 88px));
-    width: 60px;
+    width: 66px;
+    min-height: 32px;
   }
 
   .message:not(.start-screen) {

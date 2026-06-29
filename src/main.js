@@ -195,7 +195,7 @@ const heroTypes = [
     healMultiplier: 1.5,
     meleeDamageMultiplier: 1.5,
     bulletDamageMultiplier: 1.5,
-    specialLabels: ["빠른체력회복", "근접무기강화"],
+    specialLabels: ["근접무기강화"],
     spriteScaleX: 1.08,
     spriteScaleY: 1.08,
     chickenScaleX: 3.2,
