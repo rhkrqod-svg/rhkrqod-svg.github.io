@@ -149,6 +149,21 @@ button {
   line-height: 1;
 }
 
+.dodge-stat {
+  display: block;
+  margin-top: 2px;
+  color: #9fd3ff;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 1000;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.dodge-stat.hidden {
+  display: none;
+}
+
 .xp-bar {
   position: absolute;
   z-index: 4;
@@ -1348,6 +1363,10 @@ button {
 
   .stat strong {
     font-size: 12px;
+  }
+
+  .dodge-stat {
+    font-size: 7px;
   }
 
   .loadout {

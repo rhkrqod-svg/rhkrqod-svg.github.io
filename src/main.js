@@ -15,6 +15,7 @@ const refs = {
   attackStat: document.querySelector("#attackStat"),
   defenseStat: document.querySelector("#defenseStat"),
   speedStat: document.querySelector("#speedStat"),
+  dodgeStat: document.querySelector("#dodgeStat"),
   xpFill: document.querySelector("#xpFill"),
   weaponList: document.querySelector("#weaponList"),
   skillTooltip: document.querySelector("#skillTooltip"),
@@ -4079,6 +4080,11 @@ function updateHud() {
   if (refs.attackStat) refs.attackStat.textContent = Math.round(player.attackPower || 100);
   if (refs.defenseStat) refs.defenseStat.textContent = Math.round(player.defensePower || 100);
   if (refs.speedStat) refs.speedStat.textContent = Math.round((player.speed / 205) * 100);
+  if (refs.dodgeStat) {
+    const dodgePercent = Math.round((player.dodgeChance ?? 0) * 100);
+    refs.dodgeStat.textContent = `회피 ${dodgePercent}%`;
+    refs.dodgeStat.classList.toggle("hidden", dodgePercent <= 0);
+  }
   refs.xpFill.style.transform = `scaleX(${clamp(player.xp / player.nextXp, 0, 1)})`;
   refs.bestScore.textContent = formatScore(bestScore);
   if (refs.firstAidCount) refs.firstAidCount.textContent = player.firstAidKits;
