@@ -109,8 +109,8 @@ const BOSS_STAB_ATTACK_DURATION_MULTIPLIER = 1 / BOSS_BASIC_ATTACK_SPEED_MULTIPL
 const BOSS_SPECIAL_ATTACK_MIN_COOLDOWN = 6.4;
 const BOSS_SPECIAL_ATTACK_MAX_COOLDOWN = 8.2;
 const TASER_DOT_TICK = 0.5;
-const TASER_DOT_DAMAGE_RATIO = 0.1;
-const SUBWAY_POLICE_DAMAGE_MULTIPLIER = 1.95;
+const TASER_DOT_DAMAGE_RATIO = 0.25;
+const SUBWAY_POLICE_DAMAGE_MULTIPLIER = 2.535;
 const SUBWAY_POLICE_SPLASH_RADIUS = 60;
 const SUBWAY_POLICE_SPLASH_DAMAGE_RATIO = 0.28;
 const CHICKEN_BUFF_DURATION = 10;
@@ -528,22 +528,6 @@ for (const boss of bossTypes) {
 
 const upgradePool = [
   {
-    id: "rapid",
-    name: "따발총 모드",
-    desc: "자동 사격 속도 +20%",
-    apply: () => {
-      player.fireRate *= 0.8;
-    },
-  },
-  {
-    id: "damage",
-    name: "참교육 탄환",
-    desc: "탄환 피해 +20%",
-    apply: () => {
-      player.damage *= 1.2;
-    },
-  },
-  {
     id: "multi",
     name: "분노의 산탄",
     desc: "동시 발사 +1",
@@ -583,7 +567,7 @@ const upgradePool = [
     desc: "강화 교통카드를 던져 적을 강하게 관통 공격",
     apply: () => {
       weapons.card.level += 1;
-      weapons.card.cooldown = Math.min(weapons.card.cooldown, 0.64);
+      weapons.card.cooldown = Math.min(weapons.card.cooldown, 2.37);
     },
   },
   {
@@ -617,7 +601,7 @@ const upgradePool = [
     desc: "가까운 적에게 유도탄을 발사하고 폭발 피해",
     apply: () => {
       weapons.customerMissile.level += 1;
-      weapons.customerMissile.cooldown = Math.min(weapons.customerMissile.cooldown, 0.38);
+      weapons.customerMissile.cooldown = Math.min(weapons.customerMissile.cooldown, 0.68);
     },
   },
   {
@@ -669,7 +653,7 @@ function getTearGasRadius() {
 
 function getTearGasDamage() {
   const level = Math.max(1, weapons.tearGas.level);
-  return Math.round((9 + (level - 1) * 6) * 1.2);
+  return Math.round((9 + (level - 1) * 6) * 1.8);
 }
 
 function getStrapOrbitRadius() {
@@ -747,7 +731,7 @@ const player = {
   kills: 0,
   score: 0,
   elapsed: 0,
-  damage: 25,
+  damage: 32.5,
   attackPower: 100,
   defensePower: 100,
   fireRate: 0.35,
@@ -1185,7 +1169,7 @@ function resetGame() {
     kills: 0,
     score: 0,
     elapsed: 0,
-    damage: 25,
+    damage: 32.5,
     attackPower: 100,
     defensePower: 100,
     fireRate: 0.35,
@@ -1784,22 +1768,27 @@ function spawnCard() {
   if (!target) return;
   const angle = angleTo(player, target);
   const level = weapons.card.level;
-  const speed = 620 + level * 42;
-  cards.push({
-    x: player.x,
-    y: player.y,
-    vx: Math.cos(angle) * speed,
-    vy: Math.sin(angle) * speed,
-    damage: 32 + level * 32,
-    life: 7.5 + level * 0.35,
-    maxLife: 7.5 + level * 0.35,
-    radius: 24 + level * 3,
-    rotation: 0,
-    bounces: 0,
-    maxBounces: 5,
-    hitTimers: new Map(),
-    trail: [],
-  });
+  const count = Math.max(1, level);
+  const spread = Math.min(0.62, 0.14 * (count - 1));
+  const speed = 662;
+  for (let i = 0; i < count; i += 1) {
+    const cardAngle = count === 1 ? angle : angle - spread / 2 + (spread * i) / (count - 1);
+    cards.push({
+      x: player.x,
+      y: player.y,
+      vx: Math.cos(cardAngle) * speed,
+      vy: Math.sin(cardAngle) * speed,
+      damage: 64,
+      life: 7.85,
+      maxLife: 7.85,
+      radius: 27,
+      rotation: 0,
+      bounces: 0,
+      maxBounces: 5,
+      hitTimers: new Map(),
+      trail: [],
+    });
+  }
   playSound("card");
 }
 
@@ -1999,7 +1988,7 @@ function spawnTransferGate() {
 function explodeCustomerMissile(missile) {
   const level = weapons.customerMissile.level;
   const radius = 54 + level * 12;
-  const damage = Math.round((32 + level * 24) * 1.04);
+  const damage = Math.round((32 + level * 24) * 1.04 * 0.6);
   damageZones.push({
     x: missile.x,
     y: missile.y,
@@ -2019,7 +2008,7 @@ function explodeCustomerMissile(missile) {
 function spawnCustomerMissiles() {
   const level = weapons.customerMissile.level;
   if (level <= 0 || enemies.length === 0) return;
-  const count = Math.min(5, 1 + Math.floor((level - 1) / 2));
+  const count = Math.max(1, level);
   for (let i = 0; i < count; i += 1) {
     const target = findCustomerMissileTarget(900 + level * 40);
     if (!target) return;
@@ -2089,13 +2078,13 @@ function updatePlayer(delta) {
   weapons.lightning.cooldown -= cooldownDelta;
   if (weapons.lightning.cooldown <= 0) {
     strikeLightning();
-    weapons.lightning.cooldown = Math.max(1.25, 3.17 - weapons.lightning.level * 0.17);
+    weapons.lightning.cooldown = 3;
   }
 
   weapons.card.cooldown -= cooldownDelta;
   if (weapons.card.level > 0 && weapons.card.cooldown <= 0) {
     spawnCard();
-    weapons.card.cooldown = Math.max(0.8, (1.05 - weapons.card.level * 0.11) * 2.52);
+    weapons.card.cooldown = 2.37;
   }
 
   weapons.expressTrain.cooldown -= delta;
@@ -2113,7 +2102,7 @@ function updatePlayer(delta) {
   weapons.customerMissile.cooldown -= cooldownDelta;
   if (weapons.customerMissile.level > 0 && weapons.customerMissile.cooldown <= 0) {
     spawnCustomerMissiles();
-    weapons.customerMissile.cooldown = Math.max(0.38, ((0.55 - weapons.customerMissile.level * 0.04) / 0.7) * 0.936);
+    weapons.customerMissile.cooldown = 0.68;
   }
 
 }
@@ -2293,7 +2282,7 @@ function updateEnemies(delta) {
       damageEnemy(enemy, getChickenChargeDamage(), "#ffd166");
       if (!enemies.includes(enemy)) continue;
       const push = angleTo(player, enemy);
-      const pushAmount = (enemy.boss ? CHICKEN_KNOCKBACK / 3 : CHICKEN_KNOCKBACK) * (1 + clamp(player.chickenTimer / CHICKEN_BUFF_DURATION, 0, 1) * 0.18);
+      const pushAmount = (enemy.boss ? CHICKEN_KNOCKBACK / 2 : CHICKEN_KNOCKBACK) * (1 + clamp(player.chickenTimer / CHICKEN_BUFF_DURATION, 0, 1) * 0.18);
       enemy.x = clamp(enemy.x + Math.cos(push) * pushAmount, 35, WORLD_SIZE - 35);
       enemy.y = clamp(enemy.y + Math.sin(push) * pushAmount, 35, WORLD_SIZE - 35);
       addParticles(enemy.x, enemy.y, "#ffd166", enemy.boss ? 16 : 10);
@@ -2875,7 +2864,7 @@ function updateBlade(delta = 0) {
     const strapCount = Math.min(7, weapons.strapOrbit.level + 2);
     const strapRadius = getStrapOrbitRadius();
     const strapHandleRadius = getStrapHandleRadius();
-    const strapDamage = 14 + (weapons.strapOrbit.level - 1) * 8;
+    const strapDamage = Math.round((14 + (weapons.strapOrbit.level - 1) * 8) * 1.5);
     for (let i = 0; i < strapCount; i += 1) {
       const strapAngle = weapons.strapOrbit.angle + (TAU * i) / strapCount;
       const strap = {
@@ -2927,9 +2916,9 @@ function damageEnemy(enemy, amount, color = "#fff2a8") {
 }
 
 function getChickenChargeDamage() {
-  const lightningLevel = Math.max(1, weapons.lightning.level || 1);
-  const lightningDamage = Math.round((63 + lightningLevel * 58) * 1.105 * 1.3 * 0.8);
-  return Math.max(1, Math.round(lightningDamage * 0.5));
+  const expressLevel = Math.max(1, weapons.expressTrain.level || 1);
+  const expressDamage = (105 + expressLevel * 42) * 3;
+  return Math.max(1, Math.round(expressDamage * 0.5));
 }
 
 function isStimpackActive() {
@@ -3061,7 +3050,7 @@ function usePoliceCall() {
     officers,
     distance: 0,
     speed: 110,
-    damage: 32,
+    damage: 38.4,
     radius: 28,
     life: 7.2,
     maxLife: 7.2,
