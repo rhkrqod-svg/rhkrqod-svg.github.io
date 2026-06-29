@@ -2275,18 +2275,21 @@ function updateEnemies(delta) {
     enemy.y += Math.sin(angle) * speed * delta;
 
     const touchDistance = Math.hypot(enemy.x - player.x, enemy.y - player.y);
-    const chickenActive = player.chickenTimer > 0;
+    const chickenActive = isChickenBuffActive();
     const playerBodyRadius = chickenActive ? player.radius * CHICKEN_COLLISION_RADIUS_MULTIPLIER : player.radius;
-    if (touchDistance < enemy.radius + playerBodyRadius && chickenActive && enemy.chickenHitCooldown <= 0) {
-      enemy.chickenHitCooldown = CHICKEN_HIT_COOLDOWN;
-      damageEnemy(enemy, getChickenChargeDamage(), "#ffd166");
-      if (!enemies.includes(enemy)) continue;
+    if (touchDistance < enemy.radius + playerBodyRadius && chickenActive) {
+      const canDamageWithBody = enemy.chickenHitCooldown <= 0;
+      if (canDamageWithBody) {
+        enemy.chickenHitCooldown = CHICKEN_HIT_COOLDOWN;
+        damageEnemy(enemy, getChickenChargeDamage(), "#ffd166");
+        if (!enemies.includes(enemy)) continue;
+      }
       const push = angleTo(player, enemy);
       const pushAmount = (enemy.boss ? CHICKEN_KNOCKBACK / 2 : CHICKEN_KNOCKBACK) * (1 + clamp(player.chickenTimer / CHICKEN_BUFF_DURATION, 0, 1) * 0.18);
       enemy.x = clamp(enemy.x + Math.cos(push) * pushAmount, 35, WORLD_SIZE - 35);
       enemy.y = clamp(enemy.y + Math.sin(push) * pushAmount, 35, WORLD_SIZE - 35);
-      addParticles(enemy.x, enemy.y, "#ffd166", enemy.boss ? 16 : 10);
-      addPopup("BODY!", enemy.x, enemy.y - enemy.radius - 16, "#ffd166", 0.45, enemy.boss ? 15 : 13);
+      addParticles(enemy.x, enemy.y, "#ffd166", canDamageWithBody ? enemy.boss ? 16 : 10 : enemy.boss ? 8 : 5);
+      if (canDamageWithBody) addPopup("BODY!", enemy.x, enemy.y - enemy.radius - 16, "#ffd166", 0.45, enemy.boss ? 15 : 13);
       continue;
     }
     if (touchDistance < enemy.radius + player.radius && player.invuln <= 0) {
@@ -2695,6 +2698,10 @@ function increaseLevelStats() {
 }
 
 function hurtPlayer(amount) {
+  if (isChickenBuffActive()) {
+    addPopup("무적", player.x, player.y - 44, "#ffd166", 0.45, 15);
+    return;
+  }
   const reducedAmount = calculateIncomingDamage(amount);
   player.hp = Math.max(0, player.hp - reducedAmount);
   player.invuln = 0.45;
@@ -3192,6 +3199,10 @@ function syncStationPolicePets() {
   });
 }
 
+function isChickenBuffActive() {
+  return player.chickenTimer > 0;
+}
+
 function updateStationPolicePets(delta) {
   syncStationPolicePets();
   if (stationPolicePets.length === 0) return;
@@ -3607,6 +3618,12 @@ function updateDamageZones(delta) {
         hitPlayer = forward > 0 && forward < zone.length + player.radius && side < zone.width / 2 + player.radius;
       }
       if (active && !zone.applied && hitPlayer) {
+        if (isChickenBuffActive()) {
+          zone.applied = true;
+          addPopup("무적", player.x, player.y - 56, "#ffd166", 0.42, 14);
+          if (zone.consumeOnHit) zone.life = 0;
+          continue;
+        }
         hurtPlayer(zone.damage);
         zone.applied = true;
         if (zone.push) {
