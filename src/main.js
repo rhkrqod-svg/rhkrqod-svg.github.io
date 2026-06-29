@@ -2016,7 +2016,7 @@ function spawnTransferGate() {
 function explodeCustomerMissile(missile) {
   const level = weapons.customerMissile.level;
   const radius = 54 + level * 12;
-  const damage = Math.round((32 + level * 24) * 1.04 * 0.6);
+  const damage = Math.round((32 + level * 24) * 1.04 * 0.6 * 0.85);
   damageZones.push({
     x: missile.x,
     y: missile.y,
@@ -2049,7 +2049,7 @@ function spawnCustomerMissiles() {
       vy: Math.sin(angle) * speed,
       speed,
       turnRate: 7.2 + level * 0.5,
-      damage: Math.round((22 + level * 15) * 1.04),
+      damage: Math.round((22 + level * 15) * 1.04 * 0.85),
       radius: 8,
       life: 3.2,
       target,
