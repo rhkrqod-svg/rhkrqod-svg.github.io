@@ -158,7 +158,7 @@ const heroTypes = [
     id: "juyeon",
     name: "주연",
     image: "/assets/heroes/juyeon-cutout.png",
-    cardImage: "/assets/heroes/juyeon-cutout.png",
+    cardImage: "/assets/heroes/juyeon-card.png",
     chickenImage: "/assets/heroes/juyeon-chicken-form.png",
     quote: "빠른 발과 회피 감각으로 빈틈을 뚫습니다.",
     hp: 90,
@@ -1250,7 +1250,7 @@ function renderHeroChoices() {
   refs.heroChoices.innerHTML = "";
   for (const hero of heroTypes) {
     const button = document.createElement("button");
-    button.className = "hero-card";
+    button.className = `hero-card hero-card--${hero.id}`;
     button.type = "button";
     button.innerHTML = `
       <img src="${hero.cardImage ?? hero.image}" alt="${hero.name}" />
