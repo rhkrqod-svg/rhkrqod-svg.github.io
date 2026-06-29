@@ -167,8 +167,10 @@ const heroTypes = [
     def: 70,
     spd: 140,
     dodgeChance: 0.2,
-    chickenScaleX: 1.12,
-    chickenScaleY: 2.24,
+    spriteScaleX: 1.3,
+    spriteScaleY: 1.3,
+    chickenScaleX: 4.2,
+    chickenScaleY: 4.2,
     color: "#2f78c4",
     accent: "#9fd3ff",
   },
@@ -4367,8 +4369,8 @@ function drawPlayer() {
   const heroConfig = heroTypes.find((hero) => hero.id === player.heroId);
   const useHeroImage = Boolean(heroImage?.complete && heroImage.naturalWidth > 0);
   const chickenRatio = chickenActive ? clamp(player.chickenTimer / CHICKEN_BUFF_DURATION, 0, 1) : 0;
-  const spriteScaleX = chickenActive ? heroConfig?.chickenScaleX ?? CHICKEN_VISUAL_SCALE : 1;
-  const spriteScaleY = chickenActive ? heroConfig?.chickenScaleY ?? CHICKEN_VISUAL_SCALE : 1;
+  const spriteScaleX = chickenActive ? heroConfig?.chickenScaleX ?? CHICKEN_VISUAL_SCALE : heroConfig?.spriteScaleX ?? 1;
+  const spriteScaleY = chickenActive ? heroConfig?.chickenScaleY ?? CHICKEN_VISUAL_SCALE : heroConfig?.spriteScaleY ?? 1;
   const spriteHeight = Math.max(32, player.radius * 7.2) * spriteScaleY;
   const spriteWidth = useHeroImage ? spriteHeight * (heroImage.naturalWidth / heroImage.naturalHeight) * (spriteScaleX / Math.max(0.1, spriteScaleY)) : 0;
   ctx.save();
