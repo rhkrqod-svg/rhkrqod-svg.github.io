@@ -156,8 +156,9 @@ button {
   font-size: 8px;
   font-style: normal;
   font-weight: 1000;
-  line-height: 1;
-  white-space: nowrap;
+  line-height: 1.08;
+  white-space: normal;
+  max-width: 58px;
 }
 
 .dodge-stat.hidden {
@@ -475,6 +476,14 @@ button {
   font-size: 12px;
   font-weight: 1000;
   line-height: 1;
+}
+
+.chicken-call.tank-radio-mode::before {
+  content: "";
+  background:
+    url("/assets/items/tank-radio.png") center / 16px 16px no-repeat,
+    rgba(255, 209, 102, 0.14);
+  color: transparent;
 }
 
 .chicken-call span {
@@ -1242,6 +1251,26 @@ button {
   color: #fff3b0;
   font-size: 9px;
   font-weight: 900;
+  text-align: center;
+}
+
+.hero-specials {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.hero-specials span {
+  min-width: 0;
+  padding: 3px 4px;
+  border-radius: 5px;
+  border: 1px solid rgba(128, 255, 219, 0.24);
+  background: rgba(51, 154, 140, 0.14);
+  color: #80ffdb;
+  font-size: 8.4px;
+  font-weight: 1000;
+  line-height: 1;
   text-align: center;
 }
 

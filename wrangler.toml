@@ -1,0 +1,9 @@
+name = "subway-villain-leaderboard"
+main = "workers/leaderboard.js"
+compatibility_date = "2026-06-29"
+
+workers_dev = true
+
+[[kv_namespaces]]
+binding = "LEADERBOARD"
+id = "64bcf467f399443f901db08cd4874092"

@@ -180,6 +180,29 @@ const heroTypes = [
     color: "#2f78c4",
     accent: "#9fd3ff",
   },
+  {
+    id: "changwoo",
+    name: "창우",
+    image: "/assets/heroes/changwoo-cutout.png",
+    cardImage: "/assets/heroes/changwoo-card.png",
+    chickenImage: "/assets/heroes/changwoo-tank-radio-form.png",
+    quote: "전장을 뚫고 온 지하철 특수요원.",
+    hp: 150,
+    maxHp: 150,
+    atk: 65,
+    def: 140,
+    spd: 100,
+    healMultiplier: 1.5,
+    meleeDamageMultiplier: 1.5,
+    bulletDamageMultiplier: 1.5,
+    specialLabels: ["빠른체력회복", "근접무기강화"],
+    spriteScaleX: 1.08,
+    spriteScaleY: 1.08,
+    chickenScaleX: 3.2,
+    chickenScaleY: 3.2,
+    color: "#2e332b",
+    accent: "#b7ef64",
+  },
 ];
 
 const heroImages = new Map();
@@ -193,6 +216,14 @@ for (const hero of heroTypes) {
     chickenImage.src = hero.chickenImage;
     chickenHeroImages.set(hero.id, chickenImage);
   }
+}
+
+function isTankRadioHero() {
+  return player.heroId === "changwoo";
+}
+
+function getChickenItemName() {
+  return isTankRadioHero() ? "탱크무전기" : "닭가슴살";
 }
 
 const monsterTypes = [
@@ -679,7 +710,7 @@ function getTearGasRadius() {
 
 function getTearGasDamage() {
   const level = Math.max(1, weapons.tearGas.level);
-  return Math.round((9 + (level - 1) * 6) * 1.8);
+  return Math.round((9 + (level - 1) * 6) * 1.8 * (player.meleeDamageMultiplier || 1));
 }
 
 function getStrapOrbitRadius() {
@@ -769,6 +800,10 @@ const player = {
   magnet: START_MAGNET_RANGE,
   damageReduction: 0,
   dodgeChance: 0,
+  specialLabels: [],
+  healMultiplier: 1,
+  meleeDamageMultiplier: 1,
+  bulletDamageMultiplier: 1,
   defenseBreakTimer: 0,
   defenseBreakPower: 0,
   stunTimer: 0,
@@ -1208,6 +1243,10 @@ function resetGame() {
     magnet: START_MAGNET_RANGE,
     damageReduction: 0,
     dodgeChance: 0,
+    specialLabels: [],
+    healMultiplier: 1,
+    meleeDamageMultiplier: 1,
+    bulletDamageMultiplier: 1,
     defenseBreakTimer: 0,
     defenseBreakPower: 0,
     stunTimer: 0,
@@ -1271,6 +1310,11 @@ function renderHeroChoices() {
         <span>DEF ${hero.def}</span>
         <span>SPD ${hero.spd}</span>
       </div>
+      ${
+        hero.specialLabels?.length
+          ? `<div class="hero-specials">${hero.specialLabels.map((label) => `<span>${label}</span>`).join("")}</div>`
+          : ""
+      }
     `;
     button.addEventListener("click", () => selectHero(hero.id));
     refs.heroChoices.append(button);
@@ -1292,6 +1336,10 @@ function selectHero(heroId) {
   player.speed = 205 * (hero.spd / 100);
   player.damageReduction = 0;
   player.dodgeChance = hero.dodgeChance ?? 0;
+  player.specialLabels = hero.specialLabels ? [...hero.specialLabels] : [];
+  player.healMultiplier = hero.healMultiplier ?? 1;
+  player.meleeDamageMultiplier = hero.meleeDamageMultiplier ?? 1;
+  player.bulletDamageMultiplier = hero.bulletDamageMultiplier ?? 1;
   snapCameraToPlayer();
   refs.heroPanel.classList.add("hidden");
   game.pendingHeroChoice = false;
@@ -1784,7 +1832,7 @@ function fireBullets() {
       y: player.y + Math.sin(baseAngle + offset) * 24,
       vx: Math.cos(baseAngle + offset) * player.bulletSpeed,
       vy: Math.sin(baseAngle + offset) * player.bulletSpeed,
-      damage: player.damage,
+      damage: player.damage * (player.bulletDamageMultiplier || 1),
       radius: 10,
       life: 30,
       hitEnemies: new Set(),
@@ -2743,7 +2791,7 @@ function calculateIncomingDamage(amount) {
 
 function getRegenHealAmount() {
   const regenRatio = BASE_REGEN_RATIO * (1 + player.regenLevel);
-  return Math.max(1, Math.round(player.maxHp * regenRatio));
+  return Math.max(1, Math.round(player.maxHp * regenRatio * (player.healMultiplier || 1)));
 }
 
 function increaseLevelStats() {
@@ -2935,7 +2983,7 @@ function updateBlade(delta = 0) {
     const strapCount = Math.min(7, weapons.strapOrbit.level + 2);
     const strapRadius = getStrapOrbitRadius();
     const strapHandleRadius = getStrapHandleRadius();
-    const strapDamage = Math.round((14 + (weapons.strapOrbit.level - 1) * 8) * 1.5);
+    const strapDamage = Math.round((14 + (weapons.strapOrbit.level - 1) * 8) * 1.5 * (player.meleeDamageMultiplier || 1));
     for (let i = 0; i < strapCount; i += 1) {
       const strapAngle = weapons.strapOrbit.angle + (TAU * i) / strapCount;
       const strap = {
@@ -3052,7 +3100,7 @@ function grantTaserGun(count = 1, x = player.x, y = player.y) {
 
 function grantChickenBreast(count = 1, x = player.x, y = player.y) {
   player.chickenBreasts += count;
-  addPopup(`닭가슴살 +${count}`, x, y - 84, "#ffd166", 0.9, 16);
+  addPopup(`${getChickenItemName()} +${count}`, x, y - 84, "#ffd166", 0.9, 16);
   playSound("levelUp");
   updateHud();
 }
@@ -3452,7 +3500,7 @@ function updateEnergyPickups(delta) {
         addParticles(pickup.x, pickup.y, "#fff3b0", 20);
       } else if (pickup.kind === "chicken") {
         grantChickenBreast(1, pickup.x, pickup.y);
-        addPopup("닭가슴살", pickup.x, pickup.y - 18, "#ffd166", 0.8, 14);
+        addPopup(getChickenItemName(), pickup.x, pickup.y - 18, "#ffd166", 0.8, 14);
         addParticles(pickup.x, pickup.y, "#ffd166", 22);
       } else if (pickup.kind === "stim") {
         grantStimPack(1, pickup.x, pickup.y);
@@ -3495,11 +3543,12 @@ function useFirstAidKit() {
 
 function useChickenBreast() {
   if (game.state !== "playing" || game.paused || game.pendingHeroChoice || player.chickenBreasts <= 0) return;
+  const itemName = getChickenItemName();
   player.chickenBreasts -= 1;
   player.chickenTimer = CHICKEN_BUFF_DURATION;
   player.invuln = Math.max(player.invuln, 0.35);
-  announceSkill("닭가슴살", { color: "#ffd166", minGap: 500, source: "item" });
-  addPopup("닭가슴살!", player.x, player.y - 78, "#ffd166", 0.9, 20);
+  announceSkill(itemName, { color: "#ffd166", minGap: 500, source: "item" });
+  addPopup(`${itemName}!`, player.x, player.y - 78, "#ffd166", 0.9, 20);
   addParticles(player.x, player.y, "#ffd166", 34);
   addParticles(player.x, player.y, "#b7ef64", 24);
   playSound("levelUp");
@@ -4111,8 +4160,10 @@ function updateHud() {
   if (refs.speedStat) refs.speedStat.textContent = Math.round((player.speed / 205) * 100);
   if (refs.dodgeStat) {
     const dodgePercent = Math.round((player.dodgeChance ?? 0) * 100);
-    refs.dodgeStat.textContent = `회피 ${dodgePercent}%`;
-    refs.dodgeStat.classList.toggle("hidden", dodgePercent <= 0);
+    const labels = [...(player.specialLabels || [])];
+    if (dodgePercent > 0) labels.unshift(`회피 ${dodgePercent}%`);
+    refs.dodgeStat.textContent = labels.join(" / ");
+    refs.dodgeStat.classList.toggle("hidden", labels.length <= 0);
   }
   refs.xpFill.style.transform = `scaleX(${clamp(player.xp / player.nextXp, 0, 1)})`;
   refs.bestScore.textContent = formatScore(bestScore);
@@ -4133,6 +4184,10 @@ function updateHud() {
   }
   if (refs.chickenCount) refs.chickenCount.textContent = player.chickenBreasts;
   if (refs.chickenButton) {
+    refs.chickenButton.classList.toggle("tank-radio-mode", isTankRadioHero());
+    const chickenLabel = refs.chickenButton.querySelector("span");
+    if (chickenLabel) chickenLabel.textContent = getChickenItemName();
+    refs.chickenButton.setAttribute("aria-label", `${getChickenItemName()} 사용`);
     refs.chickenButton.classList.toggle("item-hidden", player.chickenBreasts <= 0);
     refs.chickenButton.disabled = player.chickenBreasts <= 0 || game.state !== "playing" || game.paused || player.chickenTimer > 0;
   }
@@ -4162,7 +4217,7 @@ function updateHud() {
     player.damageReduction > 0 ? { label: `내성 ${Math.round(player.damageReduction * 100)}%`, type: "passive", power: chipPower(Math.round(player.damageReduction / 0.15)), desc: "받는 피해가 감소합니다." } : null,
     player.dodgeChance > 0 ? { label: `회피 ${Math.round(player.dodgeChance * 100)}%`, type: "passive", power: chipPower(2), desc: "공격받을 때 일정 확률로 피해를 완전히 회피합니다." } : null,
     player.regenLevel > 0 ? { label: `회복 Lv.${player.regenLevel}`, type: "passive", power: chipPower(player.regenLevel), desc: `일정 시간마다 최대 체력의 ${Number(((1 + player.regenLevel) * 1.5).toFixed(1))}%를 회복합니다.` } : null,
-    player.chickenTimer > 0 ? { label: `닭가슴살 ${Math.ceil(player.chickenTimer)}초`, type: "status", desc: "몸집이 커지고 접촉한 적에게 몸통박치기 피해와 넉백을 줍니다." } : null,
+    player.chickenTimer > 0 ? { label: `${getChickenItemName()} ${Math.ceil(player.chickenTimer)}초`, type: "status", desc: "몸집이 커지고 접촉한 적에게 몸통박치기 피해와 넉백을 줍니다." } : null,
     player.stimTimer > 0 ? { label: `스팀팩 ${Math.ceil(player.stimTimer)}초`, type: "status", desc: "일부 무기 쿨타임이 1/3로 줄지만 매초 최대 체력 3%를 잃습니다." } : null,
   ].filter(Boolean);
   renderLoadoutItems(loadoutItems);
@@ -4912,10 +4967,25 @@ function roundedRect(x, y, w, h, r) {
 function drawProjectiles() {
   for (const bullet of bullets) {
     const p = worldToScreen(bullet.x, bullet.y);
-    ctx.fillStyle = bullet.color;
+    const angle = Math.atan2(bullet.vy, bullet.vx);
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(angle);
+    ctx.shadowColor = "#fff3b0";
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = "#f7d36f";
+    ctx.strokeStyle = "#fff8d6";
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(p.x, p.y, bullet.radius, 0, TAU);
+    ctx.moveTo(bullet.radius * 1.8, 0);
+    ctx.lineTo(bullet.radius * 0.82, bullet.radius * 0.72);
+    ctx.lineTo(-bullet.radius * 1.35, bullet.radius * 0.54);
+    ctx.quadraticCurveTo(-bullet.radius * 1.8, 0, -bullet.radius * 1.35, -bullet.radius * 0.54);
+    ctx.lineTo(bullet.radius * 0.82, -bullet.radius * 0.72);
+    ctx.closePath();
     ctx.fill();
+    ctx.stroke();
+    ctx.restore();
   }
   for (const card of cards) {
     for (const point of card.trail) {
@@ -5435,6 +5505,37 @@ function drawEnergyPickups() {
       continue;
     }
     if (pickup.kind === "chicken") {
+      if (isTankRadioHero()) {
+        ctx.shadowColor = "#ffd166";
+        ctx.shadowBlur = 20;
+        ctx.fillStyle = "#2a312b";
+        ctx.strokeStyle = "#ffd166";
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        roundedRect(-size * 0.48, -size * 0.48, size * 0.86, size * 1.05, size * 0.16);
+        ctx.fill();
+        ctx.stroke();
+        ctx.strokeStyle = "#fff3b0";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(size * 0.18, -size * 0.58);
+        ctx.lineTo(size * 0.52, -size * 0.92);
+        ctx.stroke();
+        ctx.fillStyle = "#9ad7a8";
+        ctx.strokeStyle = "rgba(255,255,255,0.75)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        roundedRect(-size * 0.28, -size * 0.3, size * 0.5, size * 0.24, size * 0.06);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = "#101512";
+        for (let i = 0; i < 3; i += 1) {
+          ctx.fillRect(-size * 0.25, size * (0.02 + i * 0.16), size * 0.5, size * 0.045);
+        }
+        ctx.shadowBlur = 0;
+        ctx.restore();
+        continue;
+      }
       ctx.shadowColor = "#ffd166";
       ctx.shadowBlur = 20;
       ctx.fillStyle = "#fff7d6";
