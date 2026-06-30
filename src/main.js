@@ -187,7 +187,7 @@ const heroTypes = [
     image: "/assets/heroes/changwoo-cutout.png",
     cardImage: "/assets/heroes/changwoo-card.png",
     chickenImage: "/assets/heroes/changwoo-tank-radio-form.png",
-    quote: "전장을 뚫고 온 지하철 특수요원.",
+    quote: "강한 육군, 약한 빌런",
     hp: 150,
     maxHp: 150,
     atk: 65,
