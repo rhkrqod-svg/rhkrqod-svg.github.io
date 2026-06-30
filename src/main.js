@@ -2270,7 +2270,8 @@ function updatePlayer(delta) {
     player.fireCooldown = getBasicBulletFireRate();
   }
 
-  weapons.strapOrbit.angle += delta * (5.3 + weapons.strapOrbit.level * 0.32);
+  const strapSpeedMultiplier = player.heroId === "changwoo" ? 0.6 : 1;
+  weapons.strapOrbit.angle += delta * (5.3 + weapons.strapOrbit.level * 0.32) * strapSpeedMultiplier;
   weapons.lightning.cooldown -= cooldownDelta;
   if (weapons.lightning.cooldown <= 0) {
     strikeLightning();
