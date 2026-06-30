@@ -3288,7 +3288,7 @@ function killEnemy(enemy) {
   player.score += earnedScore;
   dropXp(enemy.x, enemy.y, enemy.xp);
   if (enemy.boss) {
-    addPopup("보스퇴치 완료", player.x, player.y - 132, "#ffe066", 1.75, 42);
+    addPopup("보스퇴치 완료", player.x, player.y - 148, "#ffe066", 2.65, 56);
     playSound("bossKill");
     dropBossRewardItems(enemy);
     nextBossAt = player.elapsed + Math.max(34, 46 - Math.min(12, bossIndex * 2));
