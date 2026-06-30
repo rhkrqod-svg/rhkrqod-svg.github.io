@@ -200,7 +200,7 @@ const heroTypes = [
     healMultiplier: 1.5,
     meleeDamageMultiplier: 1.95,
     bulletDamageMultiplier: 2.34,
-    bulletFireRateMultiplier: 1.5,
+    bulletFireRateMultiplier: 1.2,
     specialLabels: [],
     spriteScaleX: 1.08,
     spriteScaleY: 1.08,
