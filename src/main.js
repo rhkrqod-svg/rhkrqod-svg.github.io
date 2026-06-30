@@ -81,7 +81,7 @@ const DPR_LIMIT = 2;
 const START_HP = 100;
 const MAX_PLAYER_HP = 200;
 const MAX_PLAYER_HP_LIMIT = 300;
-const START_MAGNET_RANGE = 185;
+const START_MAGNET_RANGE = 241;
 const CHARACTER_SIZE_SCALE = 0.5;
 const MONSTER_SIZE_SCALE = 0.42;
 const BOSS_SIZE_SCALE = 0.45;
@@ -194,7 +194,7 @@ const heroTypes = [
     def: 140,
     spd: 100,
     healMultiplier: 1.5,
-    meleeDamageMultiplier: 1.5,
+    meleeDamageMultiplier: 1.95,
     bulletDamageMultiplier: 2.34,
     bulletFireRateMultiplier: 1.5,
     specialLabels: ["근접무기강화"],
@@ -748,7 +748,7 @@ function getUpgradeDisplay(choice) {
 
 function getTearGasRadius() {
   const level = Math.max(1, weapons.tearGas.level);
-  return (58 + level * 8) * 1.3 * 1.7 * 1.5 * (1 + (level - 1) * 0.12);
+  return (58 + level * 8) * 1.3 * 1.7 * 1.5 * (1 + (level - 1) * 0.09);
 }
 
 function getTearGasDamage() {
@@ -3197,6 +3197,7 @@ function dropBossRewardItems(enemy) {
     [rewardKinds[i], rewardKinds[j]] = [rewardKinds[j], rewardKinds[i]];
   }
   const selectedRewards = rewardKinds.filter(() => Math.random() < 0.35).slice(0, 2);
+  if (selectedRewards.length === 0) selectedRewards.push(rewardKinds[0]);
   for (let i = 0; i < selectedRewards.length; i += 1) {
     dropBossRewardPickup(enemy, selectedRewards[i], i, selectedRewards.length);
   }
