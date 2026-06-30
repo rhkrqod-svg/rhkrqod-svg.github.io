@@ -252,6 +252,10 @@ function getChickenItemName() {
   return isTankRadioHero() ? "탱크무전기" : "닭가슴살";
 }
 
+function getPoliceItemName() {
+  return isComradeHero() ? "전우조" : "지하철 경찰대";
+}
+
 const monsterTypes = [
   {
     id: "spread-seat-guy",
@@ -3159,7 +3163,7 @@ function grantFirstAidKit(count = 1, x = player.x, y = player.y) {
 
 function grantPoliceCall(count = 1, x = player.x, y = player.y) {
   player.policeCalls += count;
-  addPopup(`지하철 경찰대 +${count}`, x, y - 48, "#b8dcff", 0.9, 16);
+  addPopup(`${getPoliceItemName()} +${count}`, x, y - 48, "#b8dcff", 0.9, 16);
   playSound("levelUp");
   updateHud();
 }
@@ -3224,6 +3228,11 @@ function getPoliceCallAngle() {
 function usePoliceCall() {
   if (game.state !== "playing" || game.paused || game.pendingHeroChoice || player.policeCalls <= 0) return;
   player.policeCalls -= 1;
+  if (isComradeHero()) {
+    useComradeDropCall();
+    updateHud();
+    return;
+  }
   announceSkill("지하철 경찰대", { color: "#b8dcff", minGap: 500, source: "item" });
   const officers = [];
   const officerCount = 60;
@@ -3254,6 +3263,43 @@ function usePoliceCall() {
   addParticles(player.x, player.y, "#77beff", 26);
   playSound("police");
   updateHud();
+}
+
+function useComradeDropCall() {
+  announceSkill("전우조", { color: "#b7ef64", minGap: 500, source: "item" });
+  const comrades = [];
+  const count = 50;
+  for (let i = 0; i < count; i += 1) {
+    const angle = (TAU * i) / count + rand(-0.06, 0.06);
+    const ring = i % 3;
+    const standRadius = 112 + ring * 42 + rand(-10, 14);
+    const startRadius = standRadius + rand(180, 270);
+    comrades.push({
+      angle,
+      x: player.x + Math.cos(angle) * startRadius,
+      y: player.y + Math.sin(angle) * startRadius,
+      standRadius,
+      dropHeight: rand(180, 320),
+      dropDelay: (i % 10) * 0.045 + Math.floor(i / 10) * 0.035,
+      attackCooldown: rand(0.06, 0.38),
+      bob: Math.random() * TAU,
+      facing: angle + Math.PI,
+      landed: false,
+    });
+  }
+  policeSquads.push({
+    kind: "comradeDrop",
+    x: player.x,
+    y: player.y,
+    comrades,
+    life: 8.9,
+    maxLife: 8.9,
+    activeLife: 8,
+    radius: 20,
+  });
+  addPopup("전우조 강하!", player.x, player.y - 76, "#b7ef64", 0.95, 20);
+  addParticles(player.x, player.y, "#b7ef64", 30);
+  playSound("police");
 }
 
 function findNearestBoss(maxDistance = Infinity) {
@@ -3325,6 +3371,10 @@ function officerHitsHostileZone(officer, zone, radius) {
 
 function updatePoliceSquads(delta) {
   for (const squad of [...policeSquads]) {
+    if (squad.kind === "comradeDrop") {
+      updateComradeDropSquad(squad, delta);
+      continue;
+    }
     squad.life -= delta;
     squad.distance += squad.speed * delta;
     for (const [enemy, cooldown] of [...squad.hitTimers.entries()]) {
@@ -3460,6 +3510,56 @@ function updateStationPolicePets(delta) {
     target.y = clamp(target.y + Math.sin(pet.facing) * pushAmount, 35, WORLD_SIZE - 35);
     addParticles(target.x, target.y, "#b8dcff", target.boss ? 8 : 5);
     if (Math.random() < 0.42) playSound("police");
+  }
+}
+
+function updateComradeDropSquad(squad, delta) {
+  squad.life -= delta;
+  const elapsed = squad.maxLife - squad.life;
+  const activeElapsed = Math.max(0, elapsed - 0.9);
+  squad.x = player.x;
+  squad.y = player.y;
+  for (const comrade of squad.comrades) {
+    const dropProgress = clamp((elapsed - comrade.dropDelay) / 0.9, 0, 1);
+    comrade.dropHeight = Math.max(0, comrade.dropHeight * (1 - delta * 3.2));
+    const orbitPulse = Math.sin(player.elapsed * 1.2 + comrade.bob) * 7;
+    const targetX = player.x + Math.cos(comrade.angle) * (comrade.standRadius + orbitPulse);
+    const targetY = player.y + Math.sin(comrade.angle) * (comrade.standRadius + orbitPulse);
+    if (dropProgress < 1) {
+      const startX = player.x + Math.cos(comrade.angle) * (comrade.standRadius + 210);
+      const startY = player.y + Math.sin(comrade.angle) * (comrade.standRadius + 210);
+      const ease = dropProgress * dropProgress * (3 - 2 * dropProgress);
+      comrade.x = startX + (targetX - startX) * ease;
+      comrade.y = startY + (targetY - startY) * ease;
+      comrade.landed = false;
+      continue;
+    }
+
+    comrade.landed = true;
+    const dx = targetX - comrade.x;
+    const dy = targetY - comrade.y;
+    const distance = Math.hypot(dx, dy) || 1;
+    const step = Math.min(distance, 220 * delta);
+    comrade.x = clamp(comrade.x + (dx / distance) * step, 25, WORLD_SIZE - 25);
+    comrade.y = clamp(comrade.y + (dy / distance) * step, 25, WORLD_SIZE - 25);
+
+    const target = findPriorityEnemyFrom(comrade, 760);
+    if (target) comrade.facing = angleTo(comrade, target);
+    else comrade.facing = comrade.angle + Math.PI;
+    if (!target || activeElapsed > squad.activeLife) continue;
+    comrade.attackCooldown -= delta;
+    if (comrade.attackCooldown > 0) continue;
+    fireBulletVolley(comrade, target, 1, {
+      damage: player.damage * (player.bulletDamageMultiplier || 1),
+      speed: player.bulletSpeed,
+      radius: 8,
+      color: "#ffd166",
+      style: "military",
+    });
+    comrade.attackCooldown = getBasicBulletFireRate();
+  }
+  if (squad.life <= 0) {
+    policeSquads.splice(policeSquads.indexOf(squad), 1);
   }
 }
 
@@ -4360,6 +4460,9 @@ function updateHud() {
   }
   if (refs.policeCount) refs.policeCount.textContent = player.policeCalls;
   if (refs.policeButton) {
+    const policeLabel = refs.policeButton.querySelector("span");
+    if (policeLabel) policeLabel.textContent = getPoliceItemName();
+    refs.policeButton.setAttribute("aria-label", `${getPoliceItemName()} 사용`);
     refs.policeButton.classList.toggle("item-hidden", player.policeCalls <= 0);
     refs.policeButton.disabled = player.policeCalls <= 0 || game.state !== "playing" || game.paused;
   }
@@ -5572,6 +5675,10 @@ function drawProjectiles() {
 
 function drawPoliceSquads() {
   for (const squad of policeSquads) {
+    if (squad.kind === "comradeDrop") {
+      drawComradeDropSquad(squad);
+      continue;
+    }
     const fade = clamp(squad.life / 0.7, 0, 1);
     const progress = 1 - squad.life / squad.maxLife;
     for (const officerInfo of squad.officers) {
@@ -5638,6 +5745,114 @@ function drawPoliceSquads() {
       ctx.fillText("POL", 0, -3);
       ctx.restore();
     }
+  }
+}
+
+function drawComradeDropSquad(squad) {
+  const fade = clamp(squad.life / 0.7, 0, 1);
+  const elapsed = squad.maxLife - squad.life;
+  const sorted = [...squad.comrades].sort((a, b) => a.y - b.y);
+  for (const comrade of sorted) {
+    const p = worldToScreen(comrade.x, comrade.y);
+    const dropProgress = clamp((elapsed - comrade.dropDelay) / 0.9, 0, 1);
+    const parachuteY = -46 - (1 - dropProgress) * 18;
+    const step = Math.sin(comrade.bob + player.elapsed * 9);
+    const recoil = clamp(comrade.attackCooldown < 0.08 ? 1 - comrade.attackCooldown / 0.08 : 0, 0, 1);
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(comrade.facing);
+    ctx.globalAlpha = fade;
+    ctx.scale(0.78, 0.78);
+
+    if (dropProgress < 1 || !comrade.landed) {
+      ctx.save();
+      ctx.rotate(-comrade.facing);
+      ctx.shadowColor = "#b7ef64";
+      ctx.shadowBlur = 9;
+      ctx.fillStyle = "rgba(183, 239, 100, 0.82)";
+      ctx.strokeStyle = "#f8f9fa";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, parachuteY, 22, Math.PI, TAU);
+      ctx.lineTo(22, parachuteY);
+      ctx.quadraticCurveTo(0, parachuteY + 10, -22, parachuteY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = "rgba(248, 249, 250, 0.78)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(-16, parachuteY + 4);
+      ctx.lineTo(-6, -27);
+      ctx.moveTo(16, parachuteY + 4);
+      ctx.lineTo(6, -27);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    ctx.shadowColor = "#b7ef64";
+    ctx.shadowBlur = 8;
+    ctx.fillStyle = "rgba(183, 239, 100, 0.14)";
+    ctx.beginPath();
+    ctx.ellipse(0, 13, 21, 10, 0, 0, TAU);
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#435240";
+    roundedRect(-10, -14, 20, 29, 6);
+    ctx.fill();
+    ctx.strokeStyle = "#b7ef64";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = "#d2a982";
+    ctx.beginPath();
+    ctx.arc(0, -25, 8, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = "#4b5737";
+    roundedRect(-10, -35, 20, 9, 4);
+    ctx.fill();
+    ctx.fillStyle = "#2f3929";
+    ctx.fillRect(-4, -39, 8, 5);
+
+    ctx.strokeStyle = "#263022";
+    ctx.lineWidth = 4;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(-7, 13);
+    ctx.lineTo(-11, 23 + step * 2);
+    ctx.moveTo(7, 13);
+    ctx.lineTo(11, 23 - step * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = "#151918";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(5, -8);
+    ctx.lineTo(27 - recoil * 5, -9);
+    ctx.stroke();
+    ctx.strokeStyle = "#b7ef64";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(18 - recoil * 5, -12);
+    ctx.lineTo(31 - recoil * 5, -12);
+    ctx.stroke();
+    if (recoil > 0.2) {
+      ctx.fillStyle = "rgba(255, 243, 176, 0.75)";
+      ctx.beginPath();
+      ctx.moveTo(33, -12);
+      ctx.lineTo(43, -16);
+      ctx.lineTo(39, -9);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    ctx.fillStyle = "#f8f9fa";
+    ctx.font = "900 7px system-ui";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("전우", 0, -3);
+    ctx.restore();
   }
 }
 
