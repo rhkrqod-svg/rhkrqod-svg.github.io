@@ -186,7 +186,7 @@ const heroTypes = [
     name: "창우",
     image: "/assets/heroes/changwoo-cutout.png",
     cardImage: "/assets/heroes/changwoo-card.png",
-    chickenImage: "/assets/heroes/changwoo-tank-radio-form.png",
+    chickenImage: "/assets/items/tank-cartoon.png",
     quote: "강한 육군, 약한 빌런",
     hp: 150,
     maxHp: 150,
