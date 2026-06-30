@@ -257,7 +257,7 @@ function getChickenItemName() {
 }
 
 function getPoliceItemName() {
-  if (isComradeHero()) return "예비군 훈련 통지서";
+  if (isComradeHero()) return "예비군 훈련";
   if (isRunnerCompanionHero()) return "마라톤 참가권";
   return "지하철 경찰대";
 }
@@ -3375,7 +3375,7 @@ function usePoliceCall() {
 }
 
 function useComradeDropCall() {
-  announceSkill("예비군 훈련 통지서", { color: "#b7ef64", minGap: 500, source: "item" });
+  announceSkill("예비군 훈련", { color: "#b7ef64", minGap: 500, source: "item" });
   const comrades = [];
   const count = 50;
   for (let i = 0; i < count; i += 1) {
