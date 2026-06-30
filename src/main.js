@@ -506,6 +506,10 @@ function canDrawGameImage(image) {
   return Boolean(image && !image.failed && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0);
 }
 
+const pacemakerRunnerImage = createGameImage("/assets/heroes/juyeon-pacemaker-runner-game.png?v=20260630");
+const reserveSoldierImage = createGameImage("/assets/heroes/changwoo-reserve-soldier-game.png?v=20260630");
+const subwayPoliceImage = createGameImage("/assets/heroes/subway-police-officer-game.png?v=20260630");
+
 const monsterImages = new Map();
 for (const monster of monsterTypes) {
   if (!monster.image) continue;
@@ -1417,6 +1421,44 @@ function selectHero(heroId) {
   game.pendingStarterChoices = 3;
   updateHud();
   openUpgradePanel();
+}
+
+function setupAllyPreview(mode = "pacemaker") {
+  resetGame();
+  const heroId = mode === "reserve" ? "changwoo" : mode === "police" ? "gae-hwanam" : "juyeon";
+  selectHero(heroId);
+  game.paused = false;
+  game.manualPaused = false;
+  game.pendingStarterChoices = 0;
+  game.pendingLevelChoices = 0;
+  refs.heroPanel.classList.add("hidden");
+  refs.upgradePanel.classList.add("hidden");
+  refs.message.classList.add("hidden");
+  player.x = WORLD_SIZE / 2;
+  player.y = WORLD_SIZE / 2;
+  player.elapsed = 160;
+  player.level = 5;
+  player.policeCalls = 1;
+  weapons.subwayPolice.level = 3;
+  snapCameraToPlayer();
+  syncStationPolicePets();
+  const previewMonsters = [
+    { type: monsterTypes[0], x: player.x - 190, y: player.y - 120 },
+    { type: monsterTypes[1], x: player.x + 210, y: player.y - 108 },
+    { type: monsterTypes[2], x: player.x - 235, y: player.y + 115 },
+    { type: monsterTypes[5], x: player.x + 245, y: player.y + 120 },
+  ];
+  for (const item of previewMonsters) {
+    const enemy = spawnEnemy(item.type, false);
+    enemy.x = item.x;
+    enemy.y = item.y;
+    enemy.spawnFlash = 0;
+    enemy.stunTimer = 0.6;
+  }
+  if (mode === "reserve") useComradeDropCall();
+  else if (mode === "police") usePoliceCall();
+  else usePacemakerMedalCall();
+  updateHud();
 }
 
 function togglePause() {
@@ -3315,7 +3357,7 @@ function dropBossRewardPickup(enemy, kind, index = 0, count = 1) {
     x: enemy.x + Math.cos(angle) * distance,
     y: enemy.y + Math.sin(angle) * distance,
     heal: 0,
-    radius: kind === "chicken" || kind === "stim" ? 14 : kind === "taser" ? 13 : kind === "radio" ? 14 : 13,
+    radius: (kind === "chicken" || kind === "stim" ? 14 : kind === "taser" ? 13 : kind === "radio" ? 14 : 13) * 1.5,
     boss: true,
     pulse: Math.random() * TAU,
     vx: Math.cos(angle) * rand(28, 78),
@@ -5969,6 +6011,20 @@ function drawPoliceSquads() {
       const step = Math.sin(officerInfo.bob + player.elapsed * 9 + squad.distance * 0.05);
       ctx.save();
       ctx.translate(p.x, p.y);
+      if (canDrawGameImage(subwayPoliceImage)) {
+        const facing = Math.cos(officer.angle) >= 0 ? 1 : -1;
+        drawAllyCutout(subwayPoliceImage, {
+          height: 96,
+          facing,
+          naturalFacing: -1,
+          alpha: fade,
+          glow: "#77beff",
+          bob: officerInfo.bob,
+          recoil: Math.abs(Math.sin(progress * Math.PI * 6)),
+        });
+        ctx.restore();
+        continue;
+      }
       ctx.rotate(officer.angle);
       ctx.scale(1.5, 1.5);
       ctx.globalAlpha = fade;
@@ -6030,104 +6086,128 @@ function drawPoliceSquads() {
   }
 }
 
+function drawPacemakerRunnerCutout({ scale = 1, facing = 1, alpha = 1, bob = 0, accent = "#9fd3ff" } = {}) {
+  const imageReady = canDrawGameImage(pacemakerRunnerImage);
+  const spriteHeight = 74 * scale;
+  const spriteWidth = imageReady ? spriteHeight * (pacemakerRunnerImage.naturalWidth / pacemakerRunnerImage.naturalHeight) : 34 * scale;
+  const step = Math.sin(bob + player.elapsed * 15);
+  ctx.save();
+  ctx.globalAlpha *= alpha;
+  ctx.scale(facing, 1);
+  ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+  ctx.beginPath();
+  ctx.ellipse(0, spriteHeight * 0.33, spriteWidth * 0.34, 4.5 * scale, 0, 0, TAU);
+  ctx.fill();
+
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.strokeStyle = "rgba(159, 211, 255, 0.42)";
+  ctx.lineWidth = 3 * scale;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(-spriteWidth * 0.88, spriteHeight * 0.18);
+  ctx.lineTo(-spriteWidth * 0.26, spriteHeight * 0.1 + step * 2);
+  ctx.moveTo(-spriteWidth * 0.74, -spriteHeight * 0.03);
+  ctx.lineTo(-spriteWidth * 0.18, -spriteHeight * 0.08);
+  ctx.stroke();
+  ctx.restore();
+
+  if (imageReady) {
+    ctx.shadowColor = accent;
+    ctx.shadowBlur = 10 * scale;
+    ctx.drawImage(pacemakerRunnerImage, -spriteWidth / 2, -spriteHeight * 0.62, spriteWidth, spriteHeight);
+    ctx.shadowBlur = 0;
+  } else {
+    ctx.fillStyle = "#d5aa82";
+    ctx.beginPath();
+    ctx.arc(0, -24 * scale, 8 * scale, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = "#d8ff21";
+    roundedRect(-9 * scale, -15 * scale, 18 * scale, 28 * scale, 6 * scale);
+    ctx.fill();
+    ctx.strokeStyle = "#151515";
+    ctx.lineWidth = 4 * scale;
+    ctx.beginPath();
+    ctx.moveTo(-6 * scale, 13 * scale);
+    ctx.lineTo(-15 * scale, (25 - step * 4) * scale);
+    ctx.moveTo(6 * scale, 13 * scale);
+    ctx.lineTo(17 * scale, (24 + step * 4) * scale);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawAllyCutout(image, { height = 68, facing = 1, naturalFacing = 1, alpha = 1, glow = "#b8dcff", bob = 0, recoil = 0, label = "" } = {}) {
+  const imageReady = canDrawGameImage(image);
+  const spriteHeight = height;
+  const spriteWidth = imageReady ? spriteHeight * (image.naturalWidth / image.naturalHeight) : spriteHeight * 0.46;
+  const step = Math.sin(bob + player.elapsed * 10);
+  const directionScale = facing * naturalFacing;
+  ctx.save();
+  ctx.globalAlpha *= alpha;
+  ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+  ctx.beginPath();
+  ctx.ellipse(0, spriteHeight * 0.34, spriteWidth * 0.34, 4.4, 0, 0, TAU);
+  ctx.fill();
+  ctx.scale(directionScale, 1);
+  if (imageReady) {
+    ctx.shadowColor = glow;
+    ctx.shadowBlur = 10;
+    ctx.drawImage(image, -spriteWidth / 2, -spriteHeight * 0.64 + step * 0.4, spriteWidth, spriteHeight);
+    ctx.shadowBlur = 0;
+  } else {
+    ctx.fillStyle = glow;
+    roundedRect(-10, -18, 20, 34, 6);
+    ctx.fill();
+  }
+  if (recoil > 0.18) {
+    ctx.globalCompositeOperation = "lighter";
+    ctx.fillStyle = "rgba(255, 243, 176, 0.82)";
+    ctx.beginPath();
+    ctx.moveTo(spriteWidth * 0.5, -spriteHeight * 0.24);
+    ctx.lineTo(spriteWidth * 0.68, -spriteHeight * 0.31);
+    ctx.lineTo(spriteWidth * 0.62, -spriteHeight * 0.19);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalCompositeOperation = "source-over";
+  }
+  if (label) {
+    ctx.scale(directionScale, 1);
+    ctx.fillStyle = "#f8f9fa";
+    ctx.font = "900 7px system-ui";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(label, 0, -3);
+  }
+  ctx.restore();
+}
+
 function drawPacemakerMedalSquad(squad) {
   const sortedRunners = [...squad.runners].sort((a, b) => a.y - b.y);
   for (const runnerInfo of sortedRunners) {
     const runner = getPacemakerRunnerPosition(squad, runnerInfo);
     if (runner.rawProgress < -0.05 || runner.rawProgress > 1.05) continue;
     const p = worldToScreen(runner.x, runner.y);
-    const step = Math.sin(runnerInfo.bob + player.elapsed * 15);
     const fadeIn = clamp((runner.rawProgress + 0.05) / 0.12, 0, 1);
     const fadeOut = clamp((1.05 - runner.rawProgress) / 0.12, 0, 1);
     const alpha = Math.min(fadeIn, fadeOut);
     ctx.save();
     ctx.translate(p.x, p.y);
-    ctx.rotate(runner.angle);
-    ctx.scale(1.18 * runnerInfo.scale, 1.18 * runnerInfo.scale);
-    ctx.globalAlpha = alpha;
-
-    ctx.strokeStyle = "rgba(127, 200, 255, 0.52)";
-    ctx.lineWidth = 3;
-    ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.moveTo(-42, 10);
-    ctx.lineTo(-16, 7 + step * 2);
-    ctx.moveTo(-34, -5);
-    ctx.lineTo(-10, -6);
-    ctx.stroke();
-
-    ctx.shadowColor = "#7fc8ff";
-    ctx.shadowBlur = 10;
-    ctx.fillStyle = "rgba(127, 200, 255, 0.15)";
-    ctx.beginPath();
-    ctx.ellipse(0, 14, 23, 10, 0, 0, TAU);
-    ctx.fill();
-
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = "#f8f9fa";
-    roundedRect(-9, -16, 18, 29, 6);
-    ctx.fill();
-    ctx.strokeStyle = "#1f78d1";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    ctx.fillStyle = "#2e8de6";
-    roundedRect(-7, -12, 14, 12, 4);
-    ctx.fill();
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(-2, -13, 4, 25);
-
-    ctx.fillStyle = "#d5aa82";
-    ctx.beginPath();
-    ctx.arc(0, -26, 8, 0, TAU);
-    ctx.fill();
-    ctx.fillStyle = "#ffffff";
-    roundedRect(-10, -35, 20, 7, 4);
-    ctx.fill();
-    ctx.strokeStyle = "#2e8de6";
-    ctx.lineWidth = 1.4;
-    ctx.beginPath();
-    ctx.moveTo(-9, -31);
-    ctx.lineTo(-17, -30);
-    ctx.stroke();
-
-    ctx.strokeStyle = "#d5aa82";
-    ctx.lineWidth = 4;
-    ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.moveTo(-8, -7);
-    ctx.lineTo(-18, 4 + step * 3);
-    ctx.moveTo(8, -7);
-    ctx.lineTo(20, -10 - step * 2);
-    ctx.stroke();
-
-    ctx.strokeStyle = "#172033";
-    ctx.lineWidth = 5;
-    ctx.beginPath();
-    ctx.moveTo(-6, 13);
-    ctx.lineTo(-15, 25 - step * 4);
-    ctx.moveTo(6, 13);
-    ctx.lineTo(17, 24 + step * 4);
-    ctx.stroke();
-
-    ctx.strokeStyle = "#ffb703";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(-4, -4);
-    ctx.lineTo(0, 0);
-    ctx.lineTo(4, -4);
-    ctx.stroke();
-    ctx.fillStyle = "#ffd166";
-    ctx.beginPath();
-    ctx.arc(0, 2, 4, 0, TAU);
-    ctx.fill();
+    ctx.translate(0, Math.sin(runnerInfo.bob + player.elapsed * 10) * 2);
+    drawPacemakerRunnerCutout({
+      scale: 0.7 * runnerInfo.scale,
+      facing: squad.passIndex === 0 ? 1 : -1,
+      alpha,
+      bob: runnerInfo.bob,
+      accent: "#7fc8ff",
+    });
 
     if (runner.active) {
       ctx.globalAlpha = alpha * 0.45;
       ctx.strokeStyle = "#7fc8ff";
       ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.arc(19, 0, 18 + Math.abs(step) * 4, -0.65, 0.65);
+      ctx.arc((squad.passIndex === 0 ? 20 : -20), 0, 18 + Math.abs(Math.sin(runnerInfo.bob + player.elapsed * 15)) * 4, -0.65, 0.65);
       ctx.stroke();
     }
     ctx.restore();
@@ -6148,6 +6228,46 @@ function drawComradeDropSquad(squad) {
     ctx.translate(p.x, p.y);
     ctx.rotate(comrade.facing);
     ctx.globalAlpha = fade;
+    if (canDrawGameImage(reserveSoldierImage)) {
+      if (dropProgress < 1 || !comrade.landed) {
+        ctx.save();
+        ctx.rotate(-comrade.facing);
+        ctx.shadowColor = "#b7ef64";
+        ctx.shadowBlur = 9;
+        ctx.fillStyle = "rgba(183, 239, 100, 0.82)";
+        ctx.strokeStyle = "#f8f9fa";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, parachuteY, 22, Math.PI, TAU);
+        ctx.lineTo(22, parachuteY);
+        ctx.quadraticCurveTo(0, parachuteY + 10, -22, parachuteY);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.strokeStyle = "rgba(248, 249, 250, 0.78)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(-16, parachuteY + 4);
+        ctx.lineTo(-6, -27);
+        ctx.moveTo(16, parachuteY + 4);
+        ctx.lineTo(6, -27);
+        ctx.stroke();
+        ctx.restore();
+      }
+      ctx.rotate(-comrade.facing);
+      drawAllyCutout(reserveSoldierImage, {
+        height: 72,
+        facing: Math.cos(comrade.facing) >= 0 ? 1 : -1,
+        naturalFacing: 1,
+        alpha: 1,
+        glow: "#b7ef64",
+        bob: comrade.bob,
+        recoil,
+        label: "예비군",
+      });
+      ctx.restore();
+      continue;
+    }
     ctx.scale(0.78, 0.78);
 
     if (dropProgress < 1 || !comrade.landed) {
@@ -6259,6 +6379,29 @@ function drawStationPolicePets() {
     const batonAngle = -0.55 + Math.sin((1 - swing) * Math.PI) * 1.2;
     ctx.save();
     ctx.translate(p.x, p.y);
+    if (canDrawGameImage(subwayPoliceImage)) {
+      const facing = Math.cos(pet.facing) >= 0 ? 1 : -1;
+      const recoil = clamp(pet.swingTimer / 0.22, 0, 1);
+      drawAllyCutout(subwayPoliceImage, {
+        height: 92,
+        facing,
+        naturalFacing: -1,
+        alpha: 1,
+        glow: "#77beff",
+        bob: pet.bob,
+        recoil,
+      });
+      if (recoil > 0.18) {
+        ctx.globalAlpha = 0.52 * recoil;
+        ctx.strokeStyle = "#b8dcff";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(facing * 22, 0, 18 + recoil * 18, -0.72, 0.72);
+        ctx.stroke();
+      }
+      ctx.restore();
+      continue;
+    }
     ctx.rotate(pet.facing);
     ctx.scale(1.22, 1.22);
     ctx.shadowColor = "#77beff";
@@ -6329,6 +6472,21 @@ function drawComradePets() {
     const recoil = clamp(pet.swingTimer / 0.16, 0, 1);
     ctx.save();
     ctx.translate(p.x, p.y);
+    if (canDrawGameImage(reserveSoldierImage)) {
+      const facing = Math.cos(pet.facing) >= 0 ? 1 : -1;
+      drawAllyCutout(reserveSoldierImage, {
+        height: 76,
+        facing,
+        naturalFacing: 1,
+        alpha: 1,
+        glow: "#9fd3ff",
+        bob: pet.bob,
+        recoil,
+        label: "예비군",
+      });
+      ctx.restore();
+      continue;
+    }
     ctx.rotate(pet.facing);
     ctx.scale(1.05, 1.05);
     ctx.shadowColor = "#9fd3ff";
@@ -6408,6 +6566,29 @@ function drawRunnerCompanionPets() {
     const impact = clamp(pet.swingTimer / 0.24, 0, 1);
     ctx.save();
     ctx.translate(p.x, p.y);
+    if (isRunnerCompanionHero() && canDrawGameImage(pacemakerRunnerImage)) {
+      const facing = Math.cos(pet.facing) >= 0 ? 1 : -1;
+      ctx.translate(0, Math.sin(pet.bob + player.elapsed * 10) * 2);
+      ctx.scale(1 + impact * 0.08, 1 + impact * 0.04);
+      drawPacemakerRunnerCutout({
+        scale: 0.82,
+        facing,
+        alpha: 1,
+        bob: pet.bob,
+        accent: "#9fd3ff",
+      });
+      if (impact > 0.18) {
+        ctx.globalAlpha = 0.58 * impact;
+        ctx.strokeStyle = "#9fd3ff";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(facing * 20, 0, 18 + impact * 18, -0.72, 0.72);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+      ctx.restore();
+      continue;
+    }
     ctx.rotate(pet.facing);
     ctx.scale(1.03 + impact * 0.08, 1.03);
     ctx.shadowColor = "#9fd3ff";
@@ -8038,6 +8219,10 @@ renderCodex();
 loadLeaderboard().catch(() => {
   if (refs.rankHint) refs.rankHint.textContent = "서버 연결 대기";
 });
+const previewMode = new URLSearchParams(window.location.search).get("preview");
+if (["pacemaker", "reserve", "police"].includes(previewMode)) {
+  setupAllyPreview(previewMode);
+}
 updateHud();
 requestAnimationFrame(frame);
 
