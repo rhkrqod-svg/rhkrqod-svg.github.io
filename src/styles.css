@@ -364,6 +364,36 @@ button {
   line-height: 1;
 }
 
+.police-call.medal-mode {
+  border-color: rgba(255, 209, 102, 0.54);
+  color: #ffd166;
+}
+
+.police-call.medal-mode::before {
+  content: "";
+  position: relative;
+  z-index: 1;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 46%, #fff6bf 0 22%, #ffd166 23% 58%, #b77a12 59% 100%);
+  box-shadow: inset 0 0 0 2px rgba(83, 48, 3, 0.36), 0 0 10px rgba(255, 209, 102, 0.45);
+}
+
+.police-call.medal-mode::after {
+  content: "";
+  position: absolute;
+  left: 11px;
+  top: 5px;
+  width: 18px;
+  height: 10px;
+  border-radius: 3px 3px 8px 8px;
+  background: linear-gradient(135deg, #2e8de6 0 44%, #ffffff 45% 55%, #2e8de6 56% 100%);
+  transform: rotate(-16deg);
+  z-index: 0;
+}
+
 .police-call span {
   color: rgba(248, 249, 250, 0.76);
   font-size: 5.2px;
