@@ -124,7 +124,7 @@ const CHICKEN_COLLISION_RADIUS_MULTIPLIER = 2.25;
 const CHICKEN_HIT_COOLDOWN = 0.5;
 const CHICKEN_KNOCKBACK = 132;
 const CHICKEN_RELEASE_INVULN = 1;
-const TANK_CANNON_COOLDOWN = 2;
+const TANK_CANNON_COOLDOWN = 1.5;
 const TANK_CANNON_RADIUS = 112;
 const TANK_CANNON_BOSS_STUN = 0.5;
 const TANK_CANNON_MONSTER_STUN = 3;
@@ -2211,8 +2211,8 @@ function fireTankCannon() {
   tankShells.push({
     x: player.x + Math.cos(angle) * 44,
     y: player.y + Math.sin(angle) * 44,
-    vx: Math.cos(angle) * 620,
-    vy: Math.sin(angle) * 620,
+    vx: Math.cos(angle) * 360,
+    vy: Math.sin(angle) * 360,
     damage: getTankCannonDamage(),
     radius: 18,
     blastRadius: TANK_CANNON_RADIUS,
@@ -3109,8 +3109,8 @@ function updateProjectiles(delta) {
     if (shell.target) {
       const desired = angleTo(shell, shell.target);
       const current = Math.atan2(shell.vy, shell.vx);
-      const next = current + clamp(angleDelta(desired, current), -2.4 * delta, 2.4 * delta);
-      const speed = Math.hypot(shell.vx, shell.vy) || 620;
+      const next = current + clamp(angleDelta(desired, current), -1.65 * delta, 1.65 * delta);
+      const speed = Math.hypot(shell.vx, shell.vy) || 360;
       shell.vx = Math.cos(next) * speed;
       shell.vy = Math.sin(next) * speed;
     }
