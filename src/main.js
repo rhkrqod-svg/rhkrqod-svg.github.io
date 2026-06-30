@@ -91,6 +91,7 @@ const BOSS_SPAWN_SAFE_RADIUS = 760;
 const PLAYER_RADIUS = 19 * CHARACTER_SIZE_SCALE;
 const FIRST_AID_HEAL_RATIO = 0.5;
 const BASE_REGEN_RATIO = 0.015;
+const REGEN_UPGRADE_RATIO = 0.02;
 const ENEMY_HP_GLOBAL_MULTIPLIER = 1.6;
 const ENEMY_SPEED_GLOBAL_MULTIPLIER = 1.38;
 const ENEMY_DAMAGE_GLOBAL_MULTIPLIER = 1.3;
@@ -705,7 +706,7 @@ const upgradePool = [
   {
     id: "mentalRegen",
     name: "멘탈 회복력",
-    desc: "자동 회복량 +1.5%p",
+    desc: "자동 체력 회복량 +2%",
     apply: () => {
       player.regenLevel += 1;
       player.regenTimer = Math.min(player.regenTimer, 1.2);
@@ -2862,7 +2863,7 @@ function calculateIncomingDamage(amount) {
 }
 
 function getRegenHealAmount() {
-  const regenRatio = BASE_REGEN_RATIO * (1 + player.regenLevel);
+  const regenRatio = BASE_REGEN_RATIO + player.regenLevel * REGEN_UPGRADE_RATIO;
   return Math.max(1, Math.round(player.maxHp * regenRatio * (player.healMultiplier || 1)));
 }
 
@@ -4400,7 +4401,7 @@ function updateHud() {
     player.stunTimer > 0 ? { label: `경직 ${Math.ceil(player.stunTimer)}초`, type: "status", desc: "잠시 움직일 수 없는 상태입니다." } : null,
     player.slowTimer > 0 ? { label: `둔화 ${Math.ceil(player.slowTimer)}초`, type: "status", desc: "이동 속도가 느려진 상태입니다." } : null,
     player.damageReduction > 0 ? { label: `내성 ${Math.round(player.damageReduction * 100)}%`, type: "passive", power: chipPower(Math.round(player.damageReduction / 0.15)), desc: "받는 피해가 감소합니다." } : null,
-    player.regenLevel > 0 ? { label: `회복 Lv.${player.regenLevel}`, type: "passive", power: chipPower(player.regenLevel), desc: `일정 시간마다 최대 체력의 ${Number(((1 + player.regenLevel) * 1.5).toFixed(1))}%를 회복합니다.` } : null,
+    player.regenLevel > 0 ? { label: `회복 Lv.${player.regenLevel}`, type: "passive", power: chipPower(player.regenLevel), desc: `일정 시간마다 최대 체력의 ${Number(((BASE_REGEN_RATIO + player.regenLevel * REGEN_UPGRADE_RATIO) * 100).toFixed(1))}%를 회복합니다.` } : null,
     player.chickenTimer > 0 ? { label: `${getChickenItemName()} ${Math.ceil(player.chickenTimer)}초`, type: "status", desc: "몸집이 커지고 접촉한 적에게 몸통박치기 피해와 넉백을 줍니다." } : null,
     player.stimTimer > 0 ? { label: `스팀팩 ${Math.ceil(player.stimTimer)}초`, type: "status", desc: "일부 무기 쿨타임이 1/3로 줄지만 매초 최대 체력 3%를 잃습니다." } : null,
   ].filter(Boolean);
