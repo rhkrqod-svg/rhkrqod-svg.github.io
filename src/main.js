@@ -258,7 +258,7 @@ function getChickenItemName() {
 
 function getPoliceItemName() {
   if (isComradeHero()) return "전우조";
-  if (isRunnerCompanionHero()) return "완주메달";
+  if (isRunnerCompanionHero()) return "마라톤 참가권";
   return "지하철 경찰대";
 }
 
@@ -3412,7 +3412,7 @@ function useComradeDropCall() {
 }
 
 function usePacemakerMedalCall() {
-  announceSkill("완주메달", { color: "#7fc8ff", minGap: 500, source: "item" });
+  announceSkill("마라톤 참가권", { color: "#7fc8ff", minGap: 500, source: "item" });
   const runners = [];
   const count = 60;
   const leftX = camera.x - 120;
@@ -3450,7 +3450,7 @@ function usePacemakerMedalCall() {
     hitCounts: [new Map(), new Map()],
     finished: false,
   });
-  addPopup("완주메달!", player.x, player.y - 76, "#7fc8ff", 0.95, 20);
+  addPopup("마라톤 참가권!", player.x, player.y - 76, "#7fc8ff", 0.95, 20);
   addParticles(player.x, player.y, "#7fc8ff", 30);
   playSound("police");
 }
