@@ -2214,7 +2214,7 @@ function fireTankCannon() {
     vx: Math.cos(angle) * 360,
     vy: Math.sin(angle) * 360,
     damage: getTankCannonDamage(),
-    radius: 18,
+    radius: 36,
     blastRadius: TANK_CANNON_RADIUS,
     life: 2.8,
     target,
@@ -3127,16 +3127,16 @@ function updateProjectiles(delta) {
     }
     if (!exploded) continue;
 
-    addParticles(shell.x, shell.y, "#ffd166", 38);
-    addParticles(shell.x, shell.y, "#ff6b35", 24);
+    addParticles(shell.x, shell.y, "#ff2d2d", 44);
+    addParticles(shell.x, shell.y, "#ff7a1a", 30);
     damageZones.push({
       x: shell.x,
       y: shell.y,
       radius: shell.blastRadius,
       damage: 0,
-      life: 0.36,
-      maxLife: 0.36,
-      color: "#ffd166",
+      life: 1.5,
+      maxLife: 1.5,
+      color: "#ff2d2d",
       hits: new Set(),
       kind: "tankBlast",
     });
@@ -3144,7 +3144,7 @@ function updateProjectiles(delta) {
       const d = Math.hypot(enemy.x - shell.x, enemy.y - shell.y);
       if (d > shell.blastRadius + enemy.radius) continue;
       const falloff = clamp(1 - d / Math.max(1, shell.blastRadius + enemy.radius), 0.55, 1);
-      damageEnemy(enemy, Math.round(shell.damage * falloff), "#ffd166");
+      damageEnemy(enemy, Math.round(shell.damage * falloff), "#ff4d4d");
       if (enemies.includes(enemy)) {
         enemy.stunTimer = Math.max(enemy.stunTimer ?? 0, enemy.boss ? TANK_CANNON_BOSS_STUN : TANK_CANNON_MONSTER_STUN);
       }
@@ -5521,7 +5521,7 @@ function drawProjectiles() {
     ctx.save();
     ctx.translate(p.x, p.y);
     ctx.rotate(angle);
-    ctx.shadowColor = "#ffd166";
+    ctx.shadowColor = "#ff2d2d";
     ctx.shadowBlur = 22;
     const fireTrail = ctx.createLinearGradient(-r * 4.8, 0, -r * 0.6, 0);
     fireTrail.addColorStop(0, "rgba(255, 107, 53, 0)");
@@ -6533,18 +6533,18 @@ function drawDamageZones() {
       ctx.translate(p.x, p.y);
       ctx.globalCompositeOperation = "lighter";
       ctx.globalAlpha = 0.78 * fade;
-      ctx.shadowColor = "#ffd166";
+      ctx.shadowColor = "#ff2d2d";
       ctx.shadowBlur = 34;
       const blastGrad = ctx.createRadialGradient(0, 0, zone.radius * 0.08, 0, 0, zone.radius);
-      blastGrad.addColorStop(0, "rgba(255, 243, 176, 0.92)");
-      blastGrad.addColorStop(0.28, "rgba(255, 183, 3, 0.54)");
-      blastGrad.addColorStop(0.66, "rgba(255, 107, 53, 0.24)");
-      blastGrad.addColorStop(1, "rgba(255, 107, 53, 0)");
+      blastGrad.addColorStop(0, "rgba(255, 245, 220, 0.94)");
+      blastGrad.addColorStop(0.22, "rgba(255, 45, 45, 0.66)");
+      blastGrad.addColorStop(0.62, "rgba(170, 0, 0, 0.34)");
+      blastGrad.addColorStop(1, "rgba(255, 0, 0, 0)");
       ctx.fillStyle = blastGrad;
       ctx.beginPath();
       ctx.arc(0, 0, zone.radius * (0.42 + blastProgress * 0.72), 0, TAU);
       ctx.fill();
-      ctx.strokeStyle = "rgba(255, 243, 176, 0.86)";
+      ctx.strokeStyle = "rgba(255, 80, 80, 0.88)";
       ctx.lineWidth = 5;
       ctx.beginPath();
       ctx.arc(0, 0, zone.radius * (0.34 + blastProgress * 0.8), 0, TAU);
