@@ -124,6 +124,10 @@ const CHICKEN_COLLISION_RADIUS_MULTIPLIER = 2.25;
 const CHICKEN_HIT_COOLDOWN = 0.5;
 const CHICKEN_KNOCKBACK = 132;
 const CHICKEN_RELEASE_INVULN = 1;
+const TANK_CANNON_COOLDOWN = 2;
+const TANK_CANNON_RADIUS = 112;
+const TANK_CANNON_BOSS_STUN = 0.5;
+const TANK_CANNON_MONSTER_STUN = 3;
 const STIMPACK_DURATION = 10;
 const STIMPACK_ATTACK_SPEED_MULTIPLIER = 3;
 const STIMPACK_DRAIN_RATIO = 0.03;
@@ -813,6 +817,7 @@ const popups = [];
 const speechBubbles = [];
 const cards = [];
 const missiles = [];
+const tankShells = [];
 const taserShots = [];
 const policeSquads = [];
 const stationPolicePets = [];
@@ -874,6 +879,7 @@ const player = {
   taserGuns: 0,
   chickenBreasts: 0,
   chickenTimer: 0,
+  tankCannonCooldown: 0,
   stimPacks: 0,
   stimTimer: 0,
   stimDrainTimer: STIMPACK_DRAIN_TICK,
@@ -1259,6 +1265,7 @@ function resetGame() {
   skillAnnouncementCooldowns.clear();
   cards.length = 0;
   missiles.length = 0;
+  tankShells.length = 0;
   taserShots.length = 0;
   policeSquads.length = 0;
   stationPolicePets.length = 0;
@@ -1318,6 +1325,7 @@ function resetGame() {
     taserGuns: 0,
     chickenBreasts: 0,
     chickenTimer: 0,
+    tankCannonCooldown: 0,
     stimPacks: 0,
     stimTimer: 0,
     stimDrainTimer: STIMPACK_DRAIN_TICK,
@@ -2190,6 +2198,32 @@ function spawnCustomerMissiles() {
   playSound("missile");
 }
 
+function getTankCannonDamage() {
+  const expressLevel = Math.max(1, weapons.expressTrain.level || 1);
+  return Math.max(1, Math.round((105 + expressLevel * 42) * 3));
+}
+
+function fireTankCannon() {
+  if (!isTankRadioHero() || !isChickenBuffActive()) return;
+  const target = findPriorityEnemyFrom(player, 1500);
+  if (!target) return;
+  const angle = angleTo(player, target);
+  tankShells.push({
+    x: player.x + Math.cos(angle) * 44,
+    y: player.y + Math.sin(angle) * 44,
+    vx: Math.cos(angle) * 620,
+    vy: Math.sin(angle) * 620,
+    damage: getTankCannonDamage(),
+    radius: 18,
+    blastRadius: TANK_CANNON_RADIUS,
+    life: 2.8,
+    target,
+    trail: [],
+  });
+  addPopup("K2 포격!", player.x, player.y - 96, "#ffd166", 0.55, 17);
+  playSound("explosion");
+}
+
 function updatePlayer(delta) {
   const move = getMoveVector();
   const stunned = player.stunTimer > 0;
@@ -2265,6 +2299,16 @@ function updatePlayer(delta) {
   if (weapons.customerMissile.level > 0 && weapons.customerMissile.cooldown <= 0) {
     spawnCustomerMissiles();
     weapons.customerMissile.cooldown = 0.68;
+  }
+
+  if (isTankRadioHero() && isChickenBuffActive()) {
+    player.tankCannonCooldown -= delta;
+    if (player.tankCannonCooldown <= 0) {
+      fireTankCannon();
+      player.tankCannonCooldown = TANK_CANNON_COOLDOWN;
+    }
+  } else {
+    player.tankCannonCooldown = 0;
   }
 
 }
@@ -3052,6 +3096,62 @@ function updateProjectiles(delta) {
     }
   }
 
+  for (const shell of [...tankShells]) {
+    shell.life -= delta;
+    shell.trail.push({ x: shell.x, y: shell.y, life: 0.32 });
+    if (shell.trail.length > 12) shell.trail.shift();
+    for (const point of shell.trail) point.life -= delta;
+    shell.trail = shell.trail.filter((point) => point.life > 0);
+
+    if (!shell.target || !enemies.includes(shell.target)) {
+      shell.target = findPriorityEnemyFrom(shell, 1400);
+    }
+    if (shell.target) {
+      const desired = angleTo(shell, shell.target);
+      const current = Math.atan2(shell.vy, shell.vx);
+      const next = current + clamp(angleDelta(desired, current), -2.4 * delta, 2.4 * delta);
+      const speed = Math.hypot(shell.vx, shell.vy) || 620;
+      shell.vx = Math.cos(next) * speed;
+      shell.vy = Math.sin(next) * speed;
+    }
+    shell.x += shell.vx * delta;
+    shell.y += shell.vy * delta;
+
+    let exploded = shell.life <= 0 || shell.x < 0 || shell.x > WORLD_SIZE || shell.y < 0 || shell.y > WORLD_SIZE;
+    for (const enemy of [...enemies]) {
+      if (Math.hypot(enemy.x - shell.x, enemy.y - shell.y) < enemy.radius + shell.radius) {
+        exploded = true;
+        break;
+      }
+    }
+    if (!exploded) continue;
+
+    addParticles(shell.x, shell.y, "#ffd166", 38);
+    addParticles(shell.x, shell.y, "#ff6b35", 24);
+    damageZones.push({
+      x: shell.x,
+      y: shell.y,
+      radius: shell.blastRadius,
+      damage: 0,
+      life: 0.36,
+      maxLife: 0.36,
+      color: "#ffd166",
+      hits: new Set(),
+      kind: "tankBlast",
+    });
+    for (const enemy of [...enemies]) {
+      const d = Math.hypot(enemy.x - shell.x, enemy.y - shell.y);
+      if (d > shell.blastRadius + enemy.radius) continue;
+      const falloff = clamp(1 - d / Math.max(1, shell.blastRadius + enemy.radius), 0.55, 1);
+      damageEnemy(enemy, Math.round(shell.damage * falloff), "#ffd166");
+      if (enemies.includes(enemy)) {
+        enemy.stunTimer = Math.max(enemy.stunTimer ?? 0, enemy.boss ? TANK_CANNON_BOSS_STUN : TANK_CANNON_MONSTER_STUN);
+      }
+    }
+    playSound("explosion");
+    tankShells.splice(tankShells.indexOf(shell), 1);
+  }
+
   updateBlade(delta);
 }
 
@@ -3832,6 +3932,7 @@ function useChickenBreast() {
   const itemName = getChickenItemName();
   player.chickenBreasts -= 1;
   player.chickenTimer = CHICKEN_BUFF_DURATION;
+  if (isTankRadioHero()) player.tankCannonCooldown = 0.15;
   player.invuln = Math.max(player.invuln, 0.35);
   announceSkill(itemName, { color: "#ffd166", minGap: 500, source: "item" });
   addPopup(`${itemName}!`, player.x, player.y - 78, "#ffd166", 0.9, 20);
@@ -5402,6 +5503,58 @@ function drawProjectiles() {
     ctx.stroke();
     ctx.restore();
   }
+
+  for (const shell of tankShells) {
+    for (const point of shell.trail) {
+      const trailPoint = worldToScreen(point.x, point.y);
+      ctx.globalAlpha = clamp(point.life / 0.32, 0, 1) * 0.62;
+      ctx.fillStyle = "#ffb703";
+      ctx.beginPath();
+      ctx.arc(trailPoint.x, trailPoint.y, Math.max(5, shell.radius * 0.42), 0, TAU);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+    const p = worldToScreen(shell.x, shell.y);
+    const angle = Math.atan2(shell.vy, shell.vx);
+    const r = shell.radius;
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(angle);
+    ctx.shadowColor = "#ffd166";
+    ctx.shadowBlur = 22;
+    const fireTrail = ctx.createLinearGradient(-r * 4.8, 0, -r * 0.6, 0);
+    fireTrail.addColorStop(0, "rgba(255, 107, 53, 0)");
+    fireTrail.addColorStop(0.55, "rgba(255, 183, 3, 0.36)");
+    fireTrail.addColorStop(1, "rgba(255, 243, 176, 0.82)");
+    ctx.fillStyle = fireTrail;
+    ctx.beginPath();
+    ctx.moveTo(-r * 4.8, 0);
+    ctx.lineTo(-r * 0.8, -r * 0.82);
+    ctx.lineTo(-r * 0.8, r * 0.82);
+    ctx.closePath();
+    ctx.fill();
+
+    const shellGrad = ctx.createLinearGradient(-r * 1.5, -r * 0.6, r * 2.0, r * 0.62);
+    shellGrad.addColorStop(0, "#3a2d1b");
+    shellGrad.addColorStop(0.32, "#7d5d2a");
+    shellGrad.addColorStop(0.66, "#c5a05a");
+    shellGrad.addColorStop(1, "#f8e6a0");
+    ctx.fillStyle = shellGrad;
+    ctx.strokeStyle = "#1d160d";
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.moveTo(r * 2.2, 0);
+    ctx.quadraticCurveTo(r * 1.38, -r * 0.9, r * 0.26, -r * 0.78);
+    ctx.lineTo(-r * 1.45, -r * 0.66);
+    ctx.quadraticCurveTo(-r * 1.85, 0, -r * 1.45, r * 0.66);
+    ctx.lineTo(r * 0.26, r * 0.78);
+    ctx.quadraticCurveTo(r * 1.38, r * 0.9, r * 2.2, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+
   for (const card of cards) {
     for (const point of card.trail) {
       const trailPoint = worldToScreen(point.x, point.y);
@@ -6368,6 +6521,42 @@ function drawDamageZones() {
       ctx.arc(carX + trainLength - 26, carY + trainWidth * 0.7, 5, 0, TAU);
       ctx.fill();
       ctx.restore();
+      ctx.restore();
+      continue;
+    }
+
+    if (zone.kind === "tankBlast") {
+      const blastProgress = clamp(progress, 0, 1);
+      const fade = clamp((1 - blastProgress) / 0.8, 0, 1);
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = 0.78 * fade;
+      ctx.shadowColor = "#ffd166";
+      ctx.shadowBlur = 34;
+      const blastGrad = ctx.createRadialGradient(0, 0, zone.radius * 0.08, 0, 0, zone.radius);
+      blastGrad.addColorStop(0, "rgba(255, 243, 176, 0.92)");
+      blastGrad.addColorStop(0.28, "rgba(255, 183, 3, 0.54)");
+      blastGrad.addColorStop(0.66, "rgba(255, 107, 53, 0.24)");
+      blastGrad.addColorStop(1, "rgba(255, 107, 53, 0)");
+      ctx.fillStyle = blastGrad;
+      ctx.beginPath();
+      ctx.arc(0, 0, zone.radius * (0.42 + blastProgress * 0.72), 0, TAU);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255, 243, 176, 0.86)";
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.arc(0, 0, zone.radius * (0.34 + blastProgress * 0.8), 0, TAU);
+      ctx.stroke();
+      ctx.globalAlpha = 0.38 * fade;
+      ctx.fillStyle = "#2f2a1f";
+      for (let i = 0; i < 10; i += 1) {
+        const a = (TAU * i) / 10 + zone.x * 0.001;
+        const d = zone.radius * (0.18 + blastProgress * (0.45 + (i % 3) * 0.08));
+        ctx.beginPath();
+        ctx.arc(Math.cos(a) * d, Math.sin(a) * d, 9 + (i % 4) * 3, 0, TAU);
+        ctx.fill();
+      }
       ctx.restore();
       continue;
     }
