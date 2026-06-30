@@ -238,13 +238,13 @@ function getStationPoliceDamage() {
 
 function getCompanionSkillName() {
   if (isComradeHero()) return "전우";
-  if (isRunnerCompanionHero()) return "동료";
+  if (isRunnerCompanionHero()) return "페이스 메이커";
   return "지하철 경찰";
 }
 
 function getCompanionSkillDesc() {
   if (isComradeHero()) return "전우가 창우 옆에서 기본탄환을 함께 발사합니다.";
-  if (isRunnerCompanionHero()) return "마라토너 동료가 달려가 몸통박치기와 스플래시 피해를 줍니다.";
+  if (isRunnerCompanionHero()) return "페이스 메이커가 달려가 몸통박치기와 스플래시 피해를 줍니다.";
   return "지하철 경찰이 팻처럼 동행하며 보스를 우선 곤봉으로 공격합니다.";
 }
 
@@ -5877,7 +5877,7 @@ function drawRunnerCompanionPets() {
     ctx.font = "900 7px system-ui";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("동료", 0, -3);
+    ctx.fillText("페메", 0, -3);
     ctx.restore();
   }
 }
