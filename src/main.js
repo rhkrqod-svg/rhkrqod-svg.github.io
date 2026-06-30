@@ -195,7 +195,7 @@ const heroTypes = [
     spd: 100,
     healMultiplier: 1.5,
     meleeDamageMultiplier: 1.5,
-    bulletDamageMultiplier: 1.95,
+    bulletDamageMultiplier: 2.34,
     bulletFireRateMultiplier: 1.5,
     specialLabels: ["근접무기강화"],
     spriteScaleX: 1.08,
