@@ -119,6 +119,7 @@ const TASER_DOT_DAMAGE_RATIO = 0.325;
 const SUBWAY_POLICE_DAMAGE_MULTIPLIER = 2.535;
 const SUBWAY_POLICE_SPLASH_RADIUS = 60;
 const SUBWAY_POLICE_SPLASH_DAMAGE_RATIO = 0.28;
+const COMRADE_DROP_DESCENT_TIME = 1.8;
 const CHICKEN_BUFF_DURATION = 7;
 const CHICKEN_VISUAL_SCALE = 3;
 const CHICKEN_COLLISION_RADIUS_MULTIPLIER = 2.25;
@@ -3444,8 +3445,8 @@ function useComradeDropCall() {
     x: player.x,
     y: player.y,
     comrades,
-    life: 8.9,
-    maxLife: 8.9,
+    life: 8 + COMRADE_DROP_DESCENT_TIME,
+    maxLife: 8 + COMRADE_DROP_DESCENT_TIME,
     activeLife: 8,
     radius: 20,
   });
@@ -3782,11 +3783,11 @@ function updateStationPolicePets(delta) {
 function updateComradeDropSquad(squad, delta) {
   squad.life -= delta;
   const elapsed = squad.maxLife - squad.life;
-  const activeElapsed = Math.max(0, elapsed - 0.9);
+  const activeElapsed = Math.max(0, elapsed - COMRADE_DROP_DESCENT_TIME);
   squad.x = player.x;
   squad.y = player.y;
   for (const comrade of squad.comrades) {
-    const dropProgress = clamp((elapsed - comrade.dropDelay) / 0.9, 0, 1);
+    const dropProgress = clamp((elapsed - comrade.dropDelay) / COMRADE_DROP_DESCENT_TIME, 0, 1);
     comrade.dropHeight = Math.max(0, comrade.dropHeight * (1 - delta * 3.2));
     const orbitPulse = Math.sin(player.elapsed * 1.2 + comrade.bob) * 7;
     const targetX = player.x + Math.cos(comrade.angle) * (comrade.standRadius + orbitPulse);
@@ -6220,7 +6221,7 @@ function drawComradeDropSquad(squad) {
   const sorted = [...squad.comrades].sort((a, b) => a.y - b.y);
   for (const comrade of sorted) {
     const p = worldToScreen(comrade.x, comrade.y);
-    const dropProgress = clamp((elapsed - comrade.dropDelay) / 0.9, 0, 1);
+    const dropProgress = clamp((elapsed - comrade.dropDelay) / COMRADE_DROP_DESCENT_TIME, 0, 1);
     const parachuteY = -46 - (1 - dropProgress) * 18;
     const step = Math.sin(comrade.bob + player.elapsed * 9);
     const recoil = clamp(comrade.attackCooldown < 0.08 ? 1 - comrade.attackCooldown / 0.08 : 0, 0, 1);
