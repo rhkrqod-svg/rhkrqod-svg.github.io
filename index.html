@@ -4,9 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
     <title>지하철 빌런헌터</title>
-    <meta name="description" content="지하철 빌런을 사냥하는 모바일 액션 생존 게임" />
+    <meta name="description" content="지하철 빌런을 처치하는 모바일 액션 생존 게임" />
     <meta property="og:title" content="지하철 빌런헌터" />
-    <meta property="og:description" content="지하철 빌런을 사냥하는 모바일 액션 생존 게임" />
+    <meta property="og:description" content="지하철 빌런을 처치하는 모바일 액션 생존 게임" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://rhkrqod-svg.github.io/" />
     <meta property="og:image" content="https://rhkrqod-svg.github.io/assets/images/start-screen.png" />
@@ -20,18 +20,18 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="지하철 빌런헌터" />
-    <meta name="twitter:description" content="지하철 빌런을 사냥하는 모바일 액션 생존 게임" />
+    <meta name="twitter:description" content="지하철 빌런을 처치하는 모바일 액션 생존 게임" />
     <meta name="twitter:image" content="https://rhkrqod-svg.github.io/assets/images/start-screen.png" />
-    <script type="module" crossorigin src="/assets/index-JN014-lB.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-6L8qg4Yv.css">
+    <script type="module" crossorigin src="/assets/index-BNUcsVEf.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-B0duAy-R.css">
   </head>
   <body>
     <div id="app">
       <canvas id="game"></canvas>
 
-      <div class="hud hp-bar" aria-label="체력">
+      <div class="hud hp-bar" aria-label="泥대젰">
         <div class="hp-row">
-          <span>체력</span>
+          <span>泥대젰</span>
           <strong id="health">100 / 100</strong>
         </div>
         <div class="hp-track">
@@ -39,17 +39,17 @@
         </div>
       </div>
 
-      <section class="hud top-hud" aria-label="게임 상태">
+      <section class="hud top-hud" aria-label="寃뚯엫 ?곹깭">
         <div class="stat">
-          <span>레벨</span>
+          <span>?덈꺼</span>
           <strong id="level">1</strong>
         </div>
         <div class="stat">
-          <span>시간</span>
+          <span>?쒓컙</span>
           <strong id="time">0:00</strong>
         </div>
         <div class="stat">
-          <span>점수</span>
+          <span>?먯닔</span>
           <strong id="score">0</strong>
         </div>
         <div class="stat compact-stat">
@@ -63,7 +63,7 @@
         <div class="stat compact-stat">
           <span>SPD</span>
           <strong id="speedStat">100</strong>
-          <em id="dodgeStat" class="dodge-stat hidden">회피 20%</em>
+          <em id="dodgeStat" class="dodge-stat hidden">?뚰뵾 20%</em>
         </div>
       </section>
 
@@ -71,13 +71,13 @@
         <div id="xpFill" class="xp-fill"></div>
       </div>
 
-      <aside class="hud loadout" aria-label="무기">
+      <aside class="hud loadout" aria-label="臾닿린">
         <div id="skillTooltip" class="skill-tooltip" role="status" aria-live="polite"></div>
         <div id="weaponList"></div>
       </aside>
 
       <aside class="hud best">
-        <span>최고 점수</span>
+        <span>理쒓퀬 ?먯닔</span>
         <strong id="bestScore">0</strong>
       </aside>
 
@@ -124,7 +124,7 @@
 
       <div id="upgradePanel" class="upgrade-panel hidden" role="dialog" aria-modal="true">
         <div class="upgrade-shell">
-          <h2 id="upgradeTitle">레벨 업</h2>
+          <h2 id="upgradeTitle">스킬 선택</h2>
           <button id="upgradePauseButton" class="upgrade-pause-button" type="button">일시정지</button>
           <div id="upgradeChoices" class="upgrade-choices"></div>
         </div>
@@ -135,9 +135,7 @@
           <img class="start-poster" src="/assets/images/start-screen.png" alt="지하철 빌런헌터 시작 화면" />
           <span>민폐 퇴치 서바이버</span>
           <h1 id="messageTitle">지하철 빌런헌터</h1>
-          <p id="messageText">
-            비식별 처리된 매운맛 빌런들이 몰려옵니다. 20분 동안 버티고 민폐 에너지를 정화하세요.
-          </p>
+          <p id="messageText">지하철 빌런들이 몰려옵니다. 살아남고 에너지를 지키세요.</p>
           <section id="leaderboardPanel" class="leaderboard-panel hidden" aria-label="랭킹">
             <div class="leaderboard-head">
               <strong>랭킹 TOP 10</strong>
@@ -150,6 +148,7 @@
             <ol id="leaderboardList" class="leaderboard-list"></ol>
           </section>
           <button id="startButton" type="button" aria-label="터치하여 시작">터치하여 시작</button>
+          <button id="leaderboardOpenButton" class="leaderboard-open-button" type="button">랭킹보기</button>
         </div>
       </div>
 
@@ -158,7 +157,7 @@
           <div id="moveStickThumb" class="move-stick-thumb"></div>
         </div>
       </div>
-    </div>
+    </div>
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
@@ -168,3 +167,4 @@
     </script>
   </body>
 </html>
+
