@@ -4548,7 +4548,7 @@ function updateHud() {
   if (refs.speedStat) refs.speedStat.textContent = Math.round((player.speed / 205) * 100);
   if (refs.dodgeStat) {
     const dodgePercent = Math.round((player.dodgeChance ?? 0) * 100);
-    const labels = [...(player.specialLabels || [])];
+    const labels = player.heroId === "changwoo" ? [] : [...(player.specialLabels || [])];
     if (dodgePercent > 0) labels.unshift(`회피 ${dodgePercent}%`);
     refs.dodgeStat.textContent = labels.join(" / ");
     refs.dodgeStat.classList.toggle("hidden", labels.length <= 0);
