@@ -82,7 +82,7 @@ const DPR_LIMIT = 2;
 const START_HP = 100;
 const MAX_PLAYER_HP = 200;
 const MAX_PLAYER_HP_LIMIT = 300;
-const START_MAGNET_RANGE = 241;
+const START_MAGNET_RANGE = 313;
 const CHARACTER_SIZE_SCALE = 0.75;
 const MONSTER_SIZE_SCALE = 0.42;
 const BOSS_SIZE_SCALE = 0.45;
@@ -2246,7 +2246,7 @@ function spawnCustomerMissiles() {
 
 function getTankCannonDamage() {
   const expressLevel = Math.max(1, weapons.expressTrain.level || 1);
-  return Math.max(1, Math.round((105 + expressLevel * 42) * 3));
+  return Math.max(1, Math.round((105 + expressLevel * 42) * 6));
 }
 
 function fireTankCannon() {
