@@ -241,13 +241,13 @@ function getStationPoliceDamage() {
 }
 
 function getCompanionSkillName() {
-  if (isComradeHero()) return "전우";
+  if (isComradeHero()) return "예비군";
   if (isRunnerCompanionHero()) return "페이스 메이커";
   return "지하철 경찰";
 }
 
 function getCompanionSkillDesc() {
-  if (isComradeHero()) return "전우가 창우 옆에서 기본탄환을 함께 발사합니다.";
+  if (isComradeHero()) return "예비군이 창우 옆에서 기본탄환을 함께 발사합니다.";
   if (isRunnerCompanionHero()) return "페이스 메이커가 달려가 몸통박치기와 스플래시 피해를 줍니다.";
   return "지하철 경찰이 팻처럼 동행하며 보스를 우선 곤봉으로 공격합니다.";
 }
@@ -257,7 +257,7 @@ function getChickenItemName() {
 }
 
 function getPoliceItemName() {
-  if (isComradeHero()) return "전우조";
+  if (isComradeHero()) return "예비군 훈련 통지서";
   if (isRunnerCompanionHero()) return "마라톤 참가권";
   return "지하철 경찰대";
 }
@@ -3375,7 +3375,7 @@ function usePoliceCall() {
 }
 
 function useComradeDropCall() {
-  announceSkill("전우조", { color: "#b7ef64", minGap: 500, source: "item" });
+  announceSkill("예비군 훈련 통지서", { color: "#b7ef64", minGap: 500, source: "item" });
   const comrades = [];
   const count = 50;
   for (let i = 0; i < count; i += 1) {
@@ -3406,7 +3406,7 @@ function useComradeDropCall() {
     activeLife: 8,
     radius: 20,
   });
-  addPopup("전우조 강하!", player.x, player.y - 76, "#b7ef64", 0.95, 20);
+  addPopup("예비군 집결!", player.x, player.y - 76, "#b7ef64", 0.95, 20);
   addParticles(player.x, player.y, "#b7ef64", 30);
   playSound("police");
 }
@@ -6236,7 +6236,7 @@ function drawComradeDropSquad(squad) {
     ctx.font = "900 7px system-ui";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("전우", 0, -3);
+    ctx.fillText("예비군", 0, -3);
     ctx.restore();
   }
 }
@@ -6394,7 +6394,7 @@ function drawComradePets() {
     ctx.font = "900 7px system-ui";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("전우", 0, -3);
+    ctx.fillText("예비군", 0, -3);
     ctx.restore();
   }
 }
