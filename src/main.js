@@ -1,4 +1,4 @@
-import "./styles.css";
+﻿import "./styles.css";
 
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
@@ -24,6 +24,7 @@ const refs = {
   messageTitle: document.querySelector("#messageTitle"),
   messageText: document.querySelector("#messageText"),
   startButton: document.querySelector("#startButton"),
+  leaderboardOpenButton: document.querySelector("#leaderboardOpenButton"),
   heroPanel: document.querySelector("#heroPanel"),
   heroChoices: document.querySelector("#heroChoices"),
   upgradePanel: document.querySelector("#upgradePanel"),
@@ -114,6 +115,7 @@ const BOSS_BASIC_ATTACK_SPEED_MULTIPLIER = 1.2;
 const BOSS_STAB_ATTACK_DURATION_MULTIPLIER = 1 / BOSS_BASIC_ATTACK_SPEED_MULTIPLIER;
 const BOSS_SPECIAL_ATTACK_MIN_COOLDOWN = 6.4;
 const BOSS_SPECIAL_ATTACK_MAX_COOLDOWN = 8.2;
+const RESERVE_LABEL = "예비군";
 const TASER_DOT_TICK = 0.5;
 const TASER_DOT_DAMAGE_RATIO = 0.325;
 const SUBWAY_POLICE_DAMAGE_MULTIPLIER = 2.535;
@@ -130,7 +132,7 @@ const TANK_CANNON_COOLDOWN = 1.5;
 const TANK_CANNON_RADIUS = 112;
 const TANK_CANNON_BOSS_STUN = 0.5;
 const TANK_CANNON_MONSTER_STUN = 3;
-const STIMPACK_DURATION = 10;
+const STIMPACK_DURATION = 8;
 const STIMPACK_ATTACK_SPEED_MULTIPLIER = 3;
 const STIMPACK_DRAIN_RATIO = 0.03;
 const STIMPACK_DRAIN_TICK = 1;
@@ -139,11 +141,11 @@ const STIMPACK_VISUAL_SCALE_RATIO = 0.5;
 const heroTypes = [
   {
     id: "gae-hwanam",
-    name: "병우",
+    name: "蹂묒슦",
     image: "/assets/heroes/gae-hwanam-cutout.png",
     cardImage: "/assets/heroes/gae-hwanam-cutout.png",
     chickenImage: "/assets/heroes/byeongu-chicken-form.png",
-    quote: "정의는 방향이 아니라 선택.",
+    quote: "?뺤쓽??諛⑺뼢???꾨땲???좏깮.",
     hp: 120,
     maxHp: 120,
     atk: 90,
@@ -154,11 +156,11 @@ const heroTypes = [
   },
   {
     id: "gae-hwani",
-    name: "희빈",
+    name: "?щ퉰",
     image: "/assets/heroes/gae-hwani-cutout.png",
     cardImage: "/assets/heroes/gae-hwani-cutout.png",
     chickenImage: "/assets/heroes/heebin-chicken-form.png",
-    quote: "작은 용기로 길을 연다.",
+    quote: "?묒? ?⑷린濡?湲몄쓣 ?곕떎.",
     hp: 100,
     maxHp: 100,
     atk: 120,
@@ -169,7 +171,7 @@ const heroTypes = [
   },
   {
     id: "juyeon",
-    name: "주연",
+    name: "二쇱뿰",
     image: "/assets/heroes/juyeon-cutout.png",
     cardImage: "/assets/heroes/juyeon-card-tight.png",
     chickenImage: "/assets/heroes/juyeon-chicken-form.png",
@@ -189,11 +191,11 @@ const heroTypes = [
   },
   {
     id: "changwoo",
-    name: "창우",
+    name: "李쎌슦",
     image: "/assets/heroes/changwoo-cutout.png",
     cardImage: "/assets/heroes/changwoo-card.png",
     chickenImage: "/assets/items/tank-cartoon.png",
-    quote: "강한 육군, 약한 빌런",
+    quote: "媛뺥븳 ?↔뎔, ?쏀븳 鍮뚮윴",
     hp: 150,
     maxHp: 150,
     atk: 65,
@@ -251,11 +253,7 @@ function getCompanionSkillName() {
 function getCompanionSkillDesc() {
   if (isComradeHero()) return "예비군이 창우 옆에서 기본탄환을 함께 발사합니다.";
   if (isRunnerCompanionHero()) return "페이스 메이커가 달려가 몸통박치기와 스플래시 피해를 줍니다.";
-  return "지하철 경찰이 팻처럼 동행하며 보스를 우선 곤봉으로 공격합니다.";
-}
-
-function getChickenItemName() {
-  return isTankRadioHero() ? "탱크무전기" : "닭가슴살";
+  return "지하철 경찰이 동행하며 보스를 우선 곤봉으로 공격합니다.";
 }
 
 function getPoliceItemName() {
@@ -264,293 +262,10 @@ function getPoliceItemName() {
   return "지하철 경찰대";
 }
 
-const monsterTypes = [
-  {
-    id: "spread-seat-guy",
-    name: "쩍벌남",
-    shortName: "쩍벌남",
-    image: "/assets/monsters/spread-seat-guy.png?v=20260619b",
-    color: "#7b2cbf",
-    trim: "#c77dff",
-    hp: 192,
-    speed: 45,
-    damage: 14,
-    radius: 62 * 0.364,
-    bodySize: 0.65,
-    xp: 15,
-    score: 42,
-    weight: (minute) => 5 + minute * 0.6,
-    note: "좌석을 통째로 점령한 느린 탱커",
-    special: "tank",
-  },
-  {
-    id: "phone-woman",
-    name: "통화녀",
-    shortName: "통화녀",
-    image: "/assets/monsters/phone-woman.png?v=20260619b",
-    color: "#00a896",
-    trim: "#80ffdb",
-    hp: 96,
-    speed: 80,
-    damage: 8,
-    radius: 62 * 0.294,
-    bodySize: 0.42,
-    xp: 9,
-    score: 26,
-    weight: (minute) => 8 + minute * 0.9,
-    note: "통화에 정신 팔린 중속 몬스터",
-    special: "spiral",
-  },
-  {
-    id: "pushy-aunt",
-    name: "밀치기아줌마",
-    shortName: "밀치기",
-    image: "/assets/monsters/pushy-aunt.png?v=20260619b",
-    color: "#f77f00",
-    trim: "#ffbe0b",
-    hp: 144,
-    speed: 105,
-    damage: 10,
-    radius: 62 * 0.28,
-    bodySize: 0.5,
-    xp: 13,
-    score: 38,
-    weight: (minute) => 7 + minute * 1.2,
-    note: "빠르게 파고드는 돌진형 몬스터",
-    special: "zigzag",
-  },
-  {
-    id: "wall-man",
-    name: "철벽남",
-    shortName: "철벽남",
-    image: "/assets/monsters/wall-man.png?v=20260619b",
-    color: "#1d3557",
-    trim: "#48cae4",
-    hp: 264,
-    speed: 30,
-    damage: 10,
-    radius: 62 * 0.42,
-    bodySize: 0.75,
-    xp: 19,
-    score: 55,
-    weight: (minute) => 3.5 + minute * 0.55,
-    note: "느리지만 단단한 벽 같은 탱커",
-    special: "tank",
-  },
-  {
-    id: "backpack-spinner",
-    name: "백팩 스핀러",
-    shortName: "백팩",
-    image: "/assets/monsters/backpack-spinner.png?v=20260619b",
-    color: "#2d6a4f",
-    trim: "#95d5b2",
-    hp: 132,
-    speed: 90,
-    damage: 15,
-    radius: 62 * 0.322,
-    bodySize: 0.58,
-    xp: 14,
-    score: 46,
-    weight: (minute) => 5.5 + minute * 0.9,
-    note: "회전하며 접근하는 고위험 몬스터",
-    special: "spiral",
-  },
-  {
-    id: "speakerphone-man",
-    name: "스피커폰맨",
-    shortName: "스피커",
-    image: "/assets/monsters/speakerphone-man.png?v=20260619b",
-    color: "#c9184a",
-    trim: "#ff8fab",
-    hp: 168,
-    speed: 60,
-    damage: 12,
-    radius: 62 * 0.294,
-    bodySize: 0.52,
-    xp: 15,
-    score: 44,
-    weight: (minute) => 5.5 + minute * 0.75,
-    note: "스피커 파동으로 압박하는 소음형 몬스터",
-    special: "shout",
-  },
-];
-
-const legacyMonsterTypes = [
-  {
-    id: "line-noise",
-    name: "1호선 황금코트 소음장군",
-    shortName: "황금소음",
-    color: "#f05d4f",
-    trim: "#ffe066",
-    hp: 38,
-    speed: 72,
-    damage: 9,
-    radius: 18,
-    xp: 7,
-    score: 10,
-    weight: (minute) => 10 + minute * 1.2,
-    note: "노이즈 캔슬링을 뚫는 고성 파동",
-    special: "pulse",
-  },
-  {
-    id: "seat-blocker",
-    name: "쩍벌 좌석왕",
-    shortName: "쩍벌왕",
-    color: "#8f6bff",
-    trim: "#f7efff",
-    hp: 115,
-    speed: 44,
-    damage: 15,
-    radius: 42,
-    xp: 16,
-    score: 45,
-    weight: (minute) => Math.max(0, minute - 0.4) * 4,
-    note: "두 칸을 한 몸처럼 쓰는 탱커",
-    special: "tank",
-  },
-  {
-    id: "queue-cutter",
-    name: "개찰구 새치기 러너",
-    shortName: "새치기",
-    color: "#36d399",
-    trim: "#effff7",
-    hp: 26,
-    speed: 118,
-    damage: 7,
-    radius: 15,
-    xp: 6,
-    score: 18,
-    weight: (minute) => 3 + minute * 2.8,
-    note: "눈 마주치기 전에 지그재그 돌진",
-    special: "zigzag",
-  },
-  {
-    id: "airport-thief",
-    name: "공항 캐리어 슬쩍맨",
-    shortName: "슬쩍맨",
-    color: "#2f80ed",
-    trim: "#d8ecff",
-    hp: 70,
-    speed: 86,
-    damage: 12,
-    radius: 20,
-    xp: 14,
-    score: 60,
-    weight: (minute) => Math.max(0, minute - 1) * 3.8,
-    note: "수하물 함정을 흩뿌리고 튐",
-    special: "luggage",
-  },
-  {
-    id: "bus-yeller",
-    name: "버스 엄지척 고성왕",
-    shortName: "고성왕",
-    color: "#ff9f1c",
-    trim: "#fff2cc",
-    hp: 86,
-    speed: 58,
-    damage: 11,
-    radius: 22,
-    xp: 15,
-    score: 55,
-    weight: (minute) => Math.max(0, minute - 1.5) * 3.2,
-    note: "위협 발언은 삭제, 고성 링만 남김",
-    special: "shout",
-  },
-  {
-    id: "receipt-storm",
-    name: "민원 영수증 폭탄러",
-    shortName: "영수증",
-    color: "#f3f0d7",
-    trim: "#1b1b1b",
-    hp: 52,
-    speed: 96,
-    damage: 8,
-    radius: 17,
-    xp: 10,
-    score: 30,
-    weight: (minute) => Math.max(0, minute - 2) * 2.5,
-    note: "증거라며 종이 회오리로 압박",
-    special: "spiral",
-  },
-];
-
-function createGameImage(src) {
-  const image = new Image();
-  image.decoding = "async";
-  image.loading = "eager";
-  image.ready = false;
-  image.failed = false;
-  image.retryCount = 0;
-  image.onload = () => {
-    image.ready = true;
-    image.failed = false;
-  };
-  image.onerror = () => {
-    image.ready = false;
-    image.failed = true;
-    if (image.retryCount >= 3) return;
-    image.retryCount += 1;
-    window.setTimeout(() => {
-      const separator = src.includes("?") ? "&" : "?";
-      image.src = `${src}${separator}retry=${image.retryCount}-${Date.now()}`;
-    }, 450 * image.retryCount);
-  };
-  image.src = src;
-  image.decode?.().then(() => {
-    image.ready = true;
-    image.failed = false;
-  }).catch(() => {});
-  return image;
-}
-
-function canDrawGameImage(image) {
-  return Boolean(image && !image.failed && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0);
-}
-
-const pacemakerRunnerImage = createGameImage("/assets/heroes/juyeon-pacemaker-runner-game.png?v=20260630");
-const reserveSoldierImage = createGameImage("/assets/heroes/changwoo-reserve-soldier-game.png?v=20260630");
-const subwayPoliceImage = createGameImage("/assets/heroes/subway-police-officer-game.png?v=20260630");
-
-const monsterImages = new Map();
-for (const monster of monsterTypes) {
-  if (!monster.image) continue;
-  monsterImages.set(monster.id, createGameImage(monster.image));
-}
-monsterImages.set("commute-protest", createGameImage("/assets/monsters/commute-protest-cart.png?v=20260627d"));
-
-const legacyBossTypes = [
-  {
-    id: "lost-luggage-master",
-    name: "공항 수하물 마스터",
-    color: "#255f85",
-    trim: "#bde0fe",
-    hp: 1180,
-    speed: 54,
-    damage: 24,
-    radius: 50,
-    xp: 130,
-    score: 420,
-    special: "boss-luggage",
-  },
-  {
-    id: "noise-overlord",
-    name: "전설의 민폐 집합체",
-    color: "#5f0f40",
-    trim: "#fb8b24",
-    hp: 1600,
-    speed: 50,
-    damage: 28,
-    radius: 58,
-    xp: 180,
-    score: 650,
-    special: "boss-final",
-  },
-];
-
 const bossTypes = [
   {
     id: "airport-thief-boss",
-    name: "공항도둑",
+    name: "怨듯빆?꾨몣",
     image: "/assets/bosses/airport-thief-boss.png",
     color: "#704214",
     trim: "#ffca3a",
@@ -628,7 +343,7 @@ for (const boss of bossTypes) {
 const upgradePool = [
   {
     id: "multi",
-    name: "분노의 산탄",
+    name: "분노의 탄환",
     desc: "동시 발사 +1",
     apply: () => {
       player.shots += 1;
@@ -655,15 +370,15 @@ const upgradePool = [
   {
     id: "lightning",
     name: "민원 번개",
-    desc: "가까운 적에게 주기적 낙뢰",
+    desc: "가까운 적에게 주기적으로 번개",
     apply: () => {
       weapons.lightning.level += 1;
     },
   },
   {
     id: "boomerang",
-    name: "교통카드 투척",
-    desc: "강화 교통카드를 던져 적을 강하게 관통 공격",
+    name: "교통카드 사출",
+    desc: "벽에 튕기는 교통카드 개수 증가",
     apply: () => {
       weapons.card.level += 1;
       weapons.card.cooldown = Math.min(weapons.card.cooldown, 2.37);
@@ -672,15 +387,15 @@ const upgradePool = [
   {
     id: "strapOrbit",
     name: "손잡이 회오리",
-    desc: "주변을 도는 손잡이 보호 무기",
+    desc: "주위를 도는 손잡이 보호 무기",
     apply: () => {
       weapons.strapOrbit.level += 1;
     },
   },
   {
     id: "tearGas",
-    name: "최류탄",
-    desc: "주인공 주변에 넓은 가스 지대를 만들어 지속 피해",
+    name: "최루탄",
+    desc: "주인공 주위에 가스 장판으로 지속 피해",
     apply: () => {
       weapons.tearGas.level += 1;
     },
@@ -688,7 +403,7 @@ const upgradePool = [
   {
     id: "expressTrain",
     name: "급행열차 돌진",
-    desc: "넓은 직선 범위를 쓸어버림",
+    desc: "넓은 직선 범위를 밀어버림",
     apply: () => {
       weapons.expressTrain.level += 1;
       weapons.expressTrain.cooldown = Math.min(weapons.expressTrain.cooldown, 1.1);
@@ -706,7 +421,7 @@ const upgradePool = [
   {
     id: "subwayPolice",
     name: "지하철 경찰",
-    desc: "지하철 경찰이 동행하며 보스를 우선 곤봉 공격",
+    desc: "지하철 경찰이 동행하며 보스를 우선 공격",
     apply: () => {
       weapons.subwayPolice.level += 1;
     },
@@ -1121,13 +836,31 @@ function playNoise({ duration = 0.14, volume = 0.22, filter = 900, when = 0 } = 
 function speakSkillName(text) {
   if (!sound.enabled || !sound.voiceEnabled || !("speechSynthesis" in window) || !soundAllowed("skillVoiceSpeech", 1150)) return;
   const cleanText = String(text ?? "").replace(/Lv\.\d+/gi, "").replace(/[!?~]+/g, "").trim();
-  if (!cleanText || cleanText.length > 18 || /[�]/.test(cleanText)) return;
+  if (!cleanText || cleanText.length > 18 || cleanText.includes("�")) return;
   try {
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = "ko-KR";
     utterance.rate = 1.14;
     utterance.pitch = 1.02;
     utterance.volume = 0.76;
+    const voices = window.speechSynthesis.getVoices?.() ?? [];
+    utterance.voice = voices.find((voice) => voice.lang?.toLowerCase().startsWith("ko")) ?? null;
+    window.speechSynthesis.speak(utterance);
+  } catch {
+    sound.voiceEnabled = false;
+  }
+}
+
+function speakSystemVoice(text, gap = 900) {
+  if (!sound.enabled || !sound.voiceEnabled || !("speechSynthesis" in window) || !soundAllowed("systemVoiceSpeech", gap)) return;
+  const cleanText = String(text ?? "").trim();
+  if (!cleanText || cleanText.includes("�")) return;
+  try {
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = "ko-KR";
+    utterance.rate = 1.02;
+    utterance.pitch = 0.92;
+    utterance.volume = 0.82;
     const voices = window.speechSynthesis.getVoices?.() ?? [];
     utterance.voice = voices.find((voice) => voice.lang?.toLowerCase().startsWith("ko")) ?? null;
     window.speechSynthesis.speak(utterance);
@@ -1488,7 +1221,7 @@ function updateUpgradePauseButton() {
   if (!refs.upgradePauseButton) return;
   const starterPicking = game.pendingStarterChoices > 0;
   refs.upgradePauseButton.disabled = starterPicking;
-  refs.upgradePauseButton.textContent = starterPicking ? "정지 중" : game.manualPaused ? "계속하기" : "일시정지";
+  refs.upgradePauseButton.textContent = starterPicking ? "선택 중" : game.manualPaused ? "계속하기" : "일시정지";
   refs.upgradePauseButton.classList.toggle("active", game.manualPaused || starterPicking);
 }
 
@@ -1695,8 +1428,8 @@ function getEncircleOffscreenPoint(angle, extraDistance = 120) {
 }
 
 function spawnCommuteProtestStage() {
-  showBossBanner("출근길 시위 시작");
-  addPopup("출근길 시위 시작", player.x, player.y - 96, "#fff3b0", 2.0, 24);
+  showBossBanner("異쒓렐湲??쒖쐞 ?쒖옉");
+  addPopup("異쒓렐湲??쒖쐞 ?쒖옉", player.x, player.y - 96, "#fff3b0", 2.0, 24);
   playSound("boss");
 
   const count = 100;
@@ -1708,8 +1441,8 @@ function spawnCommuteProtestStage() {
     const hp = 416 * hpScale;
     enemies.push({
       id: "commute-protest",
-      name: "출근길 시위대",
-      shortName: "시위대",
+      name: "異쒓렐湲??쒖쐞?",
+      shortName: "?쒖쐞?",
       color: "#495057",
       trim: "#fff3b0",
       hp,
@@ -1821,7 +1554,7 @@ function spawnBoss() {
   boss.radius = (base.radius + Math.min(14, bossIndex * 2)) * BOSS_SIZE_SCALE;
   bossIndex += 1;
   showBossBanner(base.name, { boss: true });
-  addPopup("보스 등장", player.x, player.y - 90, "#ffe066", 1.8, 28);
+  addPopup("蹂댁뒪 ?깆옣", player.x, player.y - 90, "#ffe066", 1.8, 28);
   playSound("boss");
   updateBgm();
 }
@@ -1851,13 +1584,14 @@ function updateBossSchedule() {
 function showBossBanner(name, { boss = false } = {}) {
   window.clearTimeout(bossBannerTimer);
   window.clearTimeout(bossBannerNameTimer);
-  const bossNameDelay = 550;
-  const bossNameDuration = 1800;
+  const bossNameDelay = 825;
+  const bossNameDuration = 2700;
   refs.bossBanner.classList.toggle("boss-alert", boss);
   refs.bossBanner.classList.remove("name-phase");
   refs.bossBanner.classList.remove("boss-name-only");
   refs.bossBanner.innerHTML = boss ? "<strong>보스출현</strong>" : `<strong>${name}</strong>`;
   refs.bossBanner.classList.add("active");
+  if (boss) speakSystemVoice("보스 출현", 1600);
   if (boss) {
     bossBannerNameTimer = window.setTimeout(() => {
       refs.bossBanner.classList.remove("boss-alert");
@@ -2020,7 +1754,7 @@ function strikeLightning() {
     targets.push(enemy);
   }
   for (const enemy of targets) {
-    const damage = Math.round((63 + weapons.lightning.level * 58) * 1.105 * 1.3 * 0.8);
+    const damage = getLightningDamageForLevel(weapons.lightning.level);
     const strikeRadius = (58 + weapons.lightning.level * 7) * 1.183 * 1.3 * 1.2 * 1.15;
     const levelBonus = Math.max(0, weapons.lightning.level - 1);
     const bossStun = 0.5 + levelBonus * 0.1;
@@ -2046,6 +1780,11 @@ function strikeLightning() {
   if (targets.length > 0) {
     playSound("lightning");
   }
+}
+
+function getLightningDamageForLevel(level = 1) {
+  const safeLevel = Math.max(1, level || 1);
+  return Math.round((63 + safeLevel * 58) * 1.105 * 1.3 * 0.8);
 }
 
 function pickClusterTarget(maxDistance = 900) {
@@ -2245,8 +1984,7 @@ function spawnCustomerMissiles() {
 }
 
 function getTankCannonDamage() {
-  const expressLevel = Math.max(1, weapons.expressTrain.level || 1);
-  return Math.max(1, Math.round((105 + expressLevel * 42) * 6));
+  return 1200;
 }
 
 function fireTankCannon() {
@@ -2317,7 +2055,7 @@ function updatePlayer(delta) {
   }
 
   const strapSpeedMultiplier = player.heroId === "changwoo" ? 0.6 : 1;
-  weapons.strapOrbit.angle += delta * (5.3 + weapons.strapOrbit.level * 0.32) * strapSpeedMultiplier;
+  weapons.strapOrbit.angle += delta * (5.3 + weapons.strapOrbit.level * 0.32) * strapSpeedMultiplier * 1.3;
   weapons.lightning.cooldown -= cooldownDelta;
   if (weapons.lightning.cooldown <= 0) {
     strikeLightning();
@@ -2559,18 +2297,18 @@ function updateEnemies(delta) {
       if (enemy.boss && enemy.attackSpeechCooldown <= 0) {
         const line =
           enemy.special === "boss-airport"
-            ? "왜 나만 갈구냐고!"
+            ? "???섎쭔 媛덇뎄?먭퀬!"
             : enemy.special === "boss-jarvan"
-              ? "젊은 것들 비켜라!"
+              ? "?딆? 寃껊뱾 鍮꾩폒??"
               : enemy.special === "boss-danso"
-                ? "Who are you~ 확!"
+                ? "Who are you~ ??"
                 : enemy.special === "boss-praise"
-                  ? "당신이 최고야?!"
+                  ? "?뱀떊??理쒓퀬??!"
                   : enemy.special === "boss-gum"
-                    ? "버블팝!"
+                    ? "踰꾨툝??"
                     : enemy.special === "boss-dance"
-                      ? "워킹 워킹"
-                      : "비켜!";
+                      ? "?뚰궧 ?뚰궧"
+                      : "鍮꾩폒!";
         addSpeechBubble(enemy, line, 1.05);
         enemy.attackSpeechCooldown = 2.2;
       }
@@ -2598,7 +2336,7 @@ function createPulse(enemy, radius, damage) {
 
 function createDansoSwing(enemy) {
   const angle = angleTo(enemy, player);
-  addSpeechBubble(enemy, "Who are you~ 확!", 1.05);
+  addSpeechBubble(enemy, "Who are you~ ??", 1.05);
   damageZones.push({
     x: enemy.x,
     y: enemy.y,
@@ -2632,7 +2370,7 @@ function createDansoBoomerang(enemy) {
 function launchDansoBoomerang(enemy, variant = 0) {
   if (!enemies.includes(enemy)) return;
   const angle = angleTo(enemy, player);
-  if (variant === 0) addSpeechBubble(enemy, "절이 싫으면 중이 떠나야지~", 1.05);
+  if (variant === 0) addSpeechBubble(enemy, "?덉씠 ?レ쑝硫?以묒씠 ?좊굹?쇱?~", 1.05);
   const startX = enemy.x + Math.cos(angle) * 54;
   const startY = enemy.y + Math.sin(angle) * 54;
   const targetDistance = Math.min(720, Math.max(260, Math.hypot(player.x - enemy.x, player.y - enemy.y) + 120));
@@ -2671,7 +2409,7 @@ function launchDansoBoomerang(enemy, variant = 0) {
 
 function createAirportTaunt(enemy) {
   const angle = angleTo(enemy, player);
-  addSpeechBubble(enemy, "왜 나만 갈구냐고!", 1.25);
+  addSpeechBubble(enemy, "???섎쭔 媛덇뎄?먭퀬!", 1.25);
   for (const offset of [-0.12, 0.12]) {
     const shotAngle = angle + offset;
     damageZones.push({
@@ -2694,7 +2432,7 @@ function createAirportTaunt(enemy) {
 }
 
 function createAirportCrisis(enemy) {
-  addSpeechBubble(enemy, "금융 위기 모르냐 금융위기 거지야~", 1.45);
+  addSpeechBubble(enemy, "湲덉쑖 ?꾧린 紐⑤Ⅴ??湲덉쑖?꾧린 嫄곗???", 1.45);
   const dollarCount = 30;
   for (let i = 0; i < dollarCount; i += 1) {
     const angle = (TAU * i) / dollarCount + rand(-0.16, 0.16);
@@ -2728,7 +2466,7 @@ function createJarvanFlag(enemy) {
     addParticles(target.x, target.y, "#f9c74f", 5);
     guarded += 1;
   }
-  addSpeechBubble(enemy, "경로우대 깃발!", 1.25);
+  addSpeechBubble(enemy, "寃쎈줈?곕? 源껊컻!", 1.25);
   addParticles(enemy.x, enemy.y, "#f9c74f", 24);
   damageZones.push({
     x: enemy.x,
@@ -2739,12 +2477,12 @@ function createJarvanFlag(enemy) {
     color: "#f9c74f",
     kind: "jarvanFlag",
   });
-  if (guarded > 0) addPopup(`방어 증가 x${guarded}`, enemy.x, enemy.y - 28, "#fff3b0", 0.82, 14);
+  if (guarded > 0) addPopup(`諛⑹뼱 利앷? x${guarded}`, enemy.x, enemy.y - 28, "#fff3b0", 0.82, 14);
 }
 
 function createJarvanSpear(enemy) {
   const angle = angleTo(enemy, player);
-  addSpeechBubble(enemy, "창지르기!", 1.05);
+  addSpeechBubble(enemy, "李쎌?瑜닿린!", 1.05);
   damageZones.push({
     x: enemy.x,
     y: enemy.y,
@@ -2768,7 +2506,7 @@ function createJarvanSpear(enemy) {
 
 function createJarvanSpearVolley(enemy) {
   const baseAngle = angleTo(enemy, player);
-  addSpeechBubble(enemy, "창을 받아라!", 1.15);
+  addSpeechBubble(enemy, "李쎌쓣 諛쏆븘??", 1.15);
   for (const offset of [-0.36, -0.18, 0, 0.18, 0.36]) {
     const angle = baseAngle + offset;
     damageZones.push({
@@ -2795,7 +2533,7 @@ function createJarvanSpearVolley(enemy) {
 
 function createPraiseThumb(enemy) {
   const angle = angleTo(enemy, player);
-  addSpeechBubble(enemy, "당신이 최고야?!", 1.1);
+  addSpeechBubble(enemy, "?뱀떊??理쒓퀬??!", 1.1);
   for (const offset of [-0.13, 0.13]) {
     const shotAngle = angle + offset;
     damageZones.push({
@@ -2803,7 +2541,7 @@ function createPraiseThumb(enemy) {
       y: enemy.y + Math.sin(shotAngle) * 42,
       vx: Math.cos(shotAngle) * 620 * BOSS_BASIC_ATTACK_SPEED_MULTIPLIER,
       vy: Math.sin(shotAngle) * 620 * BOSS_BASIC_ATTACK_SPEED_MULTIPLIER,
-      radius: 48,
+      radius: 62.4,
       damage: scaleBossDamage(enemy, 20),
       life: 1.25,
       maxLife: 1.25,
@@ -2818,13 +2556,13 @@ function createPraiseThumb(enemy) {
 
 function createPraiseStunWave(enemy) {
   const angle = angleTo(enemy, player);
-  addSpeechBubble(enemy, "꼼짝 못해!", 1.25);
+  addSpeechBubble(enemy, "瑗쇱쭩 紐삵빐!", 1.25);
   damageZones.push({
     x: enemy.x + Math.cos(angle) * 54,
     y: enemy.y + Math.sin(angle) * 54,
     vx: Math.cos(angle) * 360,
     vy: Math.sin(angle) * 360,
-    radius: 174,
+    radius: 226.2,
     damage: scaleBossDamage(enemy, 18),
     stun: 1.6,
     life: 1.6,
@@ -2839,7 +2577,7 @@ function createPraiseStunWave(enemy) {
 
 function createGumBubble(enemy) {
   const angle = angleTo(enemy, player);
-  addSpeechBubble(enemy, "버블팝!", 1.0);
+  addSpeechBubble(enemy, "踰꾨툝??", 1.0);
   for (const offset of [-0.13, 0.13]) {
     const shotAngle = angle + offset;
     damageZones.push({
@@ -2847,9 +2585,9 @@ function createGumBubble(enemy) {
       y: enemy.y + Math.sin(shotAngle) * 42,
       vx: Math.cos(shotAngle) * 310 * BOSS_BASIC_ATTACK_SPEED_MULTIPLIER,
       vy: Math.sin(shotAngle) * 310 * BOSS_BASIC_ATTACK_SPEED_MULTIPLIER,
-      radius: 32.5,
+      radius: 65,
       damage: scaleBossDamage(enemy, 12),
-      slow: 5,
+      slow: 2.5,
       slowMultiplier: 0.55,
       life: 1.6,
       maxLife: 1.6,
@@ -2865,16 +2603,16 @@ function createGumBubble(enemy) {
 
 function createGiantGumBubble(enemy) {
   const angle = angleTo(enemy, player);
-  addSpeechBubble(enemy, "거대 버블팝!", 1.35);
+  addSpeechBubble(enemy, "嫄곕? 踰꾨툝??", 1.35);
   damageZones.push({
     x: enemy.x + Math.cos(angle) * 54,
     y: enemy.y + Math.sin(angle) * 54,
     vx: Math.cos(angle) * 185,
     vy: Math.sin(angle) * 185,
-    radius: 132,
+    radius: 198,
     damage: scaleBossDamage(enemy, 27),
     push: 46,
-    slow: 8,
+    slow: 4,
     slowMultiplier: 0.42,
     life: 3.1,
     maxLife: 3.1,
@@ -2889,7 +2627,7 @@ function createGiantGumBubble(enemy) {
 
 function createDanceKick(enemy) {
   const angle = angleTo(enemy, player);
-  addSpeechBubble(enemy, "워킹 워킹", 1.0);
+  addSpeechBubble(enemy, "?뚰궧 ?뚰궧", 1.0);
   damageZones.push({
     x: enemy.x,
     y: enemy.y,
@@ -2909,7 +2647,7 @@ function createDanceKick(enemy) {
 }
 
 function createDanceStamp(enemy) {
-  addSpeechBubble(enemy, "하이힐 스탬프!", 1.15);
+  addSpeechBubble(enemy, "?섏씠???ㅽ꺃??", 1.15);
   damageZones.push({
     x: player.x,
     y: player.y,
@@ -2928,7 +2666,7 @@ function createDanceStamp(enemy) {
 
 function dropFakeLuggage(enemy) {
   const count = enemy.boss ? 8 : 3;
-  if (enemy.boss) addSpeechBubble(enemy, "수하물 챙겨!", 1.05);
+  if (enemy.boss) addSpeechBubble(enemy, "?섑븯臾?梨숆꺼!", 1.05);
   for (let i = 0; i < count; i += 1) {
     const angle = (TAU * i) / count + Math.random() * 0.4;
     damageZones.push({
@@ -2973,12 +2711,12 @@ function increaseLevelStats() {
 
 function hurtPlayer(amount) {
   if (isChickenBuffActive()) {
-    addPopup("무적", player.x, player.y - 44, "#ffd166", 0.45, 15);
+    addPopup("臾댁쟻", player.x, player.y - 44, "#ffd166", 0.45, 15);
     return;
   }
   if ((player.dodgeChance ?? 0) > 0 && Math.random() < player.dodgeChance) {
     player.invuln = Math.max(player.invuln, 0.22);
-    addPopup("회피", player.x, player.y - 44, "#9fd3ff", 0.55, 16);
+    addPopup("?뚰뵾", player.x, player.y - 44, "#9fd3ff", 0.55, 16);
     playSound("ui");
     return;
   }
@@ -3207,7 +2945,7 @@ function updateBlade(delta = 0) {
     const strapCount = getStrapCount();
     const strapRadius = getStrapOrbitRadius();
     const strapHandleRadius = getStrapHandleRadius();
-    const strapDamage = Math.round((14 + (weapons.strapOrbit.level - 1) * 8) * 1.5 * (player.meleeDamageMultiplier || 1));
+    const strapDamage = Math.round((14 + (weapons.strapOrbit.level - 1) * 8) * 1.5 * 2 * (player.meleeDamageMultiplier || 1));
     for (let i = 0; i < strapCount; i += 1) {
       const strapAngle = weapons.strapOrbit.angle + (TAU * i) / strapCount;
       const strap = {
@@ -3254,7 +2992,7 @@ function damageEnemy(enemy, amount, color = "#fff2a8") {
   playSound("hit");
   addParticles(enemy.x, enemy.y, guarded > 0 ? "#ffe066" : color, enemy.boss ? 14 : 7);
   addPopup(`-${finalAmount}`, enemy.x, enemy.y - enemy.radius, color, 0.48, enemy.boss ? 17 : 13);
-  if (guarded > 0 && Math.random() < 0.35) addPopup("방어", enemy.x, enemy.y - enemy.radius, "#fff3b0", 0.45, 12);
+  if (guarded > 0 && Math.random() < 0.35) addPopup("諛⑹뼱", enemy.x, enemy.y - enemy.radius, "#fff3b0", 0.45, 12);
   if (enemy.hp <= 0) killEnemy(enemy);
 }
 
@@ -3291,6 +3029,7 @@ function killEnemy(enemy) {
   if (enemy.boss) {
     addPopup("보스퇴치 완료", player.x, player.y - 148, "#ffe066", 2.65, 56);
     playSound("bossKill");
+    speakSystemVoice("보스 퇴치 완료", 1600);
     dropBossRewardItems(enemy);
     nextBossAt = player.elapsed + Math.max(34, 46 - Math.min(12, bossIndex * 2));
     bossWarningFor = 0;
@@ -3303,7 +3042,7 @@ function killEnemy(enemy) {
 
 function grantFirstAidKit(count = 1, x = player.x, y = player.y) {
   player.firstAidKits += count;
-  addPopup(`구급팩 +${count}`, x, y - 24, "#b8ffe4", 0.9, 16);
+  addPopup(`援ш툒??+${count}`, x, y - 24, "#b8ffe4", 0.9, 16);
   playSound("heal");
   updateHud();
 }
@@ -3317,7 +3056,7 @@ function grantPoliceCall(count = 1, x = player.x, y = player.y) {
 
 function grantTaserGun(count = 1, x = player.x, y = player.y) {
   player.taserGuns += count;
-  addPopup(`테이저건 +${count}`, x, y - 66, "#fff3b0", 0.9, 16);
+  addPopup(`?뚯씠?嫄?+${count}`, x, y - 66, "#fff3b0", 0.9, 16);
   playSound("levelUp");
   updateHud();
 }
@@ -3331,7 +3070,7 @@ function grantChickenBreast(count = 1, x = player.x, y = player.y) {
 
 function grantStimPack(count = 1, x = player.x, y = player.y) {
   player.stimPacks += count;
-  addPopup(`스팀팩 +${count}`, x, y - 102, "#ff8a80", 0.9, 16);
+  addPopup(`?ㅽ???+${count}`, x, y - 102, "#ff8a80", 0.9, 16);
   playSound("levelUp");
   updateHud();
 }
@@ -3386,7 +3125,7 @@ function usePoliceCall() {
     updateHud();
     return;
   }
-  announceSkill("지하철 경찰대", { color: "#b8dcff", minGap: 500, source: "item" });
+  announceSkill("吏?섏쿋 寃쎌같?", { color: "#b8dcff", minGap: 500, source: "item" });
   const officers = [];
   const officerCount = 60;
   for (let i = 0; i < officerCount; i += 1) {
@@ -3412,14 +3151,14 @@ function usePoliceCall() {
     hitTimers: new Map(),
     hitCounts: new Map(),
   });
-  addPopup("지하철 경찰대 출동!", player.x, player.y - 72, "#b8dcff", 0.9, 18);
+  addPopup("吏?섏쿋 寃쎌같? 異쒕룞!", player.x, player.y - 72, "#b8dcff", 0.9, 18);
   addParticles(player.x, player.y, "#77beff", 26);
   playSound("police");
   updateHud();
 }
 
 function useComradeDropCall() {
-  announceSkill("예비군 훈련", { color: "#b7ef64", minGap: 500, source: "item" });
+  announceSkill("?덈퉬援??덈젴", { color: "#b7ef64", minGap: 500, source: "item" });
   const comrades = [];
   const count = 50;
   for (let i = 0; i < count; i += 1) {
@@ -3457,44 +3196,35 @@ function useComradeDropCall() {
 
 function usePacemakerMedalCall() {
   announceSkill("마라톤 참가권", { color: "#7fc8ff", minGap: 500, source: "item" });
-  const runners = [];
-  const count = 60;
-  const leftX = camera.x - 120;
-  const rightX = camera.x + viewWidth + 120;
-  const laneTop = camera.y + viewHeight * 0.16;
-  const laneHeight = viewHeight * 0.68;
-  const laneCount = 12;
+  const officers = [];
+  const count = 50;
   for (let i = 0; i < count; i += 1) {
-    const lane = i % laneCount;
-    const pack = Math.floor(i / laneCount);
-    runners.push({
-      lane,
-      y: laneTop + ((lane + 0.5) / laneCount) * laneHeight + rand(-8, 8),
-      delay: lane * 0.025 + pack * 0.11 + rand(0, 0.05),
+    const angle = (TAU * i) / count + rand(-0.045, 0.045);
+    const ring = i % 2;
+    officers.push({
+      angle,
+      startRadius: 46 + ring * 30 + rand(-6, 6),
+      speedOffset: rand(-22, 30),
       bob: Math.random() * TAU,
-      speedWobble: rand(-0.035, 0.035),
       scale: rand(0.94, 1.08),
     });
   }
   policeSquads.push({
-    kind: "pacemakerWave",
+    visual: "pacemaker",
     x: player.x,
     y: player.y,
-    runners,
-    leftX,
-    rightX,
-    passIndex: 0,
-    passElapsed: 0,
-    passDuration: 3.2,
-    returnDelay: 0.36,
-    returnTimer: 0,
+    officers,
+    distance: 0,
+    speed: 128,
     radius: 24,
     damage: getStationPoliceDamage() * 1.2,
-    hitTimers: [new Map(), new Map()],
-    hitCounts: [new Map(), new Map()],
-    finished: false,
+    maxHitsPerEnemy: 3,
+    life: 5.2,
+    maxLife: 5.2,
+    hitTimers: new Map(),
+    hitCounts: new Map(),
   });
-  addPopup("마라톤 참가권!", player.x, player.y - 76, "#7fc8ff", 0.95, 20);
+  addPopup("留덈씪??李멸?沅?", player.x, player.y - 76, "#7fc8ff", 0.95, 20);
   addParticles(player.x, player.y, "#7fc8ff", 30);
   playSound("police");
 }
@@ -3539,7 +3269,7 @@ function useTaserGun() {
     target,
     trail: [],
   });
-  addPopup("테이저건!", player.x, player.y - 62, "#fff3b0", 0.65, 15);
+  addPopup("?뚯씠?嫄?", player.x, player.y - 62, "#fff3b0", 0.65, 15);
   playSound("taser");
   updateHud();
 }
@@ -3662,7 +3392,7 @@ function updatePoliceSquads(delta) {
       }
       for (const enemy of [...enemies]) {
         if (Math.hypot(enemy.x - officer.x, enemy.y - officer.y) > enemy.radius + squad.radius) continue;
-        if ((squad.hitCounts.get(enemy) ?? 0) >= 4) continue;
+        if ((squad.hitCounts.get(enemy) ?? 0) >= (squad.maxHitsPerEnemy ?? 4)) continue;
         if (squad.hitTimers.has(enemy)) continue;
         squad.hitTimers.set(enemy, 0.22);
         squad.hitCounts.set(enemy, (squad.hitCounts.get(enemy) ?? 0) + 1);
@@ -4114,7 +3844,7 @@ function useStimPack() {
   player.stimTimer = STIMPACK_DURATION;
   player.stimDrainTimer = STIMPACK_DRAIN_TICK;
   announceSkill("스팀팩", { color: "#ff8a80", minGap: 500, source: "item" });
-  addPopup("스팀팩!", player.x, player.y - 92, "#ff8a80", 0.9, 20);
+  addPopup("스팀팩", player.x, player.y - 92, "#ff8a80", 0.9, 20);
   addParticles(player.x, player.y, "#ff6b6b", 34);
   playSound("levelUp");
   updateHud();
@@ -4150,7 +3880,7 @@ function openUpgradePanel() {
   game.paused = true;
   if (refs.upgradeTitle) {
     refs.upgradeTitle.textContent =
-      game.pendingStarterChoices > 0 ? `기본 스킬 선택 ${4 - game.pendingStarterChoices}/3` : "레벨 업";
+      game.pendingStarterChoices > 0 ? `기본 스킬 선택 ${4 - game.pendingStarterChoices}/3` : "스킬 선택";
   }
   updateUpgradePauseButton();
   const starterPool = upgradePool.filter((choice) => choice && weaponUpgradeIds.has(choice.id));
@@ -4288,7 +4018,7 @@ function updateDamageZones(delta) {
       if (active && !zone.applied && hitPlayer) {
         if (isChickenBuffActive()) {
           zone.applied = true;
-          addPopup("무적", player.x, player.y - 56, "#ffd166", 0.42, 14);
+          addPopup("臾댁쟻", player.x, player.y - 56, "#ffd166", 0.42, 14);
           if (zone.consumeOnHit) zone.life = 0;
           continue;
         }
@@ -4301,12 +4031,12 @@ function updateDamageZones(delta) {
         }
         if (zone.stun) {
           player.stunTimer = Math.max(player.stunTimer, zone.stun);
-          addPopup("경직", player.x, player.y - 62, "#fff3b0", 0.55, 15);
+          addPopup("寃쎌쭅", player.x, player.y - 62, "#fff3b0", 0.55, 15);
         }
         if (zone.slow) {
           player.slowTimer = Math.max(player.slowTimer, zone.slow);
           player.slowMultiplier = Math.min(player.slowMultiplier, zone.slowMultiplier ?? 0.6);
-          addPopup("느려짐", player.x, player.y - 62, "#ffb3c6", 0.65, 15);
+          addPopup("둔화", player.x, player.y - 62, "#ffb3c6", 0.65, 15);
         }
         if (zone.consumeOnHit) zone.life = 0;
       }
@@ -4317,7 +4047,7 @@ function updateDamageZones(delta) {
         zone.exploded = true;
         addParticles(zone.x, zone.y, "#ff6b6b", 18);
         addParticles(zone.x, zone.y, "#ffd166", 14);
-        addPopup("쾅!", zone.x, zone.y - 18, "#fff3b0", 0.45, 18);
+        addPopup("苡?", zone.x, zone.y - 18, "#fff3b0", 0.45, 18);
       }
       if (armed) {
         for (const enemy of [...enemies]) {
@@ -4486,7 +4216,7 @@ function escapeHtml(value) {
 function normalizeLeaderboard(entries) {
   return (Array.isArray(entries) ? entries : [])
     .map((entry) => ({
-      name: String(entry.name || "이름없음").slice(0, 12),
+      name: String(entry.name || "?대쫫?놁쓬").slice(0, 12),
       score: Math.max(0, Math.round(Number(entry.score) || 0)),
       hero: String(entry.hero || "").slice(0, 12),
       survivedSeconds: Math.max(0, Math.round(Number(entry.survivedSeconds) || 0)),
@@ -4535,13 +4265,13 @@ function renderLeaderboard() {
             (entry, index) => `
               <li>
                 <strong>${index + 1}</strong>
-                <span>${escapeHtml(entry.name)}</span>
-                <span>${formatScore(entry.score)}점</span>
+                <span>${escapeHtml(entry.name)}<em>${escapeHtml(entry.hero || "캐릭터 미상")}</em></span>
+                <span>${formatScore(entry.score)}</span>
               </li>
             `,
           )
           .join("")
-      : `<li><strong>-</strong><span>아직 등록된 랭킹이 없습니다</span><span>0점</span></li>`;
+      : `<li><strong>-</strong><span>아직 등록된 랭킹이 없습니다<em>캐릭터 미상</em></span><span>0</span></li>`;
 }
 
 async function loadLeaderboard() {
@@ -4590,20 +4320,29 @@ async function prepareLeaderboardEntry() {
     if (refs.rankHint) refs.rankHint.textContent = "TOP 10 진입! 이름을 등록하세요";
     window.setTimeout(() => refs.playerNameInput?.focus(), 120);
   } else if (refs.rankHint) {
-    refs.rankHint.textContent = "TOP 10 밖입니다";
+    refs.rankHint.textContent = "TOP 10 諛뽰엯?덈떎";
   }
+}
+
+async function showStartLeaderboard() {
+  refs.leaderboardPanel?.classList.remove("hidden");
+  refs.rankForm?.classList.add("hidden");
+  if (refs.rankHint) refs.rankHint.textContent = "랭킹 확인 중";
+  await loadLeaderboard();
+  if (refs.rankHint) refs.rankHint.textContent = leaderboardServerOnline ? "전체 유저 공유 랭킹" : "서버 연결 실패: 임시 저장 랭킹";
+  playSound("ui");
 }
 
 async function submitLeaderboardEntry(event) {
   event.preventDefault();
   if (!pendingLeaderboardScore || leaderboardSubmitting) return;
   if (!LEADERBOARD_API || !leaderboardServerOnline) {
-    if (refs.rankHint) refs.rankHint.textContent = "서버 랭킹 미연결: 점수를 공유 저장할 수 없습니다";
+    if (refs.rankHint) refs.rankHint.textContent = "?쒕쾭 ??궧 誘몄뿰寃? ?먯닔瑜?怨듭쑀 ??ν븷 ???놁뒿?덈떎";
     return;
   }
   leaderboardSubmitting = true;
   if (refs.submitScoreButton) refs.submitScoreButton.disabled = true;
-  const name = refs.playerNameInput?.value.trim() || "이름없음";
+  const name = refs.playerNameInput?.value.trim() || "?대쫫?놁쓬";
 
   try {
     const response = await fetch(LEADERBOARD_API, {
@@ -4616,7 +4355,7 @@ async function submitLeaderboardEntry(event) {
     leaderboardEntries = normalizeLeaderboard(data.entries);
     pendingLeaderboardScore = null;
     refs.rankForm?.classList.add("hidden");
-    if (refs.rankHint) refs.rankHint.textContent = "서버 랭킹 등록 완료";
+    if (refs.rankHint) refs.rankHint.textContent = "?쒕쾭 ??궧 ?깅줉 ?꾨즺";
     renderLeaderboard();
   } catch {
     leaderboardServerOnline = false;
@@ -4654,11 +4393,11 @@ function endGame(won) {
   game.manualPaused = false;
   bestScore = Math.max(bestScore, player.score);
   localStorage.setItem(STORAGE_KEY, String(bestScore));
-  refs.messageTitle.textContent = won ? "작전 성공" : "작전 종료";
+  refs.messageTitle.textContent = won ? "?묒쟾 ?깃났" : "?묒쟾 醫낅즺";
   refs.messageText.textContent = won
-    ? `1시간을 버텼습니다. 최종 점수 ${formatScore(player.score)}점.`
-    : `최종 점수 ${formatScore(player.score)}점. 다시 출동할 수 있습니다.`;
-  refs.startButton.textContent = "다시 출동";
+    ? `1?쒓컙??踰꾪끉?듬땲?? 理쒖쥌 ?먯닔 ${formatScore(player.score)}??`
+    : `理쒖쥌 ?먯닔 ${formatScore(player.score)}?? ?ㅼ떆 異쒕룞?????덉뒿?덈떎.`;
+  refs.startButton.textContent = "?ㅼ떆 異쒕룞";
   refs.message.classList.remove("start-screen");
   refs.message.classList.remove("hidden");
   prepareLeaderboardEntry();
@@ -4715,7 +4454,7 @@ function updateHud() {
   if (refs.dodgeStat) {
     const dodgePercent = Math.round((player.dodgeChance ?? 0) * 100);
     const labels = player.heroId === "changwoo" ? [] : [...(player.specialLabels || [])];
-    if (dodgePercent > 0 && player.heroId !== "juyeon") labels.unshift(`회피 ${dodgePercent}%`);
+    if (dodgePercent > 0 && player.heroId !== "juyeon") labels.unshift(`?뚰뵾 ${dodgePercent}%`);
     refs.dodgeStat.textContent = labels.join(" / ");
     refs.dodgeStat.classList.toggle("hidden", labels.length <= 0);
   }
@@ -4730,7 +4469,7 @@ function updateHud() {
   if (refs.policeButton) {
     const policeLabel = refs.policeButton.querySelector("span");
     if (policeLabel) policeLabel.textContent = getPoliceItemName();
-    refs.policeButton.setAttribute("aria-label", `${getPoliceItemName()} 사용`);
+    refs.policeButton.setAttribute("aria-label", `${getPoliceItemName()} ?ъ슜`);
     refs.policeButton.classList.toggle("medal-mode", isRunnerCompanionHero());
     refs.policeButton.classList.toggle("item-hidden", player.policeCalls <= 0);
     refs.policeButton.disabled = player.policeCalls <= 0 || game.state !== "playing" || game.paused;
@@ -4745,7 +4484,7 @@ function updateHud() {
     refs.chickenButton.classList.toggle("tank-radio-mode", isTankRadioHero());
     const chickenLabel = refs.chickenButton.querySelector("span");
     if (chickenLabel) chickenLabel.textContent = getChickenItemName();
-    refs.chickenButton.setAttribute("aria-label", `${getChickenItemName()} 사용`);
+    refs.chickenButton.setAttribute("aria-label", `${getChickenItemName()} ?ъ슜`);
     refs.chickenButton.classList.toggle("item-hidden", player.chickenBreasts <= 0);
     refs.chickenButton.disabled = player.chickenBreasts <= 0 || game.state !== "playing" || game.paused || player.chickenTimer > 0;
   }
@@ -4756,24 +4495,24 @@ function updateHud() {
   }
   if (refs.pauseButton) {
     refs.pauseButton.disabled = game.state !== "playing" || game.pendingHeroChoice || game.pendingStarterChoices > 0 || (game.paused && !game.manualPaused);
-    refs.pauseButton.textContent = game.manualPaused ? "▶" : "Ⅱ";
+    refs.pauseButton.textContent = game.manualPaused ? "▶" : "||";
     refs.pauseButton.classList.toggle("active", game.manualPaused);
   }
   const chipPower = (level) => clamp((Number(level) || 1) / 7, 0.16, 1);
   const loadoutItems = [
-    { label: `탄환 x${player.shots}`, type: "attack", power: chipPower(player.shots), desc: `가장 가까운 적에게 기본 탄환을 발사합니다. 현재 ${player.shots}발씩 발사.` },
-    weapons.card.level > 0 ? { label: `교통카드 Lv.${weapons.card.level}`, type: "attack", power: chipPower(weapons.card.level), desc: "교통카드가 화면 벽에 최대 5번 튕기며 적을 관통 공격합니다." } : null,
-    weapons.lightning.level > 0 ? { label: `번개 Lv.${weapons.lightning.level}`, type: "attack", power: chipPower(weapons.lightning.level), desc: "가까운 적 주변에 민원 번개를 내려 범위 피해를 줍니다." } : null,
-    weapons.strapOrbit.level > 0 ? { label: `손잡이 Lv.${weapons.strapOrbit.level}`, type: "attack", power: chipPower(weapons.strapOrbit.level), desc: `지하철 손잡이 ${getStrapCount()}개가 주위를 회전하며 닿은 적을 계속 공격합니다.` } : null,
-    weapons.tearGas.level > 0 ? { label: `최류탄 Lv.${weapons.tearGas.level}`, type: "attack", power: chipPower(weapons.tearGas.level), desc: "주인공 주변에 손잡이보다 넓은 가스 지대를 만들고 안에 들어온 적에게 지속 피해를 줍니다." } : null,
-    weapons.expressTrain.level > 0 ? { label: `급행 Lv.${weapons.expressTrain.level}`, type: "attack", power: chipPower(weapons.expressTrain.level), desc: "급행열차가 보스를 우선 노려 지나가며 피해와 넉백을 줍니다." } : null,
-    weapons.customerMissile.level > 0 ? { label: `유도탄 Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level), desc: "고객센터 유도탄이 보스를 우선 추적하고 약한 폭발 피해를 줍니다." } : null,
+    { label: `?꾪솚 x${player.shots}`, type: "attack", power: chipPower(player.shots), desc: `媛??媛源뚯슫 ?곸뿉寃?湲곕낯 ?꾪솚??諛쒖궗?⑸땲?? ?꾩옱 ${player.shots}諛쒖뵫 諛쒖궗.` },
+    weapons.card.level > 0 ? { label: `援먰넻移대뱶 Lv.${weapons.card.level}`, type: "attack", power: chipPower(weapons.card.level), desc: "援먰넻移대뱶媛 ?붾㈃ 踰쎌뿉 理쒕? 5踰??뺢린硫??곸쓣 愿??怨듦꺽?⑸땲??" } : null,
+    weapons.lightning.level > 0 ? { label: `踰덇컻 Lv.${weapons.lightning.level}`, type: "attack", power: chipPower(weapons.lightning.level), desc: "媛源뚯슫 ??二쇰???誘쇱썝 踰덇컻瑜??대젮 踰붿쐞 ?쇳빐瑜?以띾땲??" } : null,
+    weapons.strapOrbit.level > 0 ? { label: `?먯옟??Lv.${weapons.strapOrbit.level}`, type: "attack", power: chipPower(weapons.strapOrbit.level), desc: `吏?섏쿋 ?먯옟??${getStrapCount()}媛쒓? 二쇱쐞瑜??뚯쟾?섎ŉ ?우? ?곸쓣 怨꾩냽 怨듦꺽?⑸땲??` } : null,
+    weapons.tearGas.level > 0 ? { label: `理쒕쪟??Lv.${weapons.tearGas.level}`, type: "attack", power: chipPower(weapons.tearGas.level), desc: "二쇱씤怨?二쇰????먯옟?대낫???볦? 媛??吏?瑜?留뚮뱾怨??덉뿉 ?ㅼ뼱???곸뿉寃?吏???쇳빐瑜?以띾땲??" } : null,
+    weapons.expressTrain.level > 0 ? { label: `湲됲뻾 Lv.${weapons.expressTrain.level}`, type: "attack", power: chipPower(weapons.expressTrain.level), desc: "湲됲뻾?댁감媛 蹂댁뒪瑜??곗꽑 ?몃젮 吏?섍?硫??쇳빐? ?됰갚??以띾땲??" } : null,
+    weapons.customerMissile.level > 0 ? { label: `?좊룄??Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level), desc: "怨좉컼?쇳꽣 ?좊룄?꾩씠 蹂댁뒪瑜??곗꽑 異붿쟻?섍퀬 ?쏀븳 ??컻 ?쇳빐瑜?以띾땲??" } : null,
     weapons.subwayPolice.level > 0 ? { label: `${getCompanionSkillName()} Lv.${weapons.subwayPolice.level}`, type: "attack", power: chipPower(weapons.subwayPolice.level), desc: getCompanionSkillDesc() } : null,
     player.defenseBreakTimer > 0 ? { label: `방어저하 ${Math.ceil(player.defenseBreakTimer)}초`, type: "status", desc: "현재 방어력이 감소한 상태입니다." } : null,
     player.stunTimer > 0 ? { label: `경직 ${Math.ceil(player.stunTimer)}초`, type: "status", desc: "잠시 움직일 수 없는 상태입니다." } : null,
     player.slowTimer > 0 ? { label: `둔화 ${Math.ceil(player.slowTimer)}초`, type: "status", desc: "이동 속도가 느려진 상태입니다." } : null,
-    player.damageReduction > 0 ? { label: `내성 ${Math.round(player.damageReduction * 100)}%`, type: "passive", power: chipPower(Math.round(player.damageReduction / 0.15)), desc: "받는 피해가 감소합니다." } : null,
-    player.regenLevel > 0 ? { label: `회복 Lv.${player.regenLevel}`, type: "passive", power: chipPower(player.regenLevel), desc: `일정 시간마다 최대 체력의 ${Number(((BASE_REGEN_RATIO + player.regenLevel * REGEN_UPGRADE_RATIO) * 100).toFixed(1))}%를 회복합니다.` } : null,
+    player.damageReduction > 0 ? { label: `?댁꽦 ${Math.round(player.damageReduction * 100)}%`, type: "passive", power: chipPower(Math.round(player.damageReduction / 0.15)), desc: "諛쏅뒗 ?쇳빐媛 媛먯냼?⑸땲??" } : null,
+    player.regenLevel > 0 ? { label: `?뚮났 Lv.${player.regenLevel}`, type: "passive", power: chipPower(player.regenLevel), desc: `?쇱젙 ?쒓컙留덈떎 理쒕? 泥대젰??${Number(((BASE_REGEN_RATIO + player.regenLevel * REGEN_UPGRADE_RATIO) * 100).toFixed(1))}%瑜??뚮났?⑸땲??` } : null,
     player.chickenTimer > 0 ? { label: `${getChickenItemName()} ${Math.ceil(player.chickenTimer)}초`, type: "status", desc: "몸집이 커지고 접촉한 적에게 몸통박치기 피해와 넉백을 줍니다." } : null,
     player.stimTimer > 0 ? { label: `스팀팩 ${Math.ceil(player.stimTimer)}초`, type: "status", desc: "일부 무기 쿨타임이 1/3로 줄지만 매초 최대 체력 3%를 잃습니다." } : null,
   ].filter(Boolean);
@@ -5487,7 +5226,7 @@ function drawEnemy(enemy) {
       ctx.lineTo(offset + 5, stunY + 10);
       ctx.stroke();
     }
-    const label = `기절 ${enemy.stunTimer.toFixed(1)}초`;
+    const label = "기절 " + enemy.stunTimer.toFixed(1) + "초";
     const labelWidth = enemy.boss ? 86 : 68;
     const labelHeight = enemy.boss ? 23 : 19;
     ctx.fillStyle = "rgba(12, 15, 18, 0.82)";
@@ -6012,14 +5751,16 @@ function drawPoliceSquads() {
       const step = Math.sin(officerInfo.bob + player.elapsed * 9 + squad.distance * 0.05);
       ctx.save();
       ctx.translate(p.x, p.y);
-      if (canDrawGameImage(subwayPoliceImage)) {
+      const allyImage = squad.visual === "pacemaker" ? pacemakerRunnerImage : subwayPoliceImage;
+      const allyGlow = squad.visual === "pacemaker" ? "#7fc8ff" : "#77beff";
+      if (canDrawGameImage(allyImage)) {
         const facing = Math.cos(officer.angle) >= 0 ? 1 : -1;
-        drawAllyCutout(subwayPoliceImage, {
-          height: 96,
+        drawAllyCutout(allyImage, {
+          height: squad.visual === "pacemaker" ? 82 * (officerInfo.scale ?? 1) : 96,
           facing,
-          naturalFacing: -1,
+          naturalFacing: squad.visual === "pacemaker" ? 1 : -1,
           alpha: fade,
-          glow: "#77beff",
+          glow: allyGlow,
           bob: officerInfo.bob,
           recoil: Math.abs(Math.sin(progress * Math.PI * 6)),
         });
@@ -6264,7 +6005,7 @@ function drawComradeDropSquad(squad) {
         glow: "#b7ef64",
         bob: comrade.bob,
         recoil,
-        label: "예비군",
+        label: RESERVE_LABEL,
       });
       ctx.restore();
       continue;
@@ -6460,7 +6201,7 @@ function drawStationPolicePets() {
     ctx.font = "900 7px system-ui";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("철경", 0, -3);
+    ctx.fillText("泥좉꼍", 0, -3);
     ctx.restore();
   }
 }
@@ -6660,7 +6401,7 @@ function drawRunnerCompanionPets() {
     ctx.font = "900 7px system-ui";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("페메", 0, -3);
+    ctx.fillText("?섎찓", 0, -3);
     ctx.restore();
   }
 }
@@ -7012,7 +6753,7 @@ function drawDamageZones() {
         ctx.font = "900 13px system-ui";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText("민원", 0, 0);
+        ctx.fillText("誘쇱썝", 0, 0);
       } else {
         const flash = Math.max(0, 1 - blastProgress);
         const ringRadius = zone.radius * (0.35 + blastProgress * 1.12);
@@ -7436,7 +7177,7 @@ function drawDamageZones() {
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillStyle = "#fff3b0";
-      ctx.fillText("👍", 0, 0);
+      ctx.fillText("?몟", 0, 0);
       ctx.restore();
       continue;
     }
@@ -7501,7 +7242,7 @@ function drawDamageZones() {
       ctx.font = "900 14px system-ui";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText("우대", 34, -55);
+      ctx.fillText("?곕?", 34, -55);
       ctx.restore();
       continue;
     }
@@ -8160,6 +7901,7 @@ window.addEventListener("keydown", (event) => {
 window.addEventListener("keyup", (event) => keys.delete(event.code));
 
 refs.startButton.addEventListener("click", resetGame);
+refs.leaderboardOpenButton?.addEventListener("click", showStartLeaderboard);
 refs.firstAidButton?.addEventListener("click", useFirstAidKit);
 refs.policeButton?.addEventListener("click", usePoliceCall);
 refs.taserButton?.addEventListener("click", useTaserGun);
@@ -8218,7 +7960,7 @@ refs.app.addEventListener(
 resize();
 renderCodex();
 loadLeaderboard().catch(() => {
-  if (refs.rankHint) refs.rankHint.textContent = "서버 연결 대기";
+  if (refs.rankHint) refs.rankHint.textContent = "Loading ranking";
 });
 const previewMode = new URLSearchParams(window.location.search).get("preview");
 if (["pacemaker", "reserve", "police"].includes(previewMode)) {
