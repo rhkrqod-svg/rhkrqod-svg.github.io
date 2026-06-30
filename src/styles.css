@@ -1221,6 +1221,12 @@ button {
   filter: drop-shadow(0 14px 18px rgba(0, 0, 0, 0.45));
 }
 
+.hero-card--juyeon img {
+  object-fit: cover;
+  object-position: center top;
+  padding: 0;
+}
+
 .hero-card strong {
   display: block;
   margin-top: 6px;
