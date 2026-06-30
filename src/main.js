@@ -769,7 +769,9 @@ function getBasicBulletFireRate() {
 }
 
 function getBasicBulletStyle() {
-  return player.heroId === "changwoo" ? "military" : "default";
+  if (player.heroId === "changwoo") return "military";
+  if (player.heroId === "juyeon") return "medal";
+  return "default";
 }
 
 let width = 1;
@@ -1904,9 +1906,10 @@ function fireBulletVolley(source, target, count, {
 function fireBullets() {
   const target = findPriorityEnemyFrom(player, 680);
   if (!target) return;
+  const bulletStyle = getBasicBulletStyle();
   fireBulletVolley(player, target, player.shots, {
-    style: getBasicBulletStyle(),
-    color: getBasicBulletStyle() === "military" ? "#ffd166" : "#fff2a8",
+    style: bulletStyle,
+    color: bulletStyle === "military" || bulletStyle === "medal" ? "#ffd166" : "#fff2a8",
   });
   playSound("shot");
 }
@@ -5202,6 +5205,78 @@ function drawProjectiles() {
       ctx.beginPath();
       ctx.moveTo(-r * 1.05, -r * 0.6);
       ctx.lineTo(-r * 1.05, r * 0.6);
+      ctx.stroke();
+      ctx.restore();
+      continue;
+    }
+    if (bullet.style === "medal") {
+      const r = bullet.radius;
+      const spin = performance.now() * 0.012 + bullet.x * 0.01;
+      const squash = 0.74 + Math.abs(Math.sin(spin)) * 0.28;
+      ctx.shadowColor = "#ffd166";
+      ctx.shadowBlur = 15;
+
+      const trail = ctx.createLinearGradient(-r * 4, 0, -r * 0.9, 0);
+      trail.addColorStop(0, "rgba(255, 209, 102, 0)");
+      trail.addColorStop(0.62, "rgba(255, 209, 102, 0.2)");
+      trail.addColorStop(1, "rgba(255, 243, 176, 0.52)");
+      ctx.fillStyle = trail;
+      ctx.beginPath();
+      ctx.moveTo(-r * 4.1, 0);
+      ctx.lineTo(-r * 0.86, -r * 0.64);
+      ctx.lineTo(-r * 0.86, r * 0.64);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.save();
+      ctx.scale(squash, 1);
+      const medalGrad = ctx.createRadialGradient(-r * 0.24, -r * 0.34, r * 0.12, 0, 0, r * 1.2);
+      medalGrad.addColorStop(0, "#fff8d6");
+      medalGrad.addColorStop(0.34, "#ffd166");
+      medalGrad.addColorStop(0.72, "#c98b1e");
+      medalGrad.addColorStop(1, "#7f4f0f");
+      ctx.fillStyle = medalGrad;
+      ctx.strokeStyle = "#fff3b0";
+      ctx.lineWidth = 2.1;
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 1.24, 0, TAU);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = "rgba(98, 58, 9, 0.68)";
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 0.78, 0, TAU);
+      ctx.stroke();
+      ctx.fillStyle = "#fff8d6";
+      ctx.font = `900 ${Math.max(8, r * 0.9)}px system-ui`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("완", 0, r * 0.02);
+      ctx.restore();
+
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "#2f78c4";
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.7, -r * 1.08);
+      ctx.lineTo(-r * 1.22, -r * 2.0);
+      ctx.lineTo(-r * 0.22, -r * 1.4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "#f8f9fa";
+      ctx.beginPath();
+      ctx.moveTo(r * 0.7, -r * 1.08);
+      ctx.lineTo(r * 1.22, -r * 2.0);
+      ctx.lineTo(r * 0.22, -r * 1.4);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.82)";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.45, -r * 0.62);
+      ctx.lineTo(r * 0.36, -r * 0.74);
       ctx.stroke();
       ctx.restore();
       continue;
