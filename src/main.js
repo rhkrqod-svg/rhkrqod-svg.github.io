@@ -169,7 +169,7 @@ const heroTypes = [
     id: "juyeon",
     name: "주연",
     image: "/assets/heroes/juyeon-cutout.png",
-    cardImage: "/assets/heroes/juyeon-card.png",
+    cardImage: "/assets/heroes/juyeon-card-tight.png",
     chickenImage: "/assets/heroes/juyeon-chicken-form.png",
     quote: "그날 빌런은 떠올렸다, 지배 당해왔던 공포를",
     hp: 90,
