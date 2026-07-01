@@ -5760,7 +5760,7 @@ function drawPoliceSquads() {
       if (canDrawGameImage(allyImage)) {
         const facing = Math.cos(officer.angle) >= 0 ? 1 : -1;
         drawAllyCutout(allyImage, {
-          height: squad.visual === "pacemaker" ? 82 * (officerInfo.scale ?? 1) : 96,
+          height: squad.visual === "pacemaker" ? 107 * (officerInfo.scale ?? 1) : 96,
           facing,
           naturalFacing: squad.visual === "pacemaker" ? 1 : -1,
           alpha: fade,
@@ -5925,7 +5925,7 @@ function drawPacemakerMedalSquad(squad) {
     ctx.translate(p.x, p.y);
     ctx.translate(0, Math.sin(runnerInfo.bob + player.elapsed * 10) * 2);
     drawPacemakerRunnerCutout({
-      scale: 0.7 * runnerInfo.scale,
+      scale: 0.91 * runnerInfo.scale,
       facing: squad.passIndex === 0 ? 1 : -1,
       alpha,
       bob: runnerInfo.bob,
@@ -5978,7 +5978,7 @@ function drawComradeDropSquad(squad) {
       }
       ctx.rotate(-comrade.facing);
       drawAllyCutout(reserveSoldierImage, {
-        height: 72,
+        height: 94,
         facing: Math.cos(comrade.facing) >= 0 ? 1 : -1,
         naturalFacing: 1,
         alpha: 1,
@@ -6197,7 +6197,7 @@ function drawComradePets() {
     if (canDrawGameImage(reserveSoldierImage)) {
       const facing = Math.cos(pet.facing) >= 0 ? 1 : -1;
       drawAllyCutout(reserveSoldierImage, {
-        height: 76,
+        height: 99,
         facing,
         naturalFacing: 1,
         alpha: 1,
@@ -6293,7 +6293,7 @@ function drawRunnerCompanionPets() {
       ctx.translate(0, Math.sin(pet.bob + player.elapsed * 10) * 2);
       ctx.scale(1 + impact * 0.08, 1 + impact * 0.04);
       drawPacemakerRunnerCutout({
-        scale: 0.82,
+        scale: 1.07,
         facing,
         alpha: 1,
         bob: pet.bob,
