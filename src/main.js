@@ -5841,24 +5841,8 @@ function drawPacemakerRunnerCutout({ scale = 1, facing = 1, alpha = 1, bob = 0, 
   ctx.ellipse(0, spriteHeight * 0.33, spriteWidth * 0.34, 4.5 * scale, 0, 0, TAU);
   ctx.fill();
 
-  ctx.save();
-  ctx.globalCompositeOperation = "lighter";
-  ctx.strokeStyle = "rgba(159, 211, 255, 0.42)";
-  ctx.lineWidth = 3 * scale;
-  ctx.lineCap = "round";
-  ctx.beginPath();
-  ctx.moveTo(-spriteWidth * 0.88, spriteHeight * 0.18);
-  ctx.lineTo(-spriteWidth * 0.26, spriteHeight * 0.1 + step * 2);
-  ctx.moveTo(-spriteWidth * 0.74, -spriteHeight * 0.03);
-  ctx.lineTo(-spriteWidth * 0.18, -spriteHeight * 0.08);
-  ctx.stroke();
-  ctx.restore();
-
   if (imageReady) {
-    ctx.shadowColor = accent;
-    ctx.shadowBlur = 10 * scale;
     ctx.drawImage(pacemakerRunnerImage, -spriteWidth / 2, -spriteHeight * 0.62, spriteWidth, spriteHeight);
-    ctx.shadowBlur = 0;
   } else {
     ctx.fillStyle = "#d5aa82";
     ctx.beginPath();
@@ -5944,14 +5928,6 @@ function drawPacemakerMedalSquad(squad) {
       accent: "#7fc8ff",
     });
 
-    if (runner.active) {
-      ctx.globalAlpha = alpha * 0.45;
-      ctx.strokeStyle = "#7fc8ff";
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.arc((squad.passIndex === 0 ? 20 : -20), 0, 18 + Math.abs(Math.sin(runnerInfo.bob + player.elapsed * 15)) * 4, -0.65, 0.65);
-      ctx.stroke();
-    }
     ctx.restore();
   }
 }
@@ -6319,15 +6295,6 @@ function drawRunnerCompanionPets() {
         bob: pet.bob,
         accent: "#9fd3ff",
       });
-      if (impact > 0.18) {
-        ctx.globalAlpha = 0.58 * impact;
-        ctx.strokeStyle = "#9fd3ff";
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.arc(facing * 20, 0, 18 + impact * 18, -0.72, 0.72);
-        ctx.stroke();
-        ctx.globalAlpha = 1;
-      }
       ctx.restore();
       continue;
     }
