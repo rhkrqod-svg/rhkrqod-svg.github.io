@@ -535,7 +535,7 @@ const upgradePool = [
   {
     id: "tearGas",
     name: "최루탄",
-    desc: "주인공 주위에 가스 장판으로 지속 피해",
+    desc: "최루탄을 던져 터진 곳에 가스 장판 생성",
     apply: () => {
       weapons.tearGas.level += 1;
     },
@@ -615,12 +615,12 @@ function getUpgradeDisplay(choice) {
 
 function getTearGasRadius() {
   const level = Math.max(1, weapons.tearGas.level);
-  return (58 + level * 8) * 1.3 * 1.7 * 1.5 * (1 + (level - 1) * 0.09);
+  return (58 + level * 8) * 1.3 * 1.7 * 1.5 * 0.5 * (1 + (level - 1) * 0.08);
 }
 
 function getTearGasDamage() {
   const level = Math.max(1, weapons.tearGas.level);
-  return Math.round((9 + (level - 1) * 6) * 1.8 * (player.meleeDamageMultiplier || 1));
+  return Math.round((9 + (level - 1) * 6) * 1.8 * 2 * (player.meleeDamageMultiplier || 1));
 }
 
 function getStrapOrbitRadius() {
@@ -756,7 +756,7 @@ const weapons = {
   card: { level: 0, cooldown: 0.45 },
   lowKick: { level: 0, cooldown: 2.4 },
   strapOrbit: { level: 0, angle: 0 },
-  tearGas: { level: 0, pulse: 0 },
+  tearGas: { level: 0, cooldown: 3, pulse: 0 },
   announcement: { level: 0, cooldown: 3.9 },
   expressTrain: { level: 0, cooldown: 8.2 },
   transferGate: { level: 0, cooldown: 6.2 },
@@ -1219,7 +1219,7 @@ function resetGame() {
   Object.assign(weapons.card, { level: 0, cooldown: 0.45 });
   Object.assign(weapons.lowKick, { level: 0, cooldown: 2.4 });
   Object.assign(weapons.strapOrbit, { level: 0, angle: 0 });
-  Object.assign(weapons.tearGas, { level: 0, pulse: 0 });
+  Object.assign(weapons.tearGas, { level: 0, cooldown: 3, pulse: 0 });
   Object.assign(weapons.announcement, { level: 0, cooldown: 3.9 });
   Object.assign(weapons.expressTrain, { level: 0, cooldown: 8.2 });
   Object.assign(weapons.transferGate, { level: 0, cooldown: 6.2 });
@@ -2031,6 +2031,36 @@ function spawnExpressTrain() {
   playSound("train");
 }
 
+function throwTearGas() {
+  const level = weapons.tearGas.level;
+  if (level <= 0) return;
+  const target = findPriorityEnemyFrom(player, 980);
+  const move = getMoveVector();
+  const angle = target ? angleTo(player, target) : Math.hypot(move.x, move.y) > 0.1 ? Math.atan2(move.y, move.x) : -Math.PI / 2;
+  const travelDistance = target ? Math.min(540, Math.max(220, distance(player, target))) : 380;
+  const targetX = clamp(player.x + Math.cos(angle) * travelDistance, 55, WORLD_SIZE - 55);
+  const targetY = clamp(player.y + Math.sin(angle) * travelDistance, 55, WORLD_SIZE - 55);
+  const speed = 520;
+  const travelTime = Math.max(0.34, travelDistance / speed);
+  damageZones.push({
+    x: player.x + Math.cos(angle) * (player.radius + 12),
+    y: player.y + Math.sin(angle) * (player.radius + 12),
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    targetX,
+    targetY,
+    radius: 20,
+    cloudRadius: getTearGasRadius(),
+    cloudDamage: getTearGasDamage(),
+    life: travelTime,
+    maxLife: travelTime,
+    color: "#c9f27b",
+    kind: "tearGasBomb",
+    trail: [],
+  });
+  playSound("gas");
+}
+
 function spawnTransferGate() {
   const level = weapons.transferGate.level;
   if (level <= 0 || enemies.length === 0) return;
@@ -2206,6 +2236,12 @@ function updatePlayer(delta) {
   if (weapons.card.level > 0 && weapons.card.cooldown <= 0) {
     spawnCard();
     weapons.card.cooldown = 2.37;
+  }
+
+  weapons.tearGas.cooldown -= cooldownDelta;
+  if (weapons.tearGas.level > 0 && weapons.tearGas.cooldown <= 0) {
+    throwTearGas();
+    weapons.tearGas.cooldown = 3;
   }
 
   weapons.expressTrain.cooldown -= delta;
@@ -3106,21 +3142,7 @@ function updateBlade(delta = 0) {
   }
 
   if (weapons.tearGas.level > 0) {
-    weapons.tearGas.pulse += delta * (1.5 + weapons.tearGas.level * 0.18);
-    const gasRadius = getTearGasRadius();
-    const gasDamage = getTearGasDamage();
-    const now = performance.now();
-    let gasHit = false;
-    for (const enemy of [...enemies]) {
-      if (Math.hypot(enemy.x - player.x, enemy.y - player.y) > gasRadius + enemy.radius) continue;
-      if (enemy.lastTearGasHit && now - enemy.lastTearGasHit <= 360) continue;
-      enemy.lastTearGasHit = now;
-      damageEnemy(enemy, gasDamage, "#b7ef64");
-      gasHit = true;
-    }
-    if (gasHit) {
-      playSound("gas");
-    }
+    weapons.tearGas.pulse += delta * (2.2 + weapons.tearGas.level * 0.22);
   }
 }
 
@@ -4134,12 +4156,65 @@ function updateDamageZones(delta) {
       zone.x += (zone.vx ?? 0) * delta;
       zone.y += (zone.vy ?? 0) * delta;
     }
+    if (zone.kind === "tearGasBomb") {
+      zone.trail = zone.trail ?? [];
+      zone.trail.push({ x: zone.x, y: zone.y, life: 0.24 });
+      if (zone.trail.length > 10) zone.trail.shift();
+      for (const point of zone.trail) point.life -= delta;
+      zone.trail = zone.trail.filter((point) => point.life > 0);
+      const reachedTarget = Math.hypot(zone.x - zone.targetX, zone.y - zone.targetY) < 26;
+      if (zone.life <= 0 || reachedTarget) {
+        const detonateX = clamp(zone.targetX ?? zone.x, 45, WORLD_SIZE - 45);
+        const detonateY = clamp(zone.targetY ?? zone.y, 45, WORLD_SIZE - 45);
+        const zoneIndex = damageZones.indexOf(zone);
+        if (zoneIndex >= 0) damageZones.splice(zoneIndex, 1);
+        damageZones.push({
+          x: detonateX,
+          y: detonateY,
+          radius: zone.cloudRadius ?? getTearGasRadius(),
+          damage: zone.cloudDamage ?? getTearGasDamage(),
+          stun: 2.5,
+          bossStun: 0.5,
+          life: 2.5,
+          maxLife: 2.5,
+          color: "#c9f27b",
+          hitTimers: new Map(),
+          stunApplied: new Set(),
+          kind: "tearGasCloud",
+          seed: Math.random() * TAU,
+          particleTimer: 0,
+        });
+        addParticles(detonateX, detonateY, "#c9f27b", 24);
+        playSound("gas");
+        continue;
+      }
+    }
     if (zone.kind === "bomb") {
       const safePoint = clampPointToVisibleWorld(zone.x, zone.y, Math.min(132, zone.radius + 26));
       zone.x = safePoint.x;
       zone.y = safePoint.y;
     }
-    if (zone.hostile) {
+    if (zone.kind === "tearGasCloud") {
+      zone.particleTimer = (zone.particleTimer ?? 0) - delta;
+      if (zone.particleTimer <= 0) {
+        zone.particleTimer = 0.18;
+        const puffAngle = Math.random() * TAU;
+        const puffDistance = Math.random() * zone.radius * 0.82;
+        addParticles(zone.x + Math.cos(puffAngle) * puffDistance, zone.y + Math.sin(puffAngle) * puffDistance, "#c9f27b", 3);
+      }
+      for (const enemy of [...enemies]) {
+        if (Math.hypot(enemy.x - zone.x, enemy.y - zone.y) > zone.radius + enemy.radius) continue;
+        if (!zone.stunApplied?.has(enemy)) {
+          zone.stunApplied?.add(enemy);
+          const stunDuration = enemy.boss ? zone.bossStun : zone.stun;
+          enemy.stunTimer = Math.max(enemy.stunTimer ?? 0, stunDuration);
+          addPopup("STUN", enemy.x, enemy.y - enemy.radius - 20, "#d8ff9f", 0.5, enemy.boss ? 15 : 13);
+        }
+        if (zone.hitTimers?.has(enemy)) continue;
+        zone.hitTimers?.set(enemy, 0.42);
+        damageEnemy(enemy, zone.damage, "#c9f27b");
+      }
+    } else if (zone.hostile) {
       const active = zone.vx || zone.vy ? true : zone.armedAt ? progress >= zone.armedAt : zone.trap ? zone.life < zone.maxLife - 0.25 : zone.life < zone.maxLife * 0.72;
       const distanceToPlayer = Math.hypot(player.x - zone.x, player.y - zone.y);
       let hitPlayer = distanceToPlayer < zone.radius + player.radius;
@@ -4645,7 +4720,7 @@ function updateHud() {
     weapons.card.level > 0 ? { label: `교통카드 Lv.${weapons.card.level}`, type: "attack", power: chipPower(weapons.card.level), desc: "교통카드가 화면 벽에 최대 5번 튕기며 적을 관통 공격합니다." } : null,
     weapons.lightning.level > 0 ? { label: `민원번개 Lv.${weapons.lightning.level}`, type: "attack", power: chipPower(weapons.lightning.level), desc: "가까운 적 주변에 민원 번개를 내려 범위 피해와 스턴을 줍니다." } : null,
     weapons.strapOrbit.level > 0 ? { label: `손잡이 Lv.${weapons.strapOrbit.level}`, type: "attack", power: chipPower(weapons.strapOrbit.level), desc: `지하철 손잡이 ${getStrapCount()}개가 주위를 회전하며 닿은 적을 계속 공격합니다.` } : null,
-    weapons.tearGas.level > 0 ? { label: `최루탄 Lv.${weapons.tearGas.level}`, type: "attack", power: chipPower(weapons.tearGas.level), desc: "주인공 주변에 회색 가스 장판을 만들고 안에 들어온 적에게 지속 피해를 줍니다." } : null,
+    weapons.tearGas.level > 0 ? { label: `최루탄 Lv.${weapons.tearGas.level}`, type: "attack", power: chipPower(weapons.tearGas.level), desc: "최루탄을 던져 터진 곳에 가스 장판을 만들고 스턴과 지속 피해를 줍니다." } : null,
     weapons.expressTrain.level > 0 ? { label: `급행열차 Lv.${weapons.expressTrain.level}`, type: "attack", power: chipPower(weapons.expressTrain.level), desc: "급행열차가 보스를 우선 노리고 지나가며 큰 피해, 넉백, 스턴을 줍니다." } : null,
     weapons.customerMissile.level > 0 ? { label: `유도탄 Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level), desc: "고객센터 유도탄이 보스를 우선 추적하고 폭발 피해를 줍니다." } : null,
     weapons.subwayPolice.level > 0 ? { label: `${getCompanionSkillName()} Lv.${weapons.subwayPolice.level}`, type: "attack", power: chipPower(weapons.subwayPolice.level), desc: getCompanionSkillDesc() } : null,
@@ -5083,43 +5158,6 @@ function drawPlayer() {
 }
 
 function drawBlades() {
-  if (weapons.tearGas.level > 0) {
-    const gasRadius = getTearGasRadius();
-    const p = worldToScreen(player.x, player.y);
-    const pulse = weapons.tearGas.pulse;
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.globalCompositeOperation = "source-over";
-    ctx.globalAlpha = 0.5;
-    const gradient = ctx.createRadialGradient(0, 0, gasRadius * 0.14, 0, 0, gasRadius);
-    gradient.addColorStop(0, "rgba(190, 196, 195, 0.24)");
-    gradient.addColorStop(0.45, "rgba(135, 145, 143, 0.16)");
-    gradient.addColorStop(0.78, "rgba(92, 101, 100, 0.08)");
-    gradient.addColorStop(1, "rgba(60, 66, 66, 0)");
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.arc(0, 0, gasRadius, 0, TAU);
-    ctx.fill();
-
-    for (let i = 0; i < 42; i += 1) {
-      const angle = pulse * (0.1 + (i % 6) * 0.014) + (TAU * i) / 42;
-      const radius = gasRadius * (0.1 + ((i * 31) % 86) / 100);
-      const drift = Math.sin(pulse * 0.9 + i * 1.9) * (10 + (i % 5) * 3);
-      const cloudSize = gasRadius * (0.052 + (i % 5) * 0.011);
-      const x = Math.cos(angle) * (radius + drift);
-      const y = Math.sin(angle) * (radius - drift * 0.6);
-      const cloud = ctx.createRadialGradient(x, y, 0, x, y, cloudSize);
-      cloud.addColorStop(0, "rgba(224, 228, 226, 0.22)");
-      cloud.addColorStop(0.45, "rgba(150, 158, 156, 0.15)");
-      cloud.addColorStop(1, "rgba(75, 82, 82, 0)");
-      ctx.fillStyle = cloud;
-      ctx.beginPath();
-      ctx.arc(x, y, cloudSize, 0, TAU);
-      ctx.fill();
-    }
-    ctx.restore();
-  }
-
   if (weapons.strapOrbit.level > 0) {
     const strapCount = getStrapCount();
     const strapRadius = getStrapOrbitRadius();
@@ -6726,6 +6764,101 @@ function drawDamageZones() {
     const p = worldToScreen(zone.x, zone.y);
     const progress = 1 - zone.life / zone.maxLife;
     ctx.save();
+    if (zone.kind === "tearGasBomb") {
+      if (zone.trail?.length > 1) {
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+        ctx.strokeStyle = "rgba(201, 242, 123, 0.34)";
+        ctx.lineWidth = 5;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        for (let i = 0; i < zone.trail.length; i += 1) {
+          const trailPoint = worldToScreen(zone.trail[i].x, zone.trail[i].y);
+          if (i === 0) ctx.moveTo(trailPoint.x, trailPoint.y);
+          else ctx.lineTo(trailPoint.x, trailPoint.y);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+      const angle = Math.atan2(zone.vy ?? 0, zone.vx ?? 1);
+      ctx.translate(p.x, p.y);
+      ctx.rotate(angle + progress * 8);
+      ctx.shadowColor = "#c9f27b";
+      ctx.shadowBlur = 16;
+      const canWidth = 34;
+      const canHeight = 17;
+      const canGrad = ctx.createLinearGradient(-canWidth / 2, -canHeight / 2, canWidth / 2, canHeight / 2);
+      canGrad.addColorStop(0, "#f1f3f5");
+      canGrad.addColorStop(0.4, "#adb5bd");
+      canGrad.addColorStop(0.72, "#5c6770");
+      canGrad.addColorStop(1, "#d8ff9f");
+      ctx.fillStyle = canGrad;
+      ctx.strokeStyle = "#1f2429";
+      ctx.lineWidth = 2.4;
+      roundedRect(-canWidth / 2, -canHeight / 2, canWidth, canHeight, 6);
+      ctx.fill();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "#c9f27b";
+      ctx.fillRect(-4, -canHeight / 2, 8, canHeight);
+      ctx.strokeStyle = "rgba(255,255,255,0.78)";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(-canWidth * 0.34, -canHeight * 0.22);
+      ctx.lineTo(canWidth * 0.28, -canHeight * 0.22);
+      ctx.stroke();
+      ctx.restore();
+      continue;
+    }
+
+    if (zone.kind === "tearGasCloud") {
+      const fadeIn = clamp(progress / 0.18, 0, 1);
+      const fadeOut = clamp(zone.life / 0.7, 0, 1);
+      const alpha = Math.min(fadeIn, fadeOut);
+      const pulse = Math.sin((performance.now() * 0.004 + zone.seed) * 2.4);
+      ctx.translate(p.x, p.y);
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = 0.34 * alpha;
+      const glow = ctx.createRadialGradient(0, 0, zone.radius * 0.06, 0, 0, zone.radius);
+      glow.addColorStop(0, "rgba(225, 255, 150, 0.5)");
+      glow.addColorStop(0.34, "rgba(170, 206, 120, 0.26)");
+      glow.addColorStop(0.72, "rgba(87, 96, 96, 0.14)");
+      glow.addColorStop(1, "rgba(45, 50, 50, 0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(0, 0, zone.radius * (0.92 + pulse * 0.035), 0, TAU);
+      ctx.fill();
+
+      for (let i = 0; i < 34; i += 1) {
+        const a = zone.seed + (TAU * i) / 34 + progress * (0.32 + (i % 5) * 0.025);
+        const d = zone.radius * (0.12 + ((i * 19) % 78) / 100);
+        const wobble = Math.sin(progress * 5.2 + i * 1.7 + zone.seed) * zone.radius * 0.055;
+        const cloudSize = zone.radius * (0.12 + (i % 6) * 0.018);
+        const x = Math.cos(a) * (d + wobble);
+        const y = Math.sin(a) * (d - wobble * 0.6);
+        const cloud = ctx.createRadialGradient(x, y, 0, x, y, cloudSize);
+        cloud.addColorStop(0, i % 4 === 0 ? "rgba(218, 255, 145, 0.36)" : "rgba(224, 228, 226, 0.34)");
+        cloud.addColorStop(0.48, "rgba(128, 137, 134, 0.2)");
+        cloud.addColorStop(1, "rgba(52, 58, 58, 0)");
+        ctx.globalAlpha = alpha * (0.42 + (i % 4) * 0.04);
+        ctx.fillStyle = cloud;
+        ctx.beginPath();
+        ctx.arc(x, y, cloudSize, 0, TAU);
+        ctx.fill();
+      }
+
+      ctx.globalAlpha = 0.62 * alpha;
+      ctx.strokeStyle = "rgba(216, 255, 159, 0.72)";
+      ctx.lineWidth = 3;
+      ctx.setLineDash([12, 13]);
+      ctx.beginPath();
+      ctx.arc(0, 0, zone.radius * (0.78 + pulse * 0.04), 0, TAU);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+      continue;
+    }
+
     if (zone.kind === "train") {
       const trainLength = zone.trainLength ?? 520;
       const trainWidth = zone.width;
