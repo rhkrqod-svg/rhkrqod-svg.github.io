@@ -22,16 +22,16 @@
     <meta name="twitter:title" content="지하철 빌런헌터" />
     <meta name="twitter:description" content="지하철 빌런을 처치하는 모바일 액션 생존 게임" />
     <meta name="twitter:image" content="https://rhkrqod-svg.github.io/assets/images/start-screen.png" />
-    <script type="module" crossorigin src="/assets/index-BZyh9IIe.js"></script>
+    <script type="module" crossorigin src="/assets/index-DfDTbQwy.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-B0duAy-R.css">
   </head>
   <body>
     <div id="app">
       <canvas id="game"></canvas>
 
-      <div class="hud hp-bar" aria-label="泥대젰">
+      <div class="hud hp-bar" aria-label="체력">
         <div class="hp-row">
-          <span>泥대젰</span>
+          <span>체력</span>
           <strong id="health">100 / 100</strong>
         </div>
         <div class="hp-track">
@@ -39,17 +39,17 @@
         </div>
       </div>
 
-      <section class="hud top-hud" aria-label="寃뚯엫 ?곹깭">
+      <section class="hud top-hud" aria-label="게임 상태">
         <div class="stat">
-          <span>?덈꺼</span>
+          <span>레벨</span>
           <strong id="level">1</strong>
         </div>
         <div class="stat">
-          <span>?쒓컙</span>
+          <span>시간</span>
           <strong id="time">0:00</strong>
         </div>
         <div class="stat">
-          <span>?먯닔</span>
+          <span>점수</span>
           <strong id="score">0</strong>
         </div>
         <div class="stat compact-stat">
@@ -63,7 +63,7 @@
         <div class="stat compact-stat">
           <span>SPD</span>
           <strong id="speedStat">100</strong>
-          <em id="dodgeStat" class="dodge-stat hidden">?뚰뵾 20%</em>
+          <em id="dodgeStat" class="dodge-stat hidden">회피 20%</em>
         </div>
       </section>
 
@@ -71,13 +71,13 @@
         <div id="xpFill" class="xp-fill"></div>
       </div>
 
-      <aside class="hud loadout" aria-label="臾닿린">
+      <aside class="hud loadout" aria-label="스킬">
         <div id="skillTooltip" class="skill-tooltip" role="status" aria-live="polite"></div>
         <div id="weaponList"></div>
       </aside>
 
       <aside class="hud best">
-        <span>理쒓퀬 ?먯닔</span>
+        <span>최고 점수</span>
         <strong id="bestScore">0</strong>
       </aside>
 
