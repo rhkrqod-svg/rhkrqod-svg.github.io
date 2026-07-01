@@ -5,6 +5,16 @@ const ctx = canvas.getContext("2d");
 const subwayInteriorBg = new Image();
 subwayInteriorBg.src = "/assets/line1-subway-interior-bg.png";
 
+function createGameImage(src) {
+  const image = new Image();
+  image.src = src;
+  return image;
+}
+
+function canDrawGameImage(image) {
+  return Boolean(image?.complete && image.naturalWidth > 0);
+}
+
 const refs = {
   app: document.querySelector("#app"),
   hp: document.querySelector("#health"),
@@ -260,11 +270,126 @@ function getCompanionSkillDesc() {
   return "지하철 경찰이 동행하며 보스를 우선 곤봉으로 공격합니다.";
 }
 
+function getChickenItemName() {
+  return isTankRadioHero() ? "탱크무전기" : "닭가슴살";
+}
+
 function getPoliceItemName() {
   if (isComradeHero()) return "예비군 훈련";
   if (isRunnerCompanionHero()) return "마라톤 참가권";
   return "지하철 경찰대";
 }
+
+const monsterTypes = [
+  {
+    id: "spread-seat-guy",
+    name: "쩍벌남",
+    shortName: "쩍벌남",
+    image: "/assets/monsters/spread-seat-guy.png?v=20260619b",
+    color: "#7b2cbf",
+    trim: "#c77dff",
+    hp: 192,
+    speed: 45,
+    damage: 14,
+    radius: 62 * 0.364,
+    bodySize: 0.65,
+    xp: 15,
+    score: 42,
+    weight: (minute) => 5 + minute * 0.6,
+    note: "좌석을 통째로 점령한 느린 탱커",
+    special: "tank",
+  },
+  {
+    id: "phone-woman",
+    name: "통화녀",
+    shortName: "통화녀",
+    image: "/assets/monsters/phone-woman.png?v=20260619b",
+    color: "#00a896",
+    trim: "#80ffdb",
+    hp: 96,
+    speed: 80,
+    damage: 8,
+    radius: 62 * 0.294,
+    bodySize: 0.42,
+    xp: 9,
+    score: 26,
+    weight: (minute) => 8 + minute * 0.9,
+    note: "통화에 정신 팔린 중속 몬스터",
+    special: "spiral",
+  },
+  {
+    id: "pushy-aunt",
+    name: "밀치기아줌마",
+    shortName: "밀치기",
+    image: "/assets/monsters/pushy-aunt.png?v=20260619b",
+    color: "#f77f00",
+    trim: "#ffbe0b",
+    hp: 144,
+    speed: 105,
+    damage: 10,
+    radius: 62 * 0.28,
+    bodySize: 0.5,
+    xp: 13,
+    score: 38,
+    weight: (minute) => 7 + minute * 1.2,
+    note: "빠르게 파고드는 돌진형 몬스터",
+    special: "zigzag",
+  },
+  {
+    id: "wall-man",
+    name: "철벽남",
+    shortName: "철벽남",
+    image: "/assets/monsters/wall-man.png?v=20260619b",
+    color: "#1d3557",
+    trim: "#48cae4",
+    hp: 264,
+    speed: 30,
+    damage: 10,
+    radius: 62 * 0.42,
+    bodySize: 0.75,
+    xp: 19,
+    score: 55,
+    weight: (minute) => 3.5 + minute * 0.55,
+    note: "느리지만 단단한 벽 같은 탱커",
+    special: "tank",
+  },
+  {
+    id: "backpack-spinner",
+    name: "백팩 스핀러",
+    shortName: "백팩",
+    image: "/assets/monsters/backpack-spinner.png?v=20260619b",
+    color: "#2d6a4f",
+    trim: "#95d5b2",
+    hp: 132,
+    speed: 90,
+    damage: 15,
+    radius: 62 * 0.322,
+    bodySize: 0.58,
+    xp: 14,
+    score: 46,
+    weight: (minute) => 5.5 + minute * 0.9,
+    note: "회전하며 접근하는 고위험 몬스터",
+    special: "spiral",
+  },
+  {
+    id: "speakerphone-man",
+    name: "스피커폰맨",
+    shortName: "스피커",
+    image: "/assets/monsters/speakerphone-man.png?v=20260619b",
+    color: "#c9184a",
+    trim: "#ff8fab",
+    hp: 168,
+    speed: 60,
+    damage: 12,
+    radius: 62 * 0.294,
+    bodySize: 0.52,
+    xp: 15,
+    score: 44,
+    weight: (minute) => 5.5 + minute * 0.75,
+    note: "스피커 파동으로 압박하는 소음형 몬스터",
+    special: "shout",
+  },
+];
 
 const bossTypes = [
   {
@@ -343,6 +468,17 @@ const bossImages = new Map();
 for (const boss of bossTypes) {
   bossImages.set(boss.id, createGameImage(boss.image));
 }
+
+const pacemakerRunnerImage = createGameImage("/assets/heroes/juyeon-pacemaker-runner-game.png?v=20260630");
+const reserveSoldierImage = createGameImage("/assets/heroes/changwoo-reserve-soldier-game.png?v=20260630");
+const subwayPoliceImage = createGameImage("/assets/heroes/subway-police-officer-game.png?v=20260630");
+
+const monsterImages = new Map();
+for (const monster of monsterTypes) {
+  if (!monster.image) continue;
+  monsterImages.set(monster.id, createGameImage(monster.image));
+}
+monsterImages.set("commute-protest", createGameImage("/assets/monsters/commute-protest-cart.png?v=20260627d"));
 
 const upgradePool = [
   {
