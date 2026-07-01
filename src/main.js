@@ -5897,60 +5897,58 @@ function drawProjectiles() {
     ctx.shadowColor = "#8ee8ff";
     ctx.shadowBlur = 16;
 
-    const phoneW = 22;
-    const phoneH = 34;
-    ctx.save();
-    ctx.rotate(Math.PI / 2);
-    ctx.fillStyle = "#111827";
-    ctx.strokeStyle = "#dff7ff";
-    ctx.lineWidth = 2;
-    roundedRect(-phoneW / 2, -phoneH / 2, phoneW, phoneH, 5);
-    ctx.fill();
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-
-    ctx.fillStyle = "#e7fbff";
-    roundedRect(-phoneW * 0.36, -phoneH * 0.28, phoneW * 0.72, phoneH * 0.46, 4);
-    ctx.fill();
-    ctx.fillStyle = "#0ea5e9";
-    ctx.font = "900 6px system-ui";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("민원", 0, -phoneH * 0.04);
-    ctx.fillStyle = "#8ee8ff";
-    ctx.beginPath();
-    ctx.arc(0, phoneH * 0.38, 2.1, 0, TAU);
-    ctx.fill();
-    ctx.restore();
-
     ctx.globalCompositeOperation = "lighter";
     ctx.fillStyle = "rgba(142, 232, 255, 0.32)";
     ctx.beginPath();
-    ctx.moveTo(-21, 0);
-    ctx.lineTo(-7, -8);
-    ctx.lineTo(-9, 8);
+    ctx.moveTo(-28, 0);
+    ctx.lineTo(-11, -9);
+    ctx.lineTo(-13, 9);
     ctx.closePath();
     ctx.fill();
     ctx.globalCompositeOperation = "source-over";
 
-    ctx.fillStyle = "#ffffff";
+    const envelopeW = 42;
+    const envelopeH = 28;
+    const envelopeX = -envelopeW / 2;
+    const envelopeY = -envelopeH / 2;
+    const envelopeGrad = ctx.createLinearGradient(envelopeX, envelopeY, envelopeW / 2, envelopeH / 2);
+    envelopeGrad.addColorStop(0, "#ffffff");
+    envelopeGrad.addColorStop(0.58, "#e7fbff");
+    envelopeGrad.addColorStop(1, "#bdefff");
+    ctx.fillStyle = envelopeGrad;
     ctx.strokeStyle = "#0ea5e9";
-    ctx.lineWidth = 1.6;
-    roundedRect(7, -15, 26, 17, 7);
+    ctx.lineWidth = 2.2;
+    roundedRect(envelopeX, envelopeY, envelopeW, envelopeH, 5);
     ctx.fill();
     ctx.stroke();
+
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = "rgba(14, 165, 233, 0.86)";
+    ctx.lineWidth = 1.8;
     ctx.beginPath();
-    ctx.moveTo(15, 2);
-    ctx.lineTo(11, 8);
-    ctx.lineTo(22, 2);
-    ctx.closePath();
-    ctx.fill();
+    ctx.moveTo(envelopeX + 3, envelopeY + 4);
+    ctx.lineTo(0, 4);
+    ctx.lineTo(envelopeX + envelopeW - 3, envelopeY + 4);
+    ctx.moveTo(envelopeX + 3, envelopeY + envelopeH - 4);
+    ctx.lineTo(-1, 3);
+    ctx.moveTo(envelopeX + envelopeW - 3, envelopeY + envelopeH - 4);
+    ctx.lineTo(1, 3);
     ctx.stroke();
+
     ctx.fillStyle = "#0ea5e9";
-    ctx.font = "900 8px system-ui";
+    roundedRect(-10, -4, 20, 10, 4);
+    ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "900 7px system-ui";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("!", 20, -6);
+    ctx.fillText("민원", 0, 1);
+
+    ctx.fillStyle = "#0ea5e9";
+    ctx.font = "900 12px system-ui";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("!", envelopeX + envelopeW - 7, envelopeY + 8);
     ctx.restore();
   }
 
