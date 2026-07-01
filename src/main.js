@@ -551,8 +551,8 @@ const upgradePool = [
   },
   {
     id: "customerMissile",
-    name: "고객센터 유도탄",
-    desc: "가까운 적에게 유도탄을 발사하고 폭발 피해",
+    name: "민원 문자",
+    desc: "민원 문자가 적을 추적하고 폭발 피해",
     apply: () => {
       weapons.customerMissile.level += 1;
       weapons.customerMissile.cooldown = Math.min(weapons.customerMissile.cooldown, 0.68);
@@ -4722,7 +4722,7 @@ function updateHud() {
     weapons.strapOrbit.level > 0 ? { label: `손잡이 Lv.${weapons.strapOrbit.level}`, type: "attack", power: chipPower(weapons.strapOrbit.level), desc: `지하철 손잡이 ${getStrapCount()}개가 주위를 회전하며 닿은 적을 계속 공격합니다.` } : null,
     weapons.tearGas.level > 0 ? { label: `최루탄 Lv.${weapons.tearGas.level}`, type: "attack", power: chipPower(weapons.tearGas.level), desc: "최루탄을 던져 터진 곳에 가스 장판을 만들고 스턴과 지속 피해를 줍니다." } : null,
     weapons.expressTrain.level > 0 ? { label: `급행열차 Lv.${weapons.expressTrain.level}`, type: "attack", power: chipPower(weapons.expressTrain.level), desc: "급행열차가 보스를 우선 노리고 지나가며 큰 피해, 넉백, 스턴을 줍니다." } : null,
-    weapons.customerMissile.level > 0 ? { label: `유도탄 Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level), desc: "고객센터 유도탄이 보스를 우선 추적하고 폭발 피해를 줍니다." } : null,
+    weapons.customerMissile.level > 0 ? { label: `민원 문자 Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level), desc: "민원 문자가 보스를 우선 추적하고 폭발 피해를 줍니다." } : null,
     weapons.subwayPolice.level > 0 ? { label: `${getCompanionSkillName()} Lv.${weapons.subwayPolice.level}`, type: "attack", power: chipPower(weapons.subwayPolice.level), desc: getCompanionSkillDesc() } : null,
     player.defenseBreakTimer > 0 ? { label: `방어저하 ${Math.ceil(player.defenseBreakTimer)}초`, type: "status", desc: "현재 방어력이 감소한 상태입니다." } : null,
     player.stunTimer > 0 ? { label: `경직 ${Math.ceil(player.stunTimer)}초`, type: "status", desc: "잠시 움직일 수 없는 상태입니다." } : null,
@@ -5880,10 +5880,10 @@ function drawProjectiles() {
   for (const missile of missiles) {
     for (const point of missile.trail) {
       const trailPoint = worldToScreen(point.x, point.y);
-      ctx.globalAlpha = clamp(point.life / 0.28, 0, 1) * 0.5;
-      ctx.fillStyle = "#80ffdb";
+      ctx.globalAlpha = clamp(point.life / 0.28, 0, 1) * 0.42;
+      ctx.fillStyle = "#8ee8ff";
       ctx.beginPath();
-      ctx.arc(trailPoint.x, trailPoint.y, 5, 0, TAU);
+      ctx.arc(trailPoint.x, trailPoint.y, 4.5, 0, TAU);
       ctx.fill();
       ctx.globalAlpha = 1;
     }
@@ -5892,21 +5892,63 @@ function drawProjectiles() {
     ctx.save();
     ctx.translate(p.x, p.y);
     ctx.rotate(angle);
-    ctx.shadowColor = "#80ffdb";
-    ctx.shadowBlur = 14;
-    ctx.fillStyle = "#dffdf5";
-    ctx.strokeStyle = "#0b6b5e";
+    ctx.shadowColor = "#8ee8ff";
+    ctx.shadowBlur = 16;
+
+    const phoneW = 22;
+    const phoneH = 34;
+    ctx.save();
+    ctx.rotate(Math.PI / 2);
+    ctx.fillStyle = "#111827";
+    ctx.strokeStyle = "#dff7ff";
     ctx.lineWidth = 2;
+    roundedRect(-phoneW / 2, -phoneH / 2, phoneW, phoneH, 5);
+    ctx.fill();
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = "#e7fbff";
+    roundedRect(-phoneW * 0.36, -phoneH * 0.28, phoneW * 0.72, phoneH * 0.46, 4);
+    ctx.fill();
+    ctx.fillStyle = "#0ea5e9";
+    ctx.font = "900 6px system-ui";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("민원", 0, -phoneH * 0.04);
+    ctx.fillStyle = "#8ee8ff";
     ctx.beginPath();
-    ctx.moveTo(15, 0);
-    ctx.lineTo(-10, -8);
-    ctx.lineTo(-6, 0);
-    ctx.lineTo(-10, 8);
+    ctx.arc(0, phoneH * 0.38, 2.1, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.globalCompositeOperation = "lighter";
+    ctx.fillStyle = "rgba(142, 232, 255, 0.32)";
+    ctx.beginPath();
+    ctx.moveTo(-21, 0);
+    ctx.lineTo(-7, -8);
+    ctx.lineTo(-9, 8);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalCompositeOperation = "source-over";
+
+    ctx.fillStyle = "#ffffff";
+    ctx.strokeStyle = "#0ea5e9";
+    ctx.lineWidth = 1.6;
+    roundedRect(7, -15, 26, 17, 7);
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(15, 2);
+    ctx.lineTo(11, 8);
+    ctx.lineTo(22, 2);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = "#ff6b6b";
-    ctx.fillRect(-14, -4, 5, 8);
+    ctx.fillStyle = "#0ea5e9";
+    ctx.font = "900 8px system-ui";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("!", 20, -6);
     ctx.restore();
   }
 
