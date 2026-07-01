@@ -127,7 +127,7 @@ const BOSS_SPECIAL_ATTACK_MIN_COOLDOWN = 6.4;
 const BOSS_SPECIAL_ATTACK_MAX_COOLDOWN = 8.2;
 const RESERVE_LABEL = "예비군";
 const TASER_DOT_TICK = 0.5;
-const TASER_DOT_DAMAGE_RATIO = 0.325;
+const TASER_DOT_DAMAGE_RATIO = 0.4875;
 const SUBWAY_POLICE_DAMAGE_MULTIPLIER = 2.535;
 const SUBWAY_POLICE_SPLASH_RADIUS = 60;
 const SUBWAY_POLICE_SPLASH_DAMAGE_RATIO = 0.28;
@@ -3424,7 +3424,7 @@ function useTaserGun() {
     vy: Math.sin(angle) * 820,
     radius: 12,
     damage: 286,
-    stun: 5,
+    stun: 7,
     life: 1.8,
     maxLife: 1.8,
     seed: Math.random() * 1000,
