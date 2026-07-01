@@ -244,6 +244,10 @@ function getStationPoliceDamage() {
   return Math.round((29 + Math.max(0, weapons.subwayPolice.level - 1) * 3) * SUBWAY_POLICE_DAMAGE_MULTIPLIER);
 }
 
+function getBuffedCompanionDamage() {
+  return Math.round(getStationPoliceDamage() * 1.5);
+}
+
 function getCompanionSkillName() {
   if (isComradeHero()) return "예비군";
   if (isRunnerCompanionHero()) return "페이스 메이커";
@@ -3217,7 +3221,7 @@ function usePacemakerMedalCall() {
     distance: 0,
     speed: 128,
     radius: 24,
-    damage: getStationPoliceDamage() * 1.2,
+    damage: getBuffedCompanionDamage() * 1.2,
     maxHitsPerEnemy: 3,
     life: 5.2,
     maxLife: 5.2,
@@ -3499,7 +3503,7 @@ function updateStationPolicePets(delta) {
     pet.attackCooldown = 0.58;
     pet.swingTimer = 0.22;
     pet.facing = angleTo(pet, target);
-    const damage = getStationPoliceDamage();
+    const damage = getBuffedCompanionDamage();
     damageEnemy(target, damage, "#b8dcff");
     applyCompanionSplashDamage(target, damage);
     const pushAmount = target.boss ? 7 : 22;
@@ -3664,7 +3668,7 @@ function updateRunnerCompanionPets(delta) {
     pet.attackCooldown = 0.58;
     pet.swingTimer = 0.24;
     pet.facing = angleTo(pet, target);
-    const damage = getStationPoliceDamage();
+    const damage = getBuffedCompanionDamage();
     damageEnemy(target, damage, "#9fd3ff");
     applyCompanionSplashDamage(target, damage, "#6ecbff");
     const pushAmount = target.boss ? 9 : 28;
