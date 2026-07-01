@@ -4504,7 +4504,7 @@ function updateHud() {
     weapons.card.level > 0 ? { label: `援먰넻移대뱶 Lv.${weapons.card.level}`, type: "attack", power: chipPower(weapons.card.level), desc: "援먰넻移대뱶媛 ?붾㈃ 踰쎌뿉 理쒕? 5踰??뺢린硫??곸쓣 愿??怨듦꺽?⑸땲??" } : null,
     weapons.lightning.level > 0 ? { label: `踰덇컻 Lv.${weapons.lightning.level}`, type: "attack", power: chipPower(weapons.lightning.level), desc: "媛源뚯슫 ??二쇰???誘쇱썝 踰덇컻瑜??대젮 踰붿쐞 ?쇳빐瑜?以띾땲??" } : null,
     weapons.strapOrbit.level > 0 ? { label: `?먯옟??Lv.${weapons.strapOrbit.level}`, type: "attack", power: chipPower(weapons.strapOrbit.level), desc: `吏?섏쿋 ?먯옟??${getStrapCount()}媛쒓? 二쇱쐞瑜??뚯쟾?섎ŉ ?우? ?곸쓣 怨꾩냽 怨듦꺽?⑸땲??` } : null,
-    weapons.tearGas.level > 0 ? { label: `理쒕쪟??Lv.${weapons.tearGas.level}`, type: "attack", power: chipPower(weapons.tearGas.level), desc: "二쇱씤怨?二쇰????먯옟?대낫???볦? 媛??吏?瑜?留뚮뱾怨??덉뿉 ?ㅼ뼱???곸뿉寃?吏???쇳빐瑜?以띾땲??" } : null,
+    weapons.tearGas.level > 0 ? { label: `최루탄 Lv.${weapons.tearGas.level}`, type: "attack", power: chipPower(weapons.tearGas.level), desc: "주인공 주변에 회색 가스 장판을 만들고 안에 들어온 적에게 지속 피해를 줍니다." } : null,
     weapons.expressTrain.level > 0 ? { label: `湲됲뻾 Lv.${weapons.expressTrain.level}`, type: "attack", power: chipPower(weapons.expressTrain.level), desc: "湲됲뻾?댁감媛 蹂댁뒪瑜??곗꽑 ?몃젮 吏?섍?硫??쇳빐? ?됰갚??以띾땲??" } : null,
     weapons.customerMissile.level > 0 ? { label: `?좊룄??Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level), desc: "怨좉컼?쇳꽣 ?좊룄?꾩씠 蹂댁뒪瑜??곗꽑 異붿쟻?섍퀬 ?쏀븳 ??컻 ?쇳빐瑜?以띾땲??" } : null,
     weapons.subwayPolice.level > 0 ? { label: `${getCompanionSkillName()} Lv.${weapons.subwayPolice.level}`, type: "attack", power: chipPower(weapons.subwayPolice.level), desc: getCompanionSkillDesc() } : null,
