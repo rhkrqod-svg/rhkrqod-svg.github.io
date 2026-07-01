@@ -6768,8 +6768,8 @@ function drawDamageZones() {
       if (zone.trail?.length > 1) {
         ctx.save();
         ctx.globalCompositeOperation = "lighter";
-        ctx.strokeStyle = "rgba(201, 242, 123, 0.34)";
-        ctx.lineWidth = 5;
+        ctx.strokeStyle = "rgba(208, 214, 210, 0.24)";
+        ctx.lineWidth = 7;
         ctx.lineCap = "round";
         ctx.beginPath();
         for (let i = 0; i < zone.trail.length; i += 1) {
@@ -6778,6 +6778,9 @@ function drawDamageZones() {
           else ctx.lineTo(trailPoint.x, trailPoint.y);
         }
         ctx.stroke();
+        ctx.strokeStyle = "rgba(201, 242, 123, 0.3)";
+        ctx.lineWidth = 3;
+        ctx.stroke();
         ctx.restore();
       }
       const angle = Math.atan2(zone.vy ?? 0, zone.vx ?? 1);
@@ -6785,12 +6788,13 @@ function drawDamageZones() {
       ctx.rotate(angle + progress * 8);
       ctx.shadowColor = "#c9f27b";
       ctx.shadowBlur = 16;
-      const canWidth = 34;
-      const canHeight = 17;
+      const canWidth = 42;
+      const canHeight = 19;
       const canGrad = ctx.createLinearGradient(-canWidth / 2, -canHeight / 2, canWidth / 2, canHeight / 2);
-      canGrad.addColorStop(0, "#f1f3f5");
-      canGrad.addColorStop(0.4, "#adb5bd");
-      canGrad.addColorStop(0.72, "#5c6770");
+      canGrad.addColorStop(0, "#f8f9fa");
+      canGrad.addColorStop(0.24, "#cfd4d8");
+      canGrad.addColorStop(0.58, "#6c757d");
+      canGrad.addColorStop(0.82, "#31383f");
       canGrad.addColorStop(1, "#d8ff9f");
       ctx.fillStyle = canGrad;
       ctx.strokeStyle = "#1f2429";
@@ -6799,8 +6803,22 @@ function drawDamageZones() {
       ctx.fill();
       ctx.stroke();
       ctx.shadowBlur = 0;
+      ctx.fillStyle = "#2b3035";
+      ctx.fillRect(-canWidth * 0.34, -canHeight * 0.5, 5, canHeight);
       ctx.fillStyle = "#c9f27b";
-      ctx.fillRect(-4, -canHeight / 2, 8, canHeight);
+      ctx.fillRect(canWidth * 0.08, -canHeight / 2, 8, canHeight);
+      ctx.fillStyle = "#d8ff9f";
+      ctx.beginPath();
+      ctx.arc(canWidth * 0.55, 0, canHeight * 0.34, 0, TAU);
+      ctx.fill();
+      ctx.strokeStyle = "#1f2429";
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+      ctx.strokeStyle = "#f1f3f5";
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.arc(-canWidth * 0.45, -canHeight * 0.54, canHeight * 0.38, -Math.PI * 0.08, Math.PI * 0.82);
+      ctx.stroke();
       ctx.strokeStyle = "rgba(255,255,255,0.78)";
       ctx.lineWidth = 1.2;
       ctx.beginPath();
@@ -6846,15 +6864,6 @@ function drawDamageZones() {
         ctx.arc(x, y, cloudSize, 0, TAU);
         ctx.fill();
       }
-
-      ctx.globalAlpha = 0.62 * alpha;
-      ctx.strokeStyle = "rgba(216, 255, 159, 0.72)";
-      ctx.lineWidth = 3;
-      ctx.setLineDash([12, 13]);
-      ctx.beginPath();
-      ctx.arc(0, 0, zone.radius * (0.78 + pulse * 0.04), 0, TAU);
-      ctx.stroke();
-      ctx.setLineDash([]);
       ctx.restore();
       continue;
     }
