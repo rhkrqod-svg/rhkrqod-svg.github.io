@@ -1235,6 +1235,7 @@ function resetGame() {
   input.pointers.clear();
   refs.message.classList.remove("start-screen");
   refs.message.classList.add("hidden");
+  if (refs.leaderboardOpenButton) refs.leaderboardOpenButton.hidden = true;
   refs.heroPanel.classList.remove("hidden");
   refs.upgradePanel.classList.add("hidden");
   refs.bossBanner.classList.remove("active");
@@ -4616,6 +4617,7 @@ function endGame(won) {
   refs.startButton.textContent = "다시 출동";
   refs.message.classList.remove("start-screen");
   refs.message.classList.remove("hidden");
+  if (refs.leaderboardOpenButton) refs.leaderboardOpenButton.hidden = true;
   prepareLeaderboardEntry();
   updateHud();
 }
