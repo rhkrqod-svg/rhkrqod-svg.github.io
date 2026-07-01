@@ -615,7 +615,7 @@ function getUpgradeDisplay(choice) {
 
 function getTearGasRadius() {
   const level = Math.max(1, weapons.tearGas.level);
-  return (58 + level * 8) * 1.3 * 1.7 * 1.5 * 0.5 * (1 + (level - 1) * 0.08);
+  return (58 + level * 8) * 1.3 * 1.7 * 1.5 * 0.75 * (1 + (level - 1) * 0.08);
 }
 
 function getTearGasDamage() {
