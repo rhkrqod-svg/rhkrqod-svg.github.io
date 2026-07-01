@@ -3168,7 +3168,7 @@ function useComradeDropCall() {
   for (let i = 0; i < count; i += 1) {
     const angle = (TAU * i) / count + rand(-0.06, 0.06);
     const ring = i % 3;
-    const standRadius = 112 + ring * 42 + rand(-10, 14);
+    const standRadius = 155 + ring * 56 + rand(-10, 14);
     const startRadius = standRadius + rand(180, 270);
     comrades.push({
       angle,
@@ -3419,9 +3419,10 @@ function syncStationPolicePets() {
   while (stationPolicePets.length < wanted) {
     const index = stationPolicePets.length;
     const angle = -Math.PI / 2 + (TAU * index) / Math.max(1, wanted || 1);
+    const spawnOrbit = isComradeHero() ? 128 : 72;
     stationPolicePets.push({
-      x: player.x + Math.cos(angle) * 72,
-      y: player.y + Math.sin(angle) * 72,
+      x: player.x + Math.cos(angle) * spawnOrbit,
+      y: player.y + Math.sin(angle) * spawnOrbit,
       slot: index,
       attackCooldown: rand(0.08, 0.36),
       swingTimer: 0,
@@ -3590,8 +3591,8 @@ function updateComradePets(delta) {
     const followAngle = Math.atan2(input.y || 0, input.x || 0);
     const hasMove = Math.hypot(input.x || 0, input.y || 0) > 0.1;
     const baseAngle = hasMove ? followAngle + Math.PI / 2 : -Math.PI / 2;
-    const spacing = 34 + Math.min(4, count) * 2;
-    const backOffset = 20 + row * 26;
+    const spacing = 68 + Math.min(4, count) * 4;
+    const backOffset = 42 + row * 34;
     const idleX = player.x + Math.cos(baseAngle) * side * spacing - Math.cos(baseAngle - Math.PI / 2) * backOffset;
     const idleY = player.y + Math.sin(baseAngle) * side * spacing - Math.sin(baseAngle - Math.PI / 2) * backOffset;
 
