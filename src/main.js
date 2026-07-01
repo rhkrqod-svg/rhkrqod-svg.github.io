@@ -3164,7 +3164,7 @@ function usePoliceCall() {
 function useComradeDropCall() {
   announceSkill("?덈퉬援??덈젴", { color: "#b7ef64", minGap: 500, source: "item" });
   const comrades = [];
-  const count = 50;
+  const count = 36;
   for (let i = 0; i < count; i += 1) {
     const angle = (TAU * i) / count + rand(-0.06, 0.06);
     const ring = i % 3;
