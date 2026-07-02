@@ -601,6 +601,10 @@ const passiveUpgradeIds = new Set([
   "mentalRegen",
 ]);
 
+const basicWeaponUpgradeIds = new Set([
+  "multi",
+]);
+
 const weaponUpgradeIds = new Set([
   "multi",
   "lightning",
@@ -693,6 +697,18 @@ function getBasicBulletStyle() {
   if (player.heroId === "changwoo") return "military";
   if (player.heroId === "juyeon") return "medal";
   return "default";
+}
+
+function getUpgradeType(choice) {
+  if (basicWeaponUpgradeIds.has(choice?.id)) return "basic";
+  if (weaponUpgradeIds.has(choice?.id)) return "attack";
+  if (passiveUpgradeIds.has(choice?.id)) return "passive";
+  return "basic";
+}
+
+function getUpgradeIconClass(choice) {
+  if (choice?.id === "multi") return `basic-${getBasicBulletStyle()}`;
+  return `icon-${choice?.id ?? "default"}`;
 }
 
 let width = 1;
@@ -4180,11 +4196,11 @@ function openUpgradePanel() {
   refs.upgradeChoices.innerHTML = "";
   for (const choice of choices) {
     const button = document.createElement("button");
-    const upgradeType = weaponUpgradeIds.has(choice.id) ? "attack" : passiveUpgradeIds.has(choice.id) ? "passive" : "basic";
+    const upgradeType = getUpgradeType(choice);
     const display = getUpgradeDisplay(choice);
     button.className = `upgrade-card ${upgradeType} upgrade-${choice.id}`;
     button.type = "button";
-    button.innerHTML = `<strong>${display.name}</strong><span>${display.desc}</span>`;
+    button.innerHTML = `<i class="upgrade-icon ${getUpgradeIconClass(choice)}" aria-hidden="true"></i><div class="upgrade-copy"><strong>${display.name}</strong><span>${display.desc}</span></div>`;
     button.addEventListener("click", () => {
       playSound("ui");
       choice.apply();
@@ -4889,7 +4905,7 @@ function updateHud() {
   const basicAttackName = getBasicAttackName();
   const basicAttackDesc = getBasicAttackDesc();
   const loadoutItems = [
-    { label: `${basicAttackName} x${player.shots}`, type: "attack", power: chipPower(player.shots), desc: basicAttackDesc },
+    { label: `${basicAttackName} x${player.shots}`, type: "basic", power: chipPower(player.shots), desc: basicAttackDesc },
     weapons.card.level > 0 ? { label: `교통카드 Lv.${weapons.card.level}`, type: "attack", power: chipPower(weapons.card.level), desc: "교통카드가 화면 벽에 최대 5번 튕기며 적을 관통 공격합니다." } : null,
     weapons.lightning.level > 0 ? { label: `민원번개 Lv.${weapons.lightning.level}`, type: "attack", power: chipPower(weapons.lightning.level), desc: "가까운 적 주변에 민원 번개를 내려 범위 피해와 스턴을 줍니다." } : null,
     weapons.strapOrbit.level > 0 ? { label: `손잡이 Lv.${weapons.strapOrbit.level}`, type: "attack", power: chipPower(weapons.strapOrbit.level), desc: `지하철 손잡이 ${getStrapCount()}개가 주위를 회전하며 닿은 적을 계속 공격합니다.` } : null,
