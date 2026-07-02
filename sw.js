@@ -1,4 +1,4 @@
-const CACHE_NAME = "subway-villain-hunter-v1";
+const CACHE_NAME = "subway-villain-hunter-v2";
 const CORE_ASSETS = [
   "/",
   "/manifest.webmanifest",
@@ -7,6 +7,15 @@ const CORE_ASSETS = [
   "/assets/icons/icon-512.png",
   "/assets/icons/apple-touch-icon.png"
 ];
+
+function shouldBypassCache(request) {
+  const url = new URL(request.url);
+  return (
+    url.origin !== self.location.origin ||
+    url.pathname.startsWith("/api/") ||
+    url.pathname.endsWith("/sw.js")
+  );
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -25,6 +34,10 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+  if (shouldBypassCache(event.request)) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
   event.respondWith(
     fetch(event.request)
       .then((response) => {
@@ -32,6 +45,12 @@ self.addEventListener("fetch", (event) => {
         caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
         return response;
       })
-      .catch(() => caches.match(event.request).then((cached) => cached || caches.match("/")))
+      .catch(() =>
+        caches.match(event.request).then((cached) => {
+          if (cached) return cached;
+          if (event.request.mode === "navigate") return caches.match("/");
+          return Response.error();
+        })
+      )
   );
 });
