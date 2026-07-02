@@ -4853,6 +4853,8 @@ function updateHud() {
       ? "귀싸대기"
       : player.heroId === "juyeon"
         ? "완주 메달"
+        : player.heroId === "changwoo"
+          ? "K2 소총"
         : "탄환";
   const basicAttackDesc = player.heroId === "gae-hwanam"
     ? `주먹을 날려 명중 지점에서 폭발 피해를 주고 일반 몬스터를 0.5초 스턴시킵니다. 현재 ${player.shots}발씩 발사.`
@@ -4860,6 +4862,8 @@ function updateHud() {
       ? `날아가는 귀싸대기가 화면 벽에 2번 튕기며 적을 공격합니다. 현재 ${player.shots}발씩 발사.`
       : player.heroId === "juyeon"
         ? `완주 메달을 던져 가장 가까운 적을 공격합니다. 현재 ${player.shots}발씩 발사.`
+        : player.heroId === "changwoo"
+          ? `K2 소총으로 가장 가까운 적을 공격합니다. 현재 ${player.shots}발씩 발사.`
       : `가장 가까운 적에게 기본 탄환을 발사합니다. 현재 ${player.shots}발씩 발사.`;
   const loadoutItems = [
     { label: `${basicAttackName} x${player.shots}`, type: "attack", power: chipPower(player.shots), desc: basicAttackDesc },
