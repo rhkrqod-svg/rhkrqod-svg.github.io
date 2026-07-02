@@ -81,10 +81,7 @@ const sound = {
 const STORAGE_KEY = "villain-commando-best";
 const LOCAL_LEADERBOARD_KEY = "villain-commando-local-leaderboard-v3";
 const GLOBAL_LEADERBOARD_API = "https://subway-villain-leaderboard.rhkrqod.workers.dev/api/leaderboard";
-const LEADERBOARD_API = (
-  import.meta.env.VITE_LEADERBOARD_API ||
-  (["localhost", "127.0.0.1"].includes(window.location.hostname) ? "/api/leaderboard" : GLOBAL_LEADERBOARD_API)
-).trim();
+const LEADERBOARD_API = (import.meta.env.VITE_LEADERBOARD_API || GLOBAL_LEADERBOARD_API).trim();
 const LEADERBOARD_LIMIT = 10;
 const TAU = Math.PI * 2;
 const WORLD_SIZE = 2800;
