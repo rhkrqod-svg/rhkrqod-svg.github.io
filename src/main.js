@@ -3250,17 +3250,19 @@ function dropBossRewardItems(enemy) {
 
 function dropBossRewardPickup(enemy, kind, index = 0, count = 1) {
   const angle = Math.random() * TAU + (TAU * index) / Math.max(1, count);
-  const distance = rand(26, 72);
+  const distance = rand(4, 16);
+  const burstSpeed = rand(260, 440);
   energyPickups.push({
     kind,
     x: enemy.x + Math.cos(angle) * distance,
     y: enemy.y + Math.sin(angle) * distance,
     heal: 0,
-    radius: (kind === "chicken" || kind === "stim" ? 14 : kind === "taser" ? 13 : kind === "radio" ? 14 : 13) * 1.5,
+    radius: (kind === "chicken" || kind === "stim" ? 14 : kind === "taser" ? 13 : kind === "radio" ? 14 : 13) * 2.45,
     boss: true,
     pulse: Math.random() * TAU,
-    vx: Math.cos(angle) * rand(28, 78),
-    vy: Math.sin(angle) * rand(28, 78),
+    burstTimer: 0.48,
+    vx: Math.cos(angle) * burstSpeed,
+    vy: Math.sin(angle) * burstSpeed,
   });
 }
 
@@ -3919,18 +3921,20 @@ function updateOrbs(delta) {
 function updateEnergyPickups(delta) {
   for (const pickup of [...energyPickups]) {
     pickup.pulse += delta * 7;
+    pickup.burstTimer = Math.max(0, (pickup.burstTimer ?? 0) - delta);
     const d = Math.hypot(player.x - pickup.x, player.y - pickup.y);
-    const attractRange = pickup.boss ? player.magnet * 1.65 : player.magnet * 1.12;
+    const attractRange = pickup.boss ? player.magnet * 2.65 : player.magnet * 1.12;
     if (d < attractRange) {
       const angle = angleTo(pickup, player);
-      const pull = 360 + (1 - d / attractRange) * 1180;
+      const pull = pickup.boss ? 1180 + (1 - d / attractRange) * 3520 : 360 + (1 - d / attractRange) * 1180;
       pickup.vx += Math.cos(angle) * pull * delta;
       pickup.vy += Math.sin(angle) * pull * delta;
     }
     pickup.x += pickup.vx * delta;
     pickup.y += pickup.vy * delta;
-    pickup.vx *= 0.92;
-    pickup.vy *= 0.92;
+    const drag = pickup.boss && pickup.burstTimer > 0 ? 0.965 : 0.92;
+    pickup.vx *= drag;
+    pickup.vy *= drag;
     if (d < player.radius + pickup.radius + 8) {
       if (pickup.kind === "radio") {
         grantPoliceCall(1, pickup.x, pickup.y);
@@ -6620,12 +6624,30 @@ function drawOrbs() {
 function drawEnergyPickups() {
   for (const pickup of energyPickups) {
     const p = worldToScreen(pickup.x, pickup.y);
-    if (p.x < -40 || p.x > width + 40 || p.y < -40 || p.y > height + 40) continue;
+    const cullPadding = pickup.boss ? 130 : 40;
+    if (p.x < -cullPadding || p.x > width + cullPadding || p.y < -cullPadding || p.y > height + cullPadding) continue;
     const pulse = 1 + Math.sin(pickup.pulse) * 0.12;
     const size = pickup.radius * pulse;
 
     ctx.save();
     ctx.translate(p.x, p.y);
+    if (pickup.boss) {
+      const burstRatio = clamp((pickup.burstTimer ?? 0) / 0.48, 0, 1);
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = 0.22 + burstRatio * 0.35;
+      ctx.strokeStyle = "#fff3b0";
+      ctx.lineWidth = 3 + burstRatio * 4;
+      ctx.beginPath();
+      ctx.arc(0, 0, size * (1.35 + burstRatio * 0.9), 0, TAU);
+      ctx.stroke();
+      ctx.globalAlpha = 0.12 + burstRatio * 0.2;
+      ctx.fillStyle = "#b8ffe4";
+      ctx.beginPath();
+      ctx.arc(0, 0, size * (1.55 + burstRatio * 0.55), 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
     if (pickup.kind === "firstAid") {
       ctx.shadowColor = "#b8ffe4";
       ctx.shadowBlur = 18;
