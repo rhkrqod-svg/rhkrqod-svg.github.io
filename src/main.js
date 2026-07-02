@@ -1880,7 +1880,7 @@ function spawnCard() {
 
 function strikeLightning() {
   if (weapons.lightning.level <= 0 || enemies.length === 0) return;
-  const strikes = Math.min(5, weapons.lightning.level);
+  const strikes = 1;
   const bossTarget = enemies
     .filter((enemy) => enemy.boss)
     .sort((a, b) => distance(player, a) - distance(player, b))[0];
@@ -1897,9 +1897,8 @@ function strikeLightning() {
   for (const enemy of targets) {
     const damage = getLightningDamageForLevel(weapons.lightning.level);
     const strikeRadius = (58 + weapons.lightning.level * 7) * 1.183 * 1.3 * 1.2 * 1.15;
-    const levelBonus = Math.max(0, weapons.lightning.level - 1);
-    const bossStun = 0.5 + levelBonus * 0.1;
-    const monsterStun = 3 + levelBonus * 0.3;
+    const bossStun = 0.5;
+    const monsterStun = 3;
     damageEnemy(enemy, enemy.boss ? Math.round(damage * 1.25) : damage, "#9bf6ff");
     enemy.stunTimer = Math.max(enemy.stunTimer ?? 0, enemy.boss ? bossStun : monsterStun);
     addParticles(enemy.x, enemy.y, "#9bf6ff", enemy.boss ? 14 : 9);
