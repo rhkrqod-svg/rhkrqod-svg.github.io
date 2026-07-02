@@ -149,6 +149,8 @@ const FIST_BULLET_RADIUS = 15;
 const FIST_EXPLOSION_RADIUS = 88;
 const FIST_EXPLOSION_DAMAGE_RATIO = 0.58;
 const FIST_MONSTER_STUN = 0.5;
+const SLAP_BULLET_RADIUS = 17;
+const SLAP_BOUNCE_LIMIT = 1;
 
 const heroTypes = [
   {
@@ -644,6 +646,7 @@ function getBasicBulletFireRate() {
 
 function getBasicBulletStyle() {
   if (player.heroId === "gae-hwanam") return "fist";
+  if (player.heroId === "gae-hwani") return "slap";
   if (player.heroId === "changwoo") return "military";
   if (player.heroId === "juyeon") return "medal";
   return "default";
@@ -1836,6 +1839,8 @@ function fireBulletVolley(source, target, count, {
       hitEnemies: new Set(),
       color,
       style,
+      bounces: 0,
+      bounceLimit: style === "slap" ? SLAP_BOUNCE_LIMIT : 0,
     });
   }
 }
@@ -1874,9 +1879,11 @@ function fireBullets() {
   const bulletStyle = getBasicBulletStyle();
   fireBulletVolley(player, target, player.shots, {
     style: bulletStyle,
-    radius: bulletStyle === "fist" ? FIST_BULLET_RADIUS : 10,
+    radius: bulletStyle === "fist" ? FIST_BULLET_RADIUS : bulletStyle === "slap" ? SLAP_BULLET_RADIUS : 10,
     color: bulletStyle === "fist"
       ? "#ffb703"
+      : bulletStyle === "slap"
+        ? "#ff8fab"
       : bulletStyle === "military" || bulletStyle === "medal"
         ? "#ffd166"
         : "#fff2a8",
@@ -2946,6 +2953,34 @@ function updateProjectiles(delta) {
     bullet.x += bullet.vx * delta;
     bullet.y += bullet.vy * delta;
     bullet.life -= delta;
+    if (bullet.style === "slap") {
+      const bounds = {
+        left: Math.max(18, camera.x + bullet.radius),
+        right: Math.min(WORLD_SIZE - 18, camera.x + viewWidth - bullet.radius),
+        top: Math.max(18, camera.y + bullet.radius),
+        bottom: Math.min(WORLD_SIZE - 18, camera.y + viewHeight - bullet.radius),
+      };
+      let bounced = false;
+      if (bullet.x <= bounds.left || bullet.x >= bounds.right) {
+        bullet.x = clamp(bullet.x, bounds.left, bounds.right);
+        bullet.vx *= -1;
+        bounced = true;
+      }
+      if (bullet.y <= bounds.top || bullet.y >= bounds.bottom) {
+        bullet.y = clamp(bullet.y, bounds.top, bounds.bottom);
+        bullet.vy *= -1;
+        bounced = true;
+      }
+      if (bounced) {
+        bullet.bounces = (bullet.bounces ?? 0) + 1;
+        addParticles(bullet.x, bullet.y, "#ff8fab", 8);
+        playSound("card");
+        if (bullet.bounces > (bullet.bounceLimit ?? 0)) {
+          bullets.splice(bullets.indexOf(bullet), 1);
+          continue;
+        }
+      }
+    }
     if (bullet.x < 0 || bullet.x > WORLD_SIZE || bullet.y < 0 || bullet.y > WORLD_SIZE) {
       bullets.splice(bullets.indexOf(bullet), 1);
       continue;
@@ -4808,10 +4843,12 @@ function updateHud() {
     refs.pauseButton.classList.toggle("active", game.manualPaused);
   }
   const chipPower = (level) => clamp((Number(level) || 1) / 7, 0.16, 1);
-  const basicAttackName = player.heroId === "gae-hwanam" ? "주먹질" : "탄환";
+  const basicAttackName = player.heroId === "gae-hwanam" ? "주먹질" : player.heroId === "gae-hwani" ? "귀싸대기" : "탄환";
   const basicAttackDesc = player.heroId === "gae-hwanam"
     ? `주먹을 날려 명중 지점에서 폭발 피해를 주고 일반 몬스터를 0.5초 스턴시킵니다. 현재 ${player.shots}발씩 발사.`
-    : `가장 가까운 적에게 기본 탄환을 발사합니다. 현재 ${player.shots}발씩 발사.`;
+    : player.heroId === "gae-hwani"
+      ? `날아가는 귀싸대기가 화면 벽에 1번 튕기며 적을 공격합니다. 현재 ${player.shots}발씩 발사.`
+      : `가장 가까운 적에게 기본 탄환을 발사합니다. 현재 ${player.shots}발씩 발사.`;
   const loadoutItems = [
     { label: `${basicAttackName} x${player.shots}`, type: "attack", power: chipPower(player.shots), desc: basicAttackDesc },
     weapons.card.level > 0 ? { label: `교통카드 Lv.${weapons.card.level}`, type: "attack", power: chipPower(weapons.card.level), desc: "교통카드가 화면 벽에 최대 5번 튕기며 적을 관통 공격합니다." } : null,
@@ -5543,6 +5580,74 @@ function drawProjectiles() {
     ctx.save();
     ctx.translate(p.x, p.y);
     ctx.rotate(angle);
+    if (bullet.style === "slap") {
+      const r = bullet.radius;
+      const slapFlash = 0.92 + Math.sin(performance.now() * 0.028 + bullet.x * 0.02) * 0.08;
+      ctx.scale(slapFlash, 1);
+      ctx.shadowColor = "#ff8fab";
+      ctx.shadowBlur = 18;
+
+      const trail = ctx.createLinearGradient(-r * 4.4, 0, -r * 0.7, 0);
+      trail.addColorStop(0, "rgba(255, 143, 171, 0)");
+      trail.addColorStop(0.54, "rgba(255, 143, 171, 0.24)");
+      trail.addColorStop(1, "rgba(255, 214, 232, 0.66)");
+      ctx.fillStyle = trail;
+      ctx.beginPath();
+      ctx.moveTo(-r * 4.2, 0);
+      ctx.lineTo(-r * 0.68, -r * 0.82);
+      ctx.lineTo(-r * 0.68, r * 0.82);
+      ctx.closePath();
+      ctx.fill();
+
+      const skin = ctx.createRadialGradient(r * 0.16, -r * 0.2, r * 0.1, 0, 0, r * 2.1);
+      skin.addColorStop(0, "#fff0d2");
+      skin.addColorStop(0.42, "#f6ba82");
+      skin.addColorStop(0.84, "#c97745");
+      skin.addColorStop(1, "#7a3e25");
+      ctx.fillStyle = skin;
+      ctx.strokeStyle = "#4a2417";
+      ctx.lineWidth = 2.1;
+
+      ctx.beginPath();
+      ctx.moveTo(r * 1.48, -r * 1.05);
+      ctx.quadraticCurveTo(r * 1.96, -r * 0.82, r * 1.86, -r * 0.4);
+      ctx.quadraticCurveTo(r * 2.1, -r * 0.2, r * 1.86, r * 0.1);
+      ctx.quadraticCurveTo(r * 2.02, r * 0.42, r * 1.62, r * 0.62);
+      ctx.quadraticCurveTo(r * 1.4, r * 1.02, r * 0.88, r * 0.92);
+      ctx.lineTo(-r * 0.88, r * 0.55);
+      ctx.quadraticCurveTo(-r * 1.42, r * 0.16, -r * 1.04, -r * 0.42);
+      ctx.quadraticCurveTo(-r * 0.5, -r * 0.92, r * 1.48, -r * 1.05);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = "rgba(96, 44, 22, 0.68)";
+      ctx.lineWidth = 1.25;
+      for (let i = 0; i < 4; i += 1) {
+        const x = r * (0.18 + i * 0.32);
+        ctx.beginPath();
+        ctx.moveTo(x, -r * 0.84);
+        ctx.quadraticCurveTo(x + r * 0.18, -r * 0.18, x - r * 0.06, r * 0.45);
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.78)";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.45, -r * 0.34);
+      ctx.lineTo(r * 0.86, -r * 0.62);
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(255, 143, 171, 0.72)";
+      ctx.beginPath();
+      ctx.arc(r * 2.1, -r * 0.9, r * 0.18, 0, TAU);
+      ctx.arc(r * 2.32, -r * 0.2, r * 0.14, 0, TAU);
+      ctx.arc(r * 2.04, r * 0.58, r * 0.12, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+      continue;
+    }
     if (bullet.style === "fist") {
       const r = bullet.radius;
       ctx.shadowColor = "#ffb703";
