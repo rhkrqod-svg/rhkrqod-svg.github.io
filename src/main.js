@@ -608,7 +608,7 @@ const weaponUpgradeIds = new Set([
 
 function getBasicAttackName() {
   if (player.heroId === "gae-hwanam") return "주먹질";
-  if (player.heroId === "gae-hwani") return "귀싸대기";
+  if (player.heroId === "gae-hwani") return "싸대기";
   if (player.heroId === "juyeon") return "완주 메달";
   if (player.heroId === "changwoo") return "K2 소총";
   return "탄환";
@@ -619,7 +619,7 @@ function getBasicAttackDesc() {
     return `주먹을 날려 명중 지점에서 폭발 피해를 주고 일반 몬스터를 0.5초 스턴시킵니다. 현재 ${player.shots}발씩 발사.`;
   }
   if (player.heroId === "gae-hwani") {
-    return `날아가는 귀싸대기가 화면 벽에 2번 튕기며 적을 공격합니다. 현재 ${player.shots}발씩 발사.`;
+    return `날아가는 싸대기가 화면 벽에 2번 튕기며 적을 공격합니다. 현재 ${player.shots}발씩 발사.`;
   }
   if (player.heroId === "juyeon") {
     return `완주 메달을 던져 가장 가까운 적을 공격합니다. 현재 ${player.shots}발씩 발사.`;
