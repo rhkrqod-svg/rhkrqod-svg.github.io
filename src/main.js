@@ -615,12 +615,12 @@ function getUpgradeDisplay(choice) {
 
 function getTearGasRadius() {
   const level = Math.max(1, weapons.tearGas.level);
-  return (58 + level * 8) * 1.3 * 1.7 * 1.5 * 0.975 * (1 + (level - 1) * 0.08);
+  return (58 + level * 8) * 1.3 * 1.7 * 1.5 * 1.4625 * (1 + (level - 1) * 0.08);
 }
 
 function getTearGasDamage() {
   const level = Math.max(1, weapons.tearGas.level);
-  return Math.round((9 + (level - 1) * 6) * 1.8 * 2 * (player.meleeDamageMultiplier || 1));
+  return Math.round((9 + (level - 1) * 6) * 1.8 * 3 * (player.meleeDamageMultiplier || 1));
 }
 
 function getStrapOrbitRadius() {
