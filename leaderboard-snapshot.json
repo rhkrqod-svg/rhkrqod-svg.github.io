@@ -1,0 +1,74 @@
+﻿{
+    "entries":  [
+                    {
+                        "name":  "갓창우",
+                        "score":  21647,
+                        "hero":  "창우",
+                        "survivedSeconds":  1173,
+                        "createdAt":  "2026-07-02T03:43:14.531Z"
+                    },
+                    {
+                        "name":  "가지맨",
+                        "score":  7761,
+                        "hero":  "창우",
+                        "survivedSeconds":  708,
+                        "createdAt":  "2026-07-01T15:13:40.681Z"
+                    },
+                    {
+                        "name":  "카메라맨",
+                        "score":  7081,
+                        "hero":  "창우",
+                        "survivedSeconds":  677,
+                        "createdAt":  "2026-06-30T03:45:45.135Z"
+                    },
+                    {
+                        "name":  "가지맨",
+                        "score":  5671,
+                        "hero":  "창우",
+                        "survivedSeconds":  617,
+                        "createdAt":  "2026-06-29T15:58:05.008Z"
+                    },
+                    {
+                        "name":  "가지맨",
+                        "score":  5158,
+                        "hero":  "창우",
+                        "survivedSeconds":  556,
+                        "createdAt":  "2026-06-29T23:25:22.421Z"
+                    },
+                    {
+                        "name":  "가지맨",
+                        "score":  4423,
+                        "hero":  "주연",
+                        "survivedSeconds":  462,
+                        "createdAt":  "2026-07-01T14:58:59.770Z"
+                    },
+                    {
+                        "name":  "가지맨",
+                        "score":  3503,
+                        "hero":  "창우",
+                        "survivedSeconds":  409,
+                        "createdAt":  "2026-06-30T15:32:00.384Z"
+                    },
+                    {
+                        "name":  "뉴진스",
+                        "score":  3310,
+                        "hero":  "창우",
+                        "survivedSeconds":  388,
+                        "createdAt":  "2026-06-30T11:12:47.542Z"
+                    },
+                    {
+                        "name":  "가지맨",
+                        "score":  3079,
+                        "hero":  "주연",
+                        "survivedSeconds":  409,
+                        "createdAt":  "2026-06-30T15:22:28.279Z"
+                    },
+                    {
+                        "name":  "가지맨",
+                        "score":  2486,
+                        "hero":  "창우",
+                        "survivedSeconds":  312,
+                        "createdAt":  "2026-06-30T10:41:26.002Z"
+                    }
+                ]
+}
