@@ -489,9 +489,13 @@ const upgradePool = [
   {
     id: "multi",
     name: "기본 무기 강화",
-    desc: "기본 무기 발사 수 +1",
+    desc: "최대 5발까지 발사 수 +1, 이후 피해 +20%",
     apply: () => {
-      player.shots += 1;
+      if (player.shots < 5) {
+        player.shots += 1;
+      } else {
+        player.bulletDamageMultiplier *= 1.2;
+      }
     },
   },
   {
@@ -522,8 +526,8 @@ const upgradePool = [
   },
   {
     id: "boomerang",
-    name: "T머니",
-    desc: "벽에 튕기는 T머니 개수 증가",
+    name: "교통카드",
+    desc: "벽에 튕기는 교통카드 개수 증가",
     apply: () => {
       weapons.card.level += 1;
       weapons.card.cooldown = Math.min(weapons.card.cooldown, 2.37);
@@ -633,9 +637,10 @@ function getBasicAttackDesc() {
 function getUpgradeDisplay(choice) {
   if (choice?.id === "multi") {
     const basicAttackName = getBasicAttackName();
+    const atShotCap = player.shots >= 5;
     return {
       name: `${basicAttackName} 강화`,
-      desc: `${basicAttackName} 발사 수 +1`,
+      desc: atShotCap ? `${basicAttackName} 피해 +20%` : `${basicAttackName} 발사 수 +1`,
     };
   }
   if (choice?.id === "subwayPolice") {
@@ -652,7 +657,7 @@ function getUpgradeDisplay(choice) {
 
 function getTearGasRadius() {
   const level = Math.max(1, weapons.tearGas.level);
-  return (58 + level * 8) * 1.3 * 1.7 * 1.5 * 1.4625 * (1 + (level - 1) * 0.08);
+  return (58 + level * 8) * 1.3 * 1.7 * 1.5 * 1.4625 * 0.8 * (1 + (level - 1) * 0.08);
 }
 
 function getTearGasDamage() {
@@ -4883,7 +4888,7 @@ function updateHud() {
   const basicAttackDesc = getBasicAttackDesc();
   const loadoutItems = [
     { label: `${basicAttackName} x${player.shots}`, type: "attack", power: chipPower(player.shots), desc: basicAttackDesc },
-    weapons.card.level > 0 ? { label: `T머니 Lv.${weapons.card.level}`, type: "attack", tone: "tmoney", power: chipPower(weapons.card.level), desc: "T머니가 화면 벽에 최대 5번 튕기며 적을 관통 공격합니다." } : null,
+    weapons.card.level > 0 ? { label: `교통카드 Lv.${weapons.card.level}`, type: "attack", tone: "tmoney", power: chipPower(weapons.card.level), desc: "교통카드가 화면 벽에 최대 5번 튕기며 적을 관통 공격합니다." } : null,
     weapons.lightning.level > 0 ? { label: `민원번개 Lv.${weapons.lightning.level}`, type: "attack", power: chipPower(weapons.lightning.level), desc: "가까운 적 주변에 민원 번개를 내려 범위 피해와 스턴을 줍니다." } : null,
     weapons.strapOrbit.level > 0 ? { label: `손잡이 Lv.${weapons.strapOrbit.level}`, type: "attack", power: chipPower(weapons.strapOrbit.level), desc: `지하철 손잡이 ${getStrapCount()}개가 주위를 회전하며 닿은 적을 계속 공격합니다.` } : null,
     weapons.tearGas.level > 0 ? { label: `최루탄 Lv.${weapons.tearGas.level}`, type: "attack", power: chipPower(weapons.tearGas.level), desc: "최루탄을 던져 터진 곳에 가스 장판을 만들고 스턴과 지속 피해를 줍니다." } : null,
@@ -5641,14 +5646,22 @@ function drawProjectiles() {
       ctx.lineWidth = 2.1;
 
       ctx.beginPath();
-      ctx.moveTo(r * 1.48, -r * 1.05);
-      ctx.quadraticCurveTo(r * 1.96, -r * 0.82, r * 1.86, -r * 0.4);
-      ctx.quadraticCurveTo(r * 2.1, -r * 0.2, r * 1.86, r * 0.1);
-      ctx.quadraticCurveTo(r * 2.02, r * 0.42, r * 1.62, r * 0.62);
-      ctx.quadraticCurveTo(r * 1.4, r * 1.02, r * 0.88, r * 0.92);
-      ctx.lineTo(-r * 0.88, r * 0.55);
-      ctx.quadraticCurveTo(-r * 1.42, r * 0.16, -r * 1.04, -r * 0.42);
-      ctx.quadraticCurveTo(-r * 0.5, -r * 0.92, r * 1.48, -r * 1.05);
+      ctx.moveTo(r * 1.18, -r * 1.58);
+      ctx.quadraticCurveTo(r * 1.55, -r * 1.44, r * 1.48, -r * 1.02);
+      ctx.lineTo(r * 1.38, r * 0.54);
+      ctx.quadraticCurveTo(r * 1.48, r * 1.12, r * 0.94, r * 1.42);
+      ctx.quadraticCurveTo(r * 0.18, r * 1.78, -r * 0.72, r * 1.36);
+      ctx.quadraticCurveTo(-r * 1.24, r * 1.08, -r * 1.25, r * 0.34);
+      ctx.lineTo(-r * 1.18, -r * 0.92);
+      ctx.quadraticCurveTo(-r * 1.15, -r * 1.38, -r * 0.78, -r * 1.48);
+      ctx.quadraticCurveTo(-r * 0.42, -r * 1.56, -r * 0.28, -r * 1.18);
+      ctx.lineTo(-r * 0.18, -r * 0.05);
+      ctx.lineTo(-r * 0.08, -r * 1.42);
+      ctx.quadraticCurveTo(-r * 0.02, -r * 1.86, r * 0.36, -r * 1.86);
+      ctx.quadraticCurveTo(r * 0.72, -r * 1.84, r * 0.76, -r * 1.4);
+      ctx.lineTo(r * 0.74, -r * 0.02);
+      ctx.lineTo(r * 0.84, -r * 1.28);
+      ctx.quadraticCurveTo(r * 0.86, -r * 1.66, r * 1.18, -r * 1.58);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
@@ -5657,25 +5670,25 @@ function drawProjectiles() {
       ctx.strokeStyle = "rgba(96, 44, 22, 0.68)";
       ctx.lineWidth = 1.25;
       for (let i = 0; i < 4; i += 1) {
-        const x = r * (0.18 + i * 0.32);
+        const x = -r * 0.68 + i * r * 0.42;
         ctx.beginPath();
-        ctx.moveTo(x, -r * 0.84);
-        ctx.quadraticCurveTo(x + r * 0.18, -r * 0.18, x - r * 0.06, r * 0.45);
+        ctx.moveTo(x, -r * 1.26);
+        ctx.quadraticCurveTo(x + r * 0.04, -r * 0.35, x - r * 0.02, r * 0.8);
         ctx.stroke();
       }
 
       ctx.strokeStyle = "rgba(255, 255, 255, 0.78)";
       ctx.lineWidth = 1.2;
       ctx.beginPath();
-      ctx.moveTo(-r * 0.45, -r * 0.34);
-      ctx.lineTo(r * 0.86, -r * 0.62);
+      ctx.moveTo(-r * 0.72, -r * 0.86);
+      ctx.lineTo(r * 0.76, -r * 1.04);
       ctx.stroke();
 
       ctx.fillStyle = "rgba(255, 143, 171, 0.72)";
       ctx.beginPath();
-      ctx.arc(r * 2.1, -r * 0.9, r * 0.18, 0, TAU);
-      ctx.arc(r * 2.32, -r * 0.2, r * 0.14, 0, TAU);
-      ctx.arc(r * 2.04, r * 0.58, r * 0.12, 0, TAU);
+      ctx.arc(r * 1.74, -r * 1.28, r * 0.16, 0, TAU);
+      ctx.arc(r * 1.78, -r * 0.42, r * 0.12, 0, TAU);
+      ctx.arc(r * 1.58, r * 0.64, r * 0.1, 0, TAU);
       ctx.fill();
       ctx.restore();
       continue;
@@ -5713,24 +5726,43 @@ function drawProjectiles() {
       ctx.strokeStyle = "#3b1f13";
       ctx.lineWidth = 2.2;
       ctx.beginPath();
-      ctx.moveTo(r * 1.65, -r * 0.68);
-      ctx.quadraticCurveTo(r * 2.16, -r * 0.34, r * 2.02, r * 0.12);
-      ctx.quadraticCurveTo(r * 1.82, r * 0.78, r * 1.05, r * 0.86);
-      ctx.lineTo(-r * 0.72, r * 0.72);
-      ctx.quadraticCurveTo(-r * 1.28, r * 0.34, -r * 1.1, -r * 0.42);
-      ctx.quadraticCurveTo(-r * 0.54, -r * 0.96, r * 1.65, -r * 0.68);
+      ctx.moveTo(r * 1.34, -r * 0.84);
+      ctx.quadraticCurveTo(r * 1.88, -r * 0.54, r * 1.76, r * 0.08);
+      ctx.quadraticCurveTo(r * 1.58, r * 0.84, r * 0.74, r * 1.06);
+      ctx.lineTo(-r * 0.92, r * 1.02);
+      ctx.quadraticCurveTo(-r * 1.72, r * 0.82, -r * 1.72, r * 0.02);
+      ctx.quadraticCurveTo(-r * 1.72, -r * 0.76, -r * 0.88, -r * 0.98);
+      ctx.lineTo(r * 0.74, -r * 1.02);
+      ctx.quadraticCurveTo(r * 1.06, -r * 1.02, r * 1.34, -r * 0.84);
       ctx.closePath();
       ctx.fill();
+      ctx.stroke();
+
+      for (let i = 0; i < 4; i += 1) {
+        const x = -r * 0.74 + i * r * 0.5;
+        ctx.beginPath();
+        ctx.arc(x, -r * 0.78, r * 0.38, Math.PI * 1.02, Math.PI * 1.92);
+        ctx.strokeStyle = "#3b1f13";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.28, r * 0.88);
+      ctx.quadraticCurveTo(-r * 0.1, r * 1.48, r * 0.52, r * 1.16);
+      ctx.quadraticCurveTo(r * 0.98, r * 0.88, r * 0.64, r * 0.42);
+      ctx.strokeStyle = "#3b1f13";
+      ctx.lineWidth = 2;
       ctx.stroke();
 
       ctx.shadowBlur = 0;
       ctx.strokeStyle = "rgba(80, 39, 16, 0.72)";
       ctx.lineWidth = 1.5;
       for (let i = 0; i < 4; i += 1) {
-        const x = r * (0.2 + i * 0.38);
+        const x = -r * 0.72 + i * r * 0.46;
         ctx.beginPath();
         ctx.moveTo(x, -r * 0.72);
-        ctx.quadraticCurveTo(x + r * 0.06, -r * 0.34, x - r * 0.02, -r * 0.02);
+        ctx.quadraticCurveTo(x + r * 0.04, -r * 0.42, x - r * 0.02, -r * 0.12);
         ctx.stroke();
       }
       ctx.strokeStyle = "rgba(255, 248, 214, 0.75)";
