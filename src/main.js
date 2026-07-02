@@ -522,8 +522,8 @@ const upgradePool = [
   },
   {
     id: "boomerang",
-    name: "교통카드 사출",
-    desc: "벽에 튕기는 교통카드 개수 증가",
+    name: "T머니",
+    desc: "벽에 튕기는 T머니 개수 증가",
     apply: () => {
       weapons.card.level += 1;
       weapons.card.cooldown = Math.min(weapons.card.cooldown, 2.37);
@@ -4883,7 +4883,7 @@ function updateHud() {
   const basicAttackDesc = getBasicAttackDesc();
   const loadoutItems = [
     { label: `${basicAttackName} x${player.shots}`, type: "attack", power: chipPower(player.shots), desc: basicAttackDesc },
-    weapons.card.level > 0 ? { label: `교통카드 Lv.${weapons.card.level}`, type: "attack", power: chipPower(weapons.card.level), desc: "교통카드가 화면 벽에 최대 5번 튕기며 적을 관통 공격합니다." } : null,
+    weapons.card.level > 0 ? { label: `T머니 Lv.${weapons.card.level}`, type: "attack", power: chipPower(weapons.card.level), desc: "T머니가 화면 벽에 최대 5번 튕기며 적을 관통 공격합니다." } : null,
     weapons.lightning.level > 0 ? { label: `민원번개 Lv.${weapons.lightning.level}`, type: "attack", power: chipPower(weapons.lightning.level), desc: "가까운 적 주변에 민원 번개를 내려 범위 피해와 스턴을 줍니다." } : null,
     weapons.strapOrbit.level > 0 ? { label: `손잡이 Lv.${weapons.strapOrbit.level}`, type: "attack", power: chipPower(weapons.strapOrbit.level), desc: `지하철 손잡이 ${getStrapCount()}개가 주위를 회전하며 닿은 적을 계속 공격합니다.` } : null,
     weapons.tearGas.level > 0 ? { label: `최루탄 Lv.${weapons.tearGas.level}`, type: "attack", power: chipPower(weapons.tearGas.level), desc: "최루탄을 던져 터진 곳에 가스 장판을 만들고 스턴과 지속 피해를 줍니다." } : null,
