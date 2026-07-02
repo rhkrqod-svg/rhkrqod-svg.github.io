@@ -4175,7 +4175,7 @@ function openUpgradePanel() {
     const button = document.createElement("button");
     const upgradeType = weaponUpgradeIds.has(choice.id) ? "attack" : passiveUpgradeIds.has(choice.id) ? "passive" : "basic";
     const display = getUpgradeDisplay(choice);
-    button.className = `upgrade-card ${upgradeType}`;
+    button.className = `upgrade-card ${upgradeType} upgrade-${choice.id}`;
     button.type = "button";
     button.innerHTML = `<strong>${display.name}</strong><span>${display.desc}</span>`;
     button.addEventListener("click", () => {
@@ -4811,7 +4811,7 @@ function renderLoadoutItems(items) {
   for (const item of items) {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = item.type;
+    button.className = [item.type, item.tone ? `tone-${item.tone}` : ""].filter(Boolean).join(" ");
     button.style.setProperty("--power", item.power ?? 0.25);
     button.textContent = item.label;
     button.addEventListener("click", () => {
@@ -4883,12 +4883,12 @@ function updateHud() {
   const basicAttackDesc = getBasicAttackDesc();
   const loadoutItems = [
     { label: `${basicAttackName} x${player.shots}`, type: "attack", power: chipPower(player.shots), desc: basicAttackDesc },
-    weapons.card.level > 0 ? { label: `T머니 Lv.${weapons.card.level}`, type: "attack", power: chipPower(weapons.card.level), desc: "T머니가 화면 벽에 최대 5번 튕기며 적을 관통 공격합니다." } : null,
+    weapons.card.level > 0 ? { label: `T머니 Lv.${weapons.card.level}`, type: "attack", tone: "tmoney", power: chipPower(weapons.card.level), desc: "T머니가 화면 벽에 최대 5번 튕기며 적을 관통 공격합니다." } : null,
     weapons.lightning.level > 0 ? { label: `민원번개 Lv.${weapons.lightning.level}`, type: "attack", power: chipPower(weapons.lightning.level), desc: "가까운 적 주변에 민원 번개를 내려 범위 피해와 스턴을 줍니다." } : null,
     weapons.strapOrbit.level > 0 ? { label: `손잡이 Lv.${weapons.strapOrbit.level}`, type: "attack", power: chipPower(weapons.strapOrbit.level), desc: `지하철 손잡이 ${getStrapCount()}개가 주위를 회전하며 닿은 적을 계속 공격합니다.` } : null,
     weapons.tearGas.level > 0 ? { label: `최루탄 Lv.${weapons.tearGas.level}`, type: "attack", power: chipPower(weapons.tearGas.level), desc: "최루탄을 던져 터진 곳에 가스 장판을 만들고 스턴과 지속 피해를 줍니다." } : null,
     weapons.expressTrain.level > 0 ? { label: `급행열차 Lv.${weapons.expressTrain.level}`, type: "attack", power: chipPower(weapons.expressTrain.level), desc: "급행열차가 보스를 우선 노리고 지나가며 큰 피해, 넉백, 스턴을 줍니다." } : null,
-    weapons.customerMissile.level > 0 ? { label: `민원 문자 Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level), desc: "민원 문자가 보스를 우선 추적하고 폭발 피해를 줍니다." } : null,
+    weapons.customerMissile.level > 0 ? { label: `민원 문자 Lv.${weapons.customerMissile.level}`, type: "attack", tone: "complaint", power: chipPower(weapons.customerMissile.level), desc: "민원 문자가 보스를 우선 추적하고 폭발 피해를 줍니다." } : null,
     weapons.subwayPolice.level > 0 ? { label: `${getCompanionSkillName()} Lv.${weapons.subwayPolice.level}`, type: "attack", power: chipPower(weapons.subwayPolice.level), desc: getCompanionSkillDesc() } : null,
     player.defenseBreakTimer > 0 ? { label: `방어저하 ${Math.ceil(player.defenseBreakTimer)}초`, type: "status", desc: "현재 방어력이 감소한 상태입니다." } : null,
     player.stunTimer > 0 ? { label: `경직 ${Math.ceil(player.stunTimer)}초`, type: "status", desc: "잠시 움직일 수 없는 상태입니다." } : null,
