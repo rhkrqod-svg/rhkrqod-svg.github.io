@@ -4538,7 +4538,14 @@ async function prepareLeaderboardEntry() {
 }
 
 async function showStartLeaderboard() {
-  refs.leaderboardPanel?.classList.remove("hidden");
+  if (!refs.leaderboardPanel) return;
+  if (!refs.leaderboardPanel.classList.contains("hidden")) {
+    refs.leaderboardPanel.classList.add("hidden");
+    refs.rankForm?.classList.add("hidden");
+    playSound("ui");
+    return;
+  }
+  refs.leaderboardPanel.classList.remove("hidden");
   refs.rankForm?.classList.add("hidden");
   if (refs.rankHint) refs.rankHint.textContent = "랭킹 확인 중";
   await loadLeaderboard();
