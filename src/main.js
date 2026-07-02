@@ -488,8 +488,8 @@ monsterImages.set("commute-protest", createGameImage("/assets/monsters/commute-p
 const upgradePool = [
   {
     id: "multi",
-    name: "분노의 탄환",
-    desc: "동시 발사 +1",
+    name: "기본 무기 강화",
+    desc: "기본 무기 발사 수 +1",
     apply: () => {
       player.shots += 1;
     },
@@ -596,6 +596,7 @@ const passiveUpgradeIds = new Set([
 ]);
 
 const weaponUpgradeIds = new Set([
+  "multi",
   "lightning",
   "boomerang",
   "strapOrbit",
@@ -605,7 +606,38 @@ const weaponUpgradeIds = new Set([
   "subwayPolice",
 ]);
 
+function getBasicAttackName() {
+  if (player.heroId === "gae-hwanam") return "주먹질";
+  if (player.heroId === "gae-hwani") return "귀싸대기";
+  if (player.heroId === "juyeon") return "완주 메달";
+  if (player.heroId === "changwoo") return "K2 소총";
+  return "탄환";
+}
+
+function getBasicAttackDesc() {
+  if (player.heroId === "gae-hwanam") {
+    return `주먹을 날려 명중 지점에서 폭발 피해를 주고 일반 몬스터를 0.5초 스턴시킵니다. 현재 ${player.shots}발씩 발사.`;
+  }
+  if (player.heroId === "gae-hwani") {
+    return `날아가는 귀싸대기가 화면 벽에 2번 튕기며 적을 공격합니다. 현재 ${player.shots}발씩 발사.`;
+  }
+  if (player.heroId === "juyeon") {
+    return `완주 메달을 던져 가장 가까운 적을 공격합니다. 현재 ${player.shots}발씩 발사.`;
+  }
+  if (player.heroId === "changwoo") {
+    return `K2 소총으로 가장 가까운 적을 공격합니다. 현재 ${player.shots}발씩 발사.`;
+  }
+  return `가장 가까운 적에게 기본 탄환을 발사합니다. 현재 ${player.shots}발씩 발사.`;
+}
+
 function getUpgradeDisplay(choice) {
+  if (choice?.id === "multi") {
+    const basicAttackName = getBasicAttackName();
+    return {
+      name: `${basicAttackName} 강화`,
+      desc: `${basicAttackName} 발사 수 +1`,
+    };
+  }
   if (choice?.id === "subwayPolice") {
     return {
       name: getCompanionSkillName(),
@@ -4847,24 +4879,8 @@ function updateHud() {
     refs.pauseButton.classList.toggle("active", game.manualPaused);
   }
   const chipPower = (level) => clamp((Number(level) || 1) / 7, 0.16, 1);
-  const basicAttackName = player.heroId === "gae-hwanam"
-    ? "주먹질"
-    : player.heroId === "gae-hwani"
-      ? "귀싸대기"
-      : player.heroId === "juyeon"
-        ? "완주 메달"
-        : player.heroId === "changwoo"
-          ? "K2 소총"
-        : "탄환";
-  const basicAttackDesc = player.heroId === "gae-hwanam"
-    ? `주먹을 날려 명중 지점에서 폭발 피해를 주고 일반 몬스터를 0.5초 스턴시킵니다. 현재 ${player.shots}발씩 발사.`
-    : player.heroId === "gae-hwani"
-      ? `날아가는 귀싸대기가 화면 벽에 2번 튕기며 적을 공격합니다. 현재 ${player.shots}발씩 발사.`
-      : player.heroId === "juyeon"
-        ? `완주 메달을 던져 가장 가까운 적을 공격합니다. 현재 ${player.shots}발씩 발사.`
-        : player.heroId === "changwoo"
-          ? `K2 소총으로 가장 가까운 적을 공격합니다. 현재 ${player.shots}발씩 발사.`
-      : `가장 가까운 적에게 기본 탄환을 발사합니다. 현재 ${player.shots}발씩 발사.`;
+  const basicAttackName = getBasicAttackName();
+  const basicAttackDesc = getBasicAttackDesc();
   const loadoutItems = [
     { label: `${basicAttackName} x${player.shots}`, type: "attack", power: chipPower(player.shots), desc: basicAttackDesc },
     weapons.card.level > 0 ? { label: `교통카드 Lv.${weapons.card.level}`, type: "attack", power: chipPower(weapons.card.level), desc: "교통카드가 화면 벽에 최대 5번 튕기며 적을 관통 공격합니다." } : null,
