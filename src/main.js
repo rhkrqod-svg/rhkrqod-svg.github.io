@@ -145,6 +145,10 @@ const STIMPACK_ATTACK_SPEED_MULTIPLIER = 3;
 const STIMPACK_DRAIN_RATIO = 0.03;
 const STIMPACK_DRAIN_TICK = 1;
 const STIMPACK_VISUAL_SCALE_RATIO = 0.5;
+const FIST_BULLET_RADIUS = 15;
+const FIST_EXPLOSION_RADIUS = 88;
+const FIST_EXPLOSION_DAMAGE_RATIO = 0.58;
+const FIST_MONSTER_STUN = 0.5;
 
 const heroTypes = [
   {
@@ -639,6 +643,7 @@ function getBasicBulletFireRate() {
 }
 
 function getBasicBulletStyle() {
+  if (player.heroId === "gae-hwanam") return "fist";
   if (player.heroId === "changwoo") return "military";
   if (player.heroId === "juyeon") return "medal";
   return "default";
@@ -1835,13 +1840,46 @@ function fireBulletVolley(source, target, count, {
   }
 }
 
+function explodeFistBullet(bullet) {
+  const explosionRadius = bullet.splashRadius ?? FIST_EXPLOSION_RADIUS;
+  const splashDamage = Math.max(1, Math.round(bullet.damage * FIST_EXPLOSION_DAMAGE_RATIO));
+  damageZones.push({
+    x: bullet.x,
+    y: bullet.y,
+    radius: explosionRadius,
+    damage: 0,
+    life: 0.28,
+    maxLife: 0.28,
+    color: "#ff9f1c",
+    kind: "fistExplosion",
+  });
+  addParticles(bullet.x, bullet.y, "#ffd166", 18);
+  addParticles(bullet.x, bullet.y, "#ff6b35", 16);
+  for (const enemy of [...enemies]) {
+    const distance = Math.hypot(enemy.x - bullet.x, enemy.y - bullet.y);
+    if (distance > enemy.radius + explosionRadius) continue;
+    const falloff = clamp(1 - distance / Math.max(1, explosionRadius + enemy.radius), 0.35, 1);
+    damageEnemy(enemy, Math.round(splashDamage * falloff), "#ffb703");
+    if (!enemy.boss) {
+      enemy.stunTimer = Math.max(enemy.stunTimer ?? 0, FIST_MONSTER_STUN);
+      addPopup("STUN", enemy.x, enemy.y - enemy.radius - 20, "#ffd166", 0.42, 12);
+    }
+  }
+  playSound("explosion");
+}
+
 function fireBullets() {
   const target = findPriorityEnemyFrom(player, 680);
   if (!target) return;
   const bulletStyle = getBasicBulletStyle();
   fireBulletVolley(player, target, player.shots, {
     style: bulletStyle,
-    color: bulletStyle === "military" || bulletStyle === "medal" ? "#ffd166" : "#fff2a8",
+    radius: bulletStyle === "fist" ? FIST_BULLET_RADIUS : 10,
+    color: bulletStyle === "fist"
+      ? "#ffb703"
+      : bulletStyle === "military" || bulletStyle === "medal"
+        ? "#ffd166"
+        : "#fff2a8",
   });
   playSound("shot");
 }
@@ -2917,6 +2955,12 @@ function updateProjectiles(delta) {
       if (Math.hypot(enemy.x - bullet.x, enemy.y - bullet.y) < enemy.radius + bullet.radius) {
         bullet.hitEnemies?.add(enemy);
         damageEnemy(enemy, bullet.damage);
+        if (bullet.style === "fist") {
+          explodeFistBullet(bullet);
+          const bulletIndex = bullets.indexOf(bullet);
+          if (bulletIndex >= 0) bullets.splice(bulletIndex, 1);
+          break;
+        }
       }
     }
     if (bullet.life <= 0) bullets.splice(bullets.indexOf(bullet), 1);
@@ -4764,8 +4808,12 @@ function updateHud() {
     refs.pauseButton.classList.toggle("active", game.manualPaused);
   }
   const chipPower = (level) => clamp((Number(level) || 1) / 7, 0.16, 1);
+  const basicAttackName = player.heroId === "gae-hwanam" ? "주먹질" : "탄환";
+  const basicAttackDesc = player.heroId === "gae-hwanam"
+    ? `주먹을 날려 명중 지점에서 폭발 피해를 주고 일반 몬스터를 0.5초 스턴시킵니다. 현재 ${player.shots}발씩 발사.`
+    : `가장 가까운 적에게 기본 탄환을 발사합니다. 현재 ${player.shots}발씩 발사.`;
   const loadoutItems = [
-    { label: `탄환 x${player.shots}`, type: "attack", power: chipPower(player.shots), desc: `가장 가까운 적에게 기본 탄환을 발사합니다. 현재 ${player.shots}발씩 발사.` },
+    { label: `${basicAttackName} x${player.shots}`, type: "attack", power: chipPower(player.shots), desc: basicAttackDesc },
     weapons.card.level > 0 ? { label: `교통카드 Lv.${weapons.card.level}`, type: "attack", power: chipPower(weapons.card.level), desc: "교통카드가 화면 벽에 최대 5번 튕기며 적을 관통 공격합니다." } : null,
     weapons.lightning.level > 0 ? { label: `민원번개 Lv.${weapons.lightning.level}`, type: "attack", power: chipPower(weapons.lightning.level), desc: "가까운 적 주변에 민원 번개를 내려 범위 피해와 스턴을 줍니다." } : null,
     weapons.strapOrbit.level > 0 ? { label: `손잡이 Lv.${weapons.strapOrbit.level}`, type: "attack", power: chipPower(weapons.strapOrbit.level), desc: `지하철 손잡이 ${getStrapCount()}개가 주위를 회전하며 닿은 적을 계속 공격합니다.` } : null,
@@ -5495,6 +5543,68 @@ function drawProjectiles() {
     ctx.save();
     ctx.translate(p.x, p.y);
     ctx.rotate(angle);
+    if (bullet.style === "fist") {
+      const r = bullet.radius;
+      ctx.shadowColor = "#ffb703";
+      ctx.shadowBlur = 18;
+
+      const trail = ctx.createLinearGradient(-r * 4.2, 0, -r * 0.8, 0);
+      trail.addColorStop(0, "rgba(255, 107, 53, 0)");
+      trail.addColorStop(0.52, "rgba(255, 107, 53, 0.26)");
+      trail.addColorStop(1, "rgba(255, 209, 102, 0.62)");
+      ctx.fillStyle = trail;
+      ctx.beginPath();
+      ctx.moveTo(-r * 4.4, 0);
+      ctx.lineTo(-r * 0.72, -r * 0.86);
+      ctx.lineTo(-r * 0.72, r * 0.86);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = "#273142";
+      ctx.strokeStyle = "#0f172a";
+      ctx.lineWidth = 2;
+      roundedRect(-r * 2.05, -r * 0.82, r * 1.0, r * 1.64, r * 0.22);
+      ctx.fill();
+      ctx.stroke();
+
+      const skin = ctx.createRadialGradient(r * 0.18, -r * 0.2, r * 0.12, r * 0.1, 0, r * 1.9);
+      skin.addColorStop(0, "#fff1c7");
+      skin.addColorStop(0.42, "#f4b66b");
+      skin.addColorStop(0.82, "#b86b34");
+      skin.addColorStop(1, "#6f3a1b");
+      ctx.fillStyle = skin;
+      ctx.strokeStyle = "#3b1f13";
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.moveTo(r * 1.65, -r * 0.68);
+      ctx.quadraticCurveTo(r * 2.16, -r * 0.34, r * 2.02, r * 0.12);
+      ctx.quadraticCurveTo(r * 1.82, r * 0.78, r * 1.05, r * 0.86);
+      ctx.lineTo(-r * 0.72, r * 0.72);
+      ctx.quadraticCurveTo(-r * 1.28, r * 0.34, -r * 1.1, -r * 0.42);
+      ctx.quadraticCurveTo(-r * 0.54, -r * 0.96, r * 1.65, -r * 0.68);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = "rgba(80, 39, 16, 0.72)";
+      ctx.lineWidth = 1.5;
+      for (let i = 0; i < 4; i += 1) {
+        const x = r * (0.2 + i * 0.38);
+        ctx.beginPath();
+        ctx.moveTo(x, -r * 0.72);
+        ctx.quadraticCurveTo(x + r * 0.06, -r * 0.34, x - r * 0.02, -r * 0.02);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = "rgba(255, 248, 214, 0.75)";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.38, -r * 0.44);
+      ctx.lineTo(r * 1.04, -r * 0.48);
+      ctx.stroke();
+      ctx.restore();
+      continue;
+    }
     if (bullet.style === "military") {
       const r = bullet.radius;
       ctx.shadowColor = "#ffd166";
@@ -6871,6 +6981,45 @@ function drawDamageZones() {
     const p = worldToScreen(zone.x, zone.y);
     const progress = 1 - zone.life / zone.maxLife;
     ctx.save();
+    if (zone.kind === "fistExplosion") {
+      const alpha = clamp(zone.life / zone.maxLife, 0, 1);
+      const burstRadius = zone.radius * (0.34 + progress * 0.9);
+      ctx.translate(p.x, p.y);
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = alpha * 0.72;
+      const glow = ctx.createRadialGradient(0, 0, burstRadius * 0.08, 0, 0, burstRadius);
+      glow.addColorStop(0, "rgba(255, 248, 214, 0.88)");
+      glow.addColorStop(0.24, "rgba(255, 183, 3, 0.64)");
+      glow.addColorStop(0.58, "rgba(255, 107, 53, 0.28)");
+      glow.addColorStop(1, "rgba(255, 107, 53, 0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(0, 0, burstRadius, 0, TAU);
+      ctx.fill();
+
+      ctx.strokeStyle = "rgba(255, 243, 176, 0.92)";
+      ctx.lineWidth = Math.max(2, 8 * alpha);
+      ctx.beginPath();
+      ctx.arc(0, 0, zone.radius * (0.22 + progress * 0.78), 0, TAU);
+      ctx.stroke();
+
+      ctx.rotate(progress * 2.4);
+      ctx.strokeStyle = "rgba(255, 209, 102, 0.68)";
+      ctx.lineCap = "round";
+      for (let i = 0; i < 10; i += 1) {
+        const angle = (TAU * i) / 10;
+        const inner = zone.radius * (0.16 + progress * 0.22);
+        const outer = zone.radius * (0.38 + progress * 0.44);
+        ctx.lineWidth = 2.5 * alpha;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+        ctx.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
+        ctx.stroke();
+      }
+      ctx.restore();
+      continue;
+    }
+
     if (zone.kind === "tearGasBomb") {
       if (zone.trail?.length > 1) {
         ctx.save();
