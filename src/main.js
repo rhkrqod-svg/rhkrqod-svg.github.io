@@ -1880,7 +1880,7 @@ function spawnCard() {
 
 function strikeLightning() {
   if (weapons.lightning.level <= 0 || enemies.length === 0) return;
-  const strikes = 1;
+  const strikes = Math.min(7, Math.max(1, weapons.lightning.level));
   const bossTarget = enemies
     .filter((enemy) => enemy.boss)
     .sort((a, b) => distance(player, a) - distance(player, b))[0];
@@ -1896,7 +1896,7 @@ function strikeLightning() {
   }
   for (const enemy of targets) {
     const damage = getLightningDamageForLevel(weapons.lightning.level);
-    const strikeRadius = (58 + weapons.lightning.level * 7) * 1.183 * 1.3 * 1.2 * 1.15;
+    const strikeRadius = (65 + (weapons.lightning.level - 1) * 4) * 1.183 * 1.3 * 1.2 * 1.15;
     const bossStun = 0.5;
     const monsterStun = 3;
     damageEnemy(enemy, enemy.boss ? Math.round(damage * 1.25) : damage, "#9bf6ff");
@@ -1924,7 +1924,7 @@ function strikeLightning() {
 
 function getLightningDamageForLevel(level = 1) {
   const safeLevel = Math.max(1, level || 1);
-  return Math.round((63 + safeLevel * 58) * 1.105 * 1.3 * 0.8);
+  return Math.round((121 + (safeLevel - 1) * 32) * 1.105 * 1.3 * 0.8);
 }
 
 function pickClusterTarget(maxDistance = 900) {
