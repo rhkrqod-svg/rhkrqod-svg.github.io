@@ -4890,12 +4890,12 @@ function updateHud() {
   const basicAttackDesc = getBasicAttackDesc();
   const loadoutItems = [
     { label: `${basicAttackName} x${player.shots}`, type: "attack", power: chipPower(player.shots), desc: basicAttackDesc },
-    weapons.card.level > 0 ? { label: `교통카드 Lv.${weapons.card.level}`, type: "attack", tone: "tmoney", power: chipPower(weapons.card.level), desc: "교통카드가 화면 벽에 최대 5번 튕기며 적을 관통 공격합니다." } : null,
+    weapons.card.level > 0 ? { label: `교통카드 Lv.${weapons.card.level}`, type: "attack", power: chipPower(weapons.card.level), desc: "교통카드가 화면 벽에 최대 5번 튕기며 적을 관통 공격합니다." } : null,
     weapons.lightning.level > 0 ? { label: `민원번개 Lv.${weapons.lightning.level}`, type: "attack", power: chipPower(weapons.lightning.level), desc: "가까운 적 주변에 민원 번개를 내려 범위 피해와 스턴을 줍니다." } : null,
     weapons.strapOrbit.level > 0 ? { label: `손잡이 Lv.${weapons.strapOrbit.level}`, type: "attack", power: chipPower(weapons.strapOrbit.level), desc: `지하철 손잡이 ${getStrapCount()}개가 주위를 회전하며 닿은 적을 계속 공격합니다.` } : null,
     weapons.tearGas.level > 0 ? { label: `최루탄 Lv.${weapons.tearGas.level}`, type: "attack", power: chipPower(weapons.tearGas.level), desc: "최루탄을 던져 터진 곳에 가스 장판을 만들고 스턴과 지속 피해를 줍니다." } : null,
     weapons.expressTrain.level > 0 ? { label: `급행열차 Lv.${weapons.expressTrain.level}`, type: "attack", power: chipPower(weapons.expressTrain.level), desc: "급행열차가 보스를 우선 노리고 지나가며 큰 피해, 넉백, 스턴을 줍니다." } : null,
-    weapons.customerMissile.level > 0 ? { label: `민원 문자 Lv.${weapons.customerMissile.level}`, type: "attack", tone: "complaint", power: chipPower(weapons.customerMissile.level), desc: "민원 문자가 보스를 우선 추적하고 폭발 피해를 줍니다." } : null,
+    weapons.customerMissile.level > 0 ? { label: `민원 문자 Lv.${weapons.customerMissile.level}`, type: "attack", power: chipPower(weapons.customerMissile.level), desc: "민원 문자가 보스를 우선 추적하고 폭발 피해를 줍니다." } : null,
     weapons.subwayPolice.level > 0 ? { label: `${getCompanionSkillName()} Lv.${weapons.subwayPolice.level}`, type: "attack", power: chipPower(weapons.subwayPolice.level), desc: getCompanionSkillDesc() } : null,
     player.defenseBreakTimer > 0 ? { label: `방어저하 ${Math.ceil(player.defenseBreakTimer)}초`, type: "status", desc: "현재 방어력이 감소한 상태입니다." } : null,
     player.stunTimer > 0 ? { label: `경직 ${Math.ceil(player.stunTimer)}초`, type: "status", desc: "잠시 움직일 수 없는 상태입니다." } : null,
@@ -6014,7 +6014,7 @@ function drawProjectiles() {
     for (const point of card.trail) {
       const trailPoint = worldToScreen(point.x, point.y);
       ctx.globalAlpha = clamp(point.life / 0.22, 0, 1) * 0.48;
-      ctx.fillStyle = "#80ffdb";
+      ctx.fillStyle = "#4fb3ff";
       ctx.beginPath();
       ctx.arc(trailPoint.x, trailPoint.y, Math.max(4, card.radius * 0.42), 0, TAU);
       ctx.fill();
@@ -6027,22 +6027,26 @@ function drawProjectiles() {
     ctx.rotate(card.rotation);
     const cardWidth = 48;
     const cardHeight = 30;
-    ctx.shadowColor = "#3dd6ff";
-    ctx.shadowBlur = 18;
-    ctx.fillStyle = "#f7fbff";
-    ctx.strokeStyle = "#1149a8";
+    ctx.shadowColor = "#2f80ff";
+    ctx.shadowBlur = 22;
+    const tmoneyGrad = ctx.createLinearGradient(-cardWidth / 2, -cardHeight / 2, cardWidth / 2, cardHeight / 2);
+    tmoneyGrad.addColorStop(0, "#7dd3fc");
+    tmoneyGrad.addColorStop(0.36, "#2563eb");
+    tmoneyGrad.addColorStop(1, "#061a59");
+    ctx.fillStyle = tmoneyGrad;
+    ctx.strokeStyle = "#dbeafe";
     ctx.lineWidth = 2.8;
     roundedRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 6);
     ctx.fill();
     ctx.stroke();
     ctx.shadowBlur = 0;
-    ctx.fillStyle = "#00a6e8";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
     roundedRect(-20, -11, 19, 7, 3);
     ctx.fill();
-    ctx.fillStyle = "#55c63f";
+    ctx.fillStyle = "rgba(125, 211, 252, 0.9)";
     roundedRect(1, -11, 19, 7, 3);
     ctx.fill();
-    ctx.fillStyle = "#1149a8";
+    ctx.fillStyle = "#ffffff";
     ctx.font = "900 10px system-ui";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -6251,7 +6255,7 @@ function drawProjectiles() {
     for (const point of missile.trail) {
       const trailPoint = worldToScreen(point.x, point.y);
       ctx.globalAlpha = clamp(point.life / 0.28, 0, 1) * 0.42;
-      ctx.fillStyle = "#8ee8ff";
+      ctx.fillStyle = "#ffffff";
       ctx.beginPath();
       ctx.arc(trailPoint.x, trailPoint.y, 4.5, 0, TAU);
       ctx.fill();
@@ -6262,11 +6266,11 @@ function drawProjectiles() {
     ctx.save();
     ctx.translate(p.x, p.y);
     ctx.rotate(angle);
-    ctx.shadowColor = "#8ee8ff";
-    ctx.shadowBlur = 16;
+    ctx.shadowColor = "#ffffff";
+    ctx.shadowBlur = 20;
 
     ctx.globalCompositeOperation = "lighter";
-    ctx.fillStyle = "rgba(142, 232, 255, 0.32)";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.34)";
     ctx.beginPath();
     ctx.moveTo(-28, 0);
     ctx.lineTo(-11, -9);
@@ -6281,17 +6285,17 @@ function drawProjectiles() {
     const envelopeY = -envelopeH / 2;
     const envelopeGrad = ctx.createLinearGradient(envelopeX, envelopeY, envelopeW / 2, envelopeH / 2);
     envelopeGrad.addColorStop(0, "#ffffff");
-    envelopeGrad.addColorStop(0.58, "#e7fbff");
-    envelopeGrad.addColorStop(1, "#bdefff");
+    envelopeGrad.addColorStop(0.64, "#f8fafc");
+    envelopeGrad.addColorStop(1, "#e2e8f0");
     ctx.fillStyle = envelopeGrad;
-    ctx.strokeStyle = "#0ea5e9";
+    ctx.strokeStyle = "#cbd5e1";
     ctx.lineWidth = 2.2;
     roundedRect(envelopeX, envelopeY, envelopeW, envelopeH, 5);
     ctx.fill();
     ctx.stroke();
 
     ctx.shadowBlur = 0;
-    ctx.strokeStyle = "rgba(14, 165, 233, 0.86)";
+    ctx.strokeStyle = "rgba(100, 116, 139, 0.72)";
     ctx.lineWidth = 1.8;
     ctx.beginPath();
     ctx.moveTo(envelopeX + 3, envelopeY + 4);
@@ -6303,7 +6307,7 @@ function drawProjectiles() {
     ctx.lineTo(1, 3);
     ctx.stroke();
 
-    ctx.fillStyle = "#0ea5e9";
+    ctx.fillStyle = "#475569";
     roundedRect(-10, -4, 20, 10, 4);
     ctx.fill();
     ctx.fillStyle = "#ffffff";
@@ -6312,7 +6316,7 @@ function drawProjectiles() {
     ctx.textBaseline = "middle";
     ctx.fillText("민원", 0, 1);
 
-    ctx.fillStyle = "#0ea5e9";
+    ctx.fillStyle = "#94a3b8";
     ctx.font = "900 12px system-ui";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
