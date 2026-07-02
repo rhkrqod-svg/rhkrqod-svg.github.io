@@ -150,7 +150,8 @@ const FIST_EXPLOSION_RADIUS = 88;
 const FIST_EXPLOSION_DAMAGE_RATIO = 0.58;
 const FIST_MONSTER_STUN = 0.5;
 const SLAP_BULLET_RADIUS = 17;
-const SLAP_BOUNCE_LIMIT = 1;
+const SLAP_BOUNCE_LIMIT = 2;
+const SLOW_BASIC_ATTACK_HERO_COOLDOWN_MULTIPLIER = 1.3;
 
 const heroTypes = [
   {
@@ -641,7 +642,10 @@ function getStrapCount() {
 }
 
 function getBasicBulletFireRate() {
-  return player.fireRate / (player.bulletFireRateMultiplier || 1);
+  const heroCooldownMultiplier = player.heroId === "gae-hwanam" || player.heroId === "gae-hwani"
+    ? SLOW_BASIC_ATTACK_HERO_COOLDOWN_MULTIPLIER
+    : 1;
+  return (player.fireRate * heroCooldownMultiplier) / (player.bulletFireRateMultiplier || 1);
 }
 
 function getBasicBulletStyle() {
@@ -4843,11 +4847,19 @@ function updateHud() {
     refs.pauseButton.classList.toggle("active", game.manualPaused);
   }
   const chipPower = (level) => clamp((Number(level) || 1) / 7, 0.16, 1);
-  const basicAttackName = player.heroId === "gae-hwanam" ? "주먹질" : player.heroId === "gae-hwani" ? "귀싸대기" : "탄환";
+  const basicAttackName = player.heroId === "gae-hwanam"
+    ? "주먹질"
+    : player.heroId === "gae-hwani"
+      ? "귀싸대기"
+      : player.heroId === "juyeon"
+        ? "완주 메달"
+        : "탄환";
   const basicAttackDesc = player.heroId === "gae-hwanam"
     ? `주먹을 날려 명중 지점에서 폭발 피해를 주고 일반 몬스터를 0.5초 스턴시킵니다. 현재 ${player.shots}발씩 발사.`
     : player.heroId === "gae-hwani"
-      ? `날아가는 귀싸대기가 화면 벽에 1번 튕기며 적을 공격합니다. 현재 ${player.shots}발씩 발사.`
+      ? `날아가는 귀싸대기가 화면 벽에 2번 튕기며 적을 공격합니다. 현재 ${player.shots}발씩 발사.`
+      : player.heroId === "juyeon"
+        ? `완주 메달을 던져 가장 가까운 적을 공격합니다. 현재 ${player.shots}발씩 발사.`
       : `가장 가까운 적에게 기본 탄환을 발사합니다. 현재 ${player.shots}발씩 발사.`;
   const loadoutItems = [
     { label: `${basicAttackName} x${player.shots}`, type: "attack", power: chipPower(player.shots), desc: basicAttackDesc },
