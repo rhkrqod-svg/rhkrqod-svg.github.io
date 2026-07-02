@@ -4491,23 +4491,42 @@ function renderLeaderboard() {
       : `<li><strong>-</strong><span>아직 등록된 랭킹이 없습니다<em>캐릭터 미상</em></span><span>0</span></li>`;
 }
 
+function renderLeaderboardMessage(message, detail = "서버 연결을 다시 시도해 주세요") {
+  if (!refs.leaderboardList) return;
+  refs.leaderboardList.innerHTML = `
+    <li>
+      <strong>!</strong>
+      <span>${escapeHtml(message)}<em>${escapeHtml(detail)}</em></span>
+      <span>-</span>
+    </li>
+  `;
+}
+
 async function loadLeaderboard() {
   if (!LEADERBOARD_API) {
     leaderboardServerOnline = false;
-    applyLeaderboard(readLocalLeaderboard());
+    leaderboardEntries = [];
+    renderLeaderboardMessage("서버 랭킹 주소가 없습니다");
     return false;
   }
 
   try {
-    const response = await fetch(LEADERBOARD_API, { cache: "no-store" });
+    const url = new URL(LEADERBOARD_API, window.location.href);
+    url.searchParams.set("t", String(Date.now()));
+    const response = await fetch(url.toString(), {
+      cache: "no-store",
+      headers: { accept: "application/json" },
+    });
     if (!response.ok) throw new Error("leaderboard_load_failed");
     const data = await response.json();
+    if (!Array.isArray(data.entries)) throw new Error("leaderboard_invalid_payload");
     leaderboardServerOnline = true;
     applyLeaderboard(data.entries);
     return true;
   } catch {
     leaderboardServerOnline = false;
-    applyLeaderboard(readLocalLeaderboard());
+    leaderboardEntries = [];
+    renderLeaderboardMessage("서버 랭킹을 불러오지 못했습니다", "네트워크 또는 캐시를 확인 중입니다");
     return false;
   }
 }
@@ -4552,8 +4571,9 @@ async function showStartLeaderboard() {
   refs.leaderboardPanel.classList.remove("hidden");
   refs.rankForm?.classList.add("hidden");
   if (refs.rankHint) refs.rankHint.textContent = "랭킹 확인 중";
+  renderLeaderboardMessage("서버 랭킹을 불러오는 중", "잠시만 기다려 주세요");
   await loadLeaderboard();
-  if (refs.rankHint) refs.rankHint.textContent = leaderboardServerOnline ? "전체 유저 공유 랭킹" : "서버 연결 실패: 임시 저장 랭킹";
+  if (refs.rankHint) refs.rankHint.textContent = leaderboardServerOnline ? "전체 유저 공유 랭킹" : "서버 연결 실패: 다시 눌러 재시도";
   playSound("ui");
 }
 
