@@ -477,6 +477,8 @@ for (const boss of bossTypes) {
 const pacemakerRunnerImage = createGameImage("/assets/heroes/juyeon-pacemaker-runner-game.png?v=20260630");
 const reserveSoldierImage = createGameImage("/assets/heroes/changwoo-reserve-soldier-game.png?v=20260630");
 const subwayPoliceImage = createGameImage("/assets/heroes/subway-police-officer-game.png?v=20260630");
+const fistProjectileImage = createGameImage("/assets/projectiles/byeongu-fist.png?v=20260702");
+const slapProjectileImage = createGameImage("/assets/projectiles/heebin-slap.png?v=20260702");
 
 const monsterImages = new Map();
 for (const monster of monsterTypes) {
@@ -5619,6 +5621,26 @@ function drawProjectiles() {
     ctx.rotate(angle);
     if (bullet.style === "slap") {
       const r = bullet.radius;
+      if (canDrawGameImage(slapProjectileImage)) {
+        ctx.shadowColor = "#ff8fab";
+        ctx.shadowBlur = 16;
+        const trail = ctx.createLinearGradient(-r * 4.4, 0, -r * 0.7, 0);
+        trail.addColorStop(0, "rgba(255, 143, 171, 0)");
+        trail.addColorStop(0.54, "rgba(255, 143, 171, 0.24)");
+        trail.addColorStop(1, "rgba(255, 214, 232, 0.66)");
+        ctx.fillStyle = trail;
+        ctx.beginPath();
+        ctx.moveTo(-r * 4.2, 0);
+        ctx.lineTo(-r * 0.68, -r * 0.82);
+        ctx.lineTo(-r * 0.68, r * 0.82);
+        ctx.closePath();
+        ctx.fill();
+        const imageHeight = r * 3.95;
+        const imageWidth = imageHeight * (slapProjectileImage.naturalWidth / slapProjectileImage.naturalHeight);
+        ctx.drawImage(slapProjectileImage, -imageWidth * 0.5, -imageHeight * 0.5, imageWidth, imageHeight);
+        ctx.restore();
+        continue;
+      }
       const slapFlash = 0.92 + Math.sin(performance.now() * 0.028 + bullet.x * 0.02) * 0.08;
       ctx.scale(slapFlash, 1);
       ctx.shadowColor = "#ff8fab";
@@ -5695,6 +5717,26 @@ function drawProjectiles() {
     }
     if (bullet.style === "fist") {
       const r = bullet.radius;
+      if (canDrawGameImage(fistProjectileImage)) {
+        ctx.shadowColor = "#ffb703";
+        ctx.shadowBlur = 18;
+        const trail = ctx.createLinearGradient(-r * 4.2, 0, -r * 0.8, 0);
+        trail.addColorStop(0, "rgba(255, 107, 53, 0)");
+        trail.addColorStop(0.52, "rgba(255, 107, 53, 0.26)");
+        trail.addColorStop(1, "rgba(255, 209, 102, 0.62)");
+        ctx.fillStyle = trail;
+        ctx.beginPath();
+        ctx.moveTo(-r * 4.4, 0);
+        ctx.lineTo(-r * 0.72, -r * 0.86);
+        ctx.lineTo(-r * 0.72, r * 0.86);
+        ctx.closePath();
+        ctx.fill();
+        const imageWidth = r * 4.05;
+        const imageHeight = imageWidth * (fistProjectileImage.naturalHeight / fistProjectileImage.naturalWidth);
+        ctx.drawImage(fistProjectileImage, -imageWidth * 0.5, -imageHeight * 0.5, imageWidth, imageHeight);
+        ctx.restore();
+        continue;
+      }
       ctx.shadowColor = "#ffb703";
       ctx.shadowBlur = 18;
 
