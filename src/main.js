@@ -82,6 +82,7 @@ const STORAGE_KEY = "villain-commando-best";
 const LOCAL_LEADERBOARD_KEY = "villain-commando-local-leaderboard-v3";
 const GLOBAL_LEADERBOARD_API = "https://subway-villain-leaderboard.rhkrqod.workers.dev/api/leaderboard";
 const LEADERBOARD_API = (import.meta.env.VITE_LEADERBOARD_API || GLOBAL_LEADERBOARD_API).trim();
+const LEADERBOARD_SNAPSHOT_URL = "/leaderboard-snapshot.json";
 const LEADERBOARD_LIMIT = 10;
 const TAU = Math.PI * 2;
 const WORLD_SIZE = 2800;
@@ -4502,12 +4503,30 @@ function renderLeaderboardMessage(message, detail = "서버 연결을 다시 시
   `;
 }
 
+async function loadLeaderboardSnapshot() {
+  try {
+    const url = new URL(LEADERBOARD_SNAPSHOT_URL, window.location.href);
+    url.searchParams.set("t", String(Date.now()));
+    const response = await fetch(url.toString(), {
+      cache: "no-store",
+      headers: { accept: "application/json" },
+    });
+    if (!response.ok) throw new Error("leaderboard_snapshot_load_failed");
+    const data = await response.json();
+    if (!Array.isArray(data.entries)) throw new Error("leaderboard_snapshot_invalid_payload");
+    applyLeaderboard(data.entries);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function loadLeaderboard() {
   if (!LEADERBOARD_API) {
     leaderboardServerOnline = false;
-    leaderboardEntries = [];
-    renderLeaderboardMessage("서버 랭킹 주소가 없습니다");
-    return false;
+    const snapshotReady = await loadLeaderboardSnapshot();
+    if (!snapshotReady) renderLeaderboardMessage("서버 랭킹 주소가 없습니다");
+    return snapshotReady;
   }
 
   try {
@@ -4525,9 +4544,9 @@ async function loadLeaderboard() {
     return true;
   } catch {
     leaderboardServerOnline = false;
-    leaderboardEntries = [];
-    renderLeaderboardMessage("서버 랭킹을 불러오지 못했습니다", "네트워크 또는 캐시를 확인 중입니다");
-    return false;
+    const snapshotReady = await loadLeaderboardSnapshot();
+    if (!snapshotReady) renderLeaderboardMessage("서버 랭킹을 불러오지 못했습니다", "네트워크 또는 캐시를 확인 중입니다");
+    return snapshotReady;
   }
 }
 
@@ -4572,8 +4591,9 @@ async function showStartLeaderboard() {
   refs.rankForm?.classList.add("hidden");
   if (refs.rankHint) refs.rankHint.textContent = "랭킹 확인 중";
   renderLeaderboardMessage("서버 랭킹을 불러오는 중", "잠시만 기다려 주세요");
+  await loadLeaderboardSnapshot();
   await loadLeaderboard();
-  if (refs.rankHint) refs.rankHint.textContent = leaderboardServerOnline ? "전체 유저 공유 랭킹" : "서버 연결 실패: 다시 눌러 재시도";
+  if (refs.rankHint) refs.rankHint.textContent = leaderboardServerOnline ? "전체 유저 공유 랭킹" : "공유 랭킹 백업 표시 중";
   playSound("ui");
 }
 
