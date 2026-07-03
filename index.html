@@ -41,6 +41,7 @@
         <div class="stat">
           <span>레벨</span>
           <strong id="level">1</strong>
+          <button id="trainingButton" class="training-button" type="button">훈련소</button>
         </div>
         <div class="stat">
           <span>시간</span>
@@ -125,6 +126,24 @@
           <h2 id="upgradeTitle">스킬 선택</h2>
           <button id="upgradePauseButton" class="upgrade-pause-button" type="button">일시정지</button>
           <div id="upgradeChoices" class="upgrade-choices"></div>
+        </div>
+      </div>
+
+      <div id="trainingPanel" class="training-panel hidden" role="dialog" aria-modal="true">
+        <div class="training-shell">
+          <div class="training-head">
+            <div>
+              <span>티머니 잔액</span>
+              <strong id="tmoneyBalance">500</strong>
+            </div>
+            <button id="trainingCloseButton" type="button">닫기</button>
+          </div>
+          <div class="training-tabs">
+            <button id="trainingWeaponTab" class="active" type="button">무기창</button>
+            <button id="trainingPassiveTab" type="button">패시브창</button>
+          </div>
+          <div id="trainingDetail" class="training-detail">스킬을 누르면 설명이 표시됩니다.</div>
+          <div id="trainingList" class="training-list"></div>
         </div>
       </div>
 

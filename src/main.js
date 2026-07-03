@@ -41,6 +41,14 @@ const refs = {
   upgradeTitle: document.querySelector("#upgradeTitle"),
   upgradePauseButton: document.querySelector("#upgradePauseButton"),
   upgradeChoices: document.querySelector("#upgradeChoices"),
+  trainingButton: document.querySelector("#trainingButton"),
+  trainingPanel: document.querySelector("#trainingPanel"),
+  trainingCloseButton: document.querySelector("#trainingCloseButton"),
+  trainingWeaponTab: document.querySelector("#trainingWeaponTab"),
+  trainingPassiveTab: document.querySelector("#trainingPassiveTab"),
+  trainingList: document.querySelector("#trainingList"),
+  trainingDetail: document.querySelector("#trainingDetail"),
+  tmoneyBalance: document.querySelector("#tmoneyBalance"),
   leaderboardPanel: document.querySelector("#leaderboardPanel"),
   leaderboardList: document.querySelector("#leaderboardList"),
   rankForm: document.querySelector("#rankForm"),
@@ -92,6 +100,10 @@ const START_HP = 100;
 const MAX_PLAYER_HP = 200;
 const MAX_PLAYER_HP_LIMIT = 300;
 const START_MAGNET_RANGE = 313;
+const START_TMONEY_POINTS = 500;
+const TRAINING_MAX_LEVEL = 5;
+const TRAINING_LEVEL_COSTS = [0, 250, 500, 1000, 2000, 3000];
+const UPGRADE_SCALING_BONUS = 1.3;
 const CHARACTER_SIZE_SCALE = 0.75;
 const MONSTER_SIZE_SCALE = 0.42;
 const BOSS_SIZE_SCALE = 0.45;
@@ -101,7 +113,7 @@ const BOSS_SPAWN_SAFE_RADIUS = 760;
 const PLAYER_RADIUS = 19 * CHARACTER_SIZE_SCALE;
 const FIRST_AID_HEAL_RATIO = 0.5;
 const BASE_REGEN_RATIO = 0.015;
-const REGEN_UPGRADE_RATIO = 0.02;
+const REGEN_UPGRADE_RATIO = 0.026;
 const ENEMY_HP_GLOBAL_MULTIPLIER = 1.6;
 const ENEMY_SPEED_GLOBAL_MULTIPLIER = 1.38;
 const ENEMY_DAMAGE_GLOBAL_MULTIPLIER = 1.3;
@@ -130,7 +142,7 @@ const SUBWAY_POLICE_DAMAGE_MULTIPLIER = 2.535;
 const SUBWAY_POLICE_SPLASH_RADIUS = 60;
 const SUBWAY_POLICE_SPLASH_DAMAGE_RATIO = 0.28;
 const COMRADE_DROP_DESCENT_TIME = 1.8;
-const CHICKEN_BUFF_DURATION = 7;
+const CHICKEN_BUFF_DURATION = 10;
 const CHICKEN_VISUAL_SCALE = 3;
 const CHICKEN_COLLISION_RADIUS_MULTIPLIER = 2.25;
 const CHICKEN_HIT_COOLDOWN = 0.5;
@@ -141,7 +153,7 @@ const TANK_CANNON_RADIUS = 112;
 const TANK_CANNON_BOSS_STUN = 0.5;
 const TANK_CANNON_MONSTER_STUN = 3;
 const STIMPACK_DURATION = 8;
-const STIMPACK_ATTACK_SPEED_MULTIPLIER = 3;
+const STIMPACK_ATTACK_SPEED_MULTIPLIER = 4;
 const STIMPACK_DRAIN_RATIO = 0.03;
 const STIMPACK_DRAIN_TICK = 1;
 const STIMPACK_VISUAL_SCALE_RATIO = 0.5;
@@ -256,7 +268,7 @@ function isRunnerCompanionHero() {
 }
 
 function getStationPoliceDamage() {
-  return Math.round((29 + Math.max(0, weapons.subwayPolice.level - 1) * 3) * SUBWAY_POLICE_DAMAGE_MULTIPLIER);
+  return Math.round((29 + Math.max(0, weapons.subwayPolice.level - 1) * 3 * UPGRADE_SCALING_BONUS) * SUBWAY_POLICE_DAMAGE_MULTIPLIER);
 }
 
 function getBuffedCompanionDamage() {
@@ -492,7 +504,10 @@ const upgradePool = [
     id: "multi",
     name: "기본 무기 강화",
     desc: "최대 5발까지 발사 수 +1, 이후 피해 +20%",
+    category: "weapon",
+    basic: true,
     apply: () => {
+      player.basicWeaponLevel = Math.min(TRAINING_MAX_LEVEL, (player.basicWeaponLevel || 1) + 1);
       if (player.shots < 5) {
         player.shots += 1;
       } else {
@@ -503,18 +518,20 @@ const upgradePool = [
   {
     id: "magnet",
     name: "민심 흡수기",
-    desc: "경험치 흡수 범위 +35%",
+    desc: "경험치 흡수 범위 +58%",
+    category: "passive",
     apply: () => {
-      player.magnet *= 1.45;
+      player.magnet *= 1 + 0.45 * UPGRADE_SCALING_BONUS;
     },
   },
   {
     id: "maxhp",
     name: "멘탈 강화",
-    desc: "최대 체력 +15%, 즉시 회복",
+    desc: "최대 체력 +19.5%, 즉시 회복",
+    category: "passive",
     apply: () => {
       const previousMaxHp = player.maxHp;
-      player.maxHp = Math.min(MAX_PLAYER_HP_LIMIT, player.maxHp * 1.15);
+      player.maxHp = Math.min(MAX_PLAYER_HP_LIMIT, player.maxHp * (1 + 0.15 * UPGRADE_SCALING_BONUS));
       player.hp = Math.min(player.maxHp, player.hp + player.maxHp - previousMaxHp);
     },
   },
@@ -522,6 +539,7 @@ const upgradePool = [
     id: "lightning",
     name: "민원 번개",
     desc: "가까운 적에게 주기적으로 번개",
+    category: "weapon",
     apply: () => {
       weapons.lightning.level += 1;
     },
@@ -530,6 +548,7 @@ const upgradePool = [
     id: "boomerang",
     name: "교통카드",
     desc: "벽에 튕기는 교통카드 개수 증가",
+    category: "weapon",
     apply: () => {
       weapons.card.level += 1;
       weapons.card.cooldown = Math.min(weapons.card.cooldown, 2.37);
@@ -539,6 +558,7 @@ const upgradePool = [
     id: "strapOrbit",
     name: "손잡이 회오리",
     desc: "주위를 도는 손잡이 보호 무기",
+    category: "weapon",
     apply: () => {
       weapons.strapOrbit.level += 1;
     },
@@ -547,6 +567,7 @@ const upgradePool = [
     id: "tearGas",
     name: "최루탄",
     desc: "최루탄을 던져 터진 곳에 가스 장판 생성",
+    category: "weapon",
     apply: () => {
       weapons.tearGas.level += 1;
     },
@@ -555,6 +576,7 @@ const upgradePool = [
     id: "expressTrain",
     name: "급행열차 돌진",
     desc: "넓은 직선 범위를 밀어버림",
+    category: "weapon",
     apply: () => {
       weapons.expressTrain.level += 1;
       weapons.expressTrain.cooldown = Math.min(weapons.expressTrain.cooldown, 1.1);
@@ -564,6 +586,7 @@ const upgradePool = [
     id: "customerMissile",
     name: "민원 문자",
     desc: "민원 문자가 적을 추적하고 폭발 피해",
+    category: "weapon",
     apply: () => {
       weapons.customerMissile.level += 1;
       weapons.customerMissile.cooldown = Math.min(weapons.customerMissile.cooldown, 0.68);
@@ -573,6 +596,7 @@ const upgradePool = [
     id: "subwayPolice",
     name: "지하철 경찰",
     desc: "지하철 경찰이 동행하며 보스를 우선 공격",
+    category: "weapon",
     apply: () => {
       weapons.subwayPolice.level += 1;
     },
@@ -580,15 +604,17 @@ const upgradePool = [
   {
     id: "nuisanceResist",
     name: "민폐 내성",
-    desc: "받는 피해 15% 감소",
+    desc: "받는 피해 19.5% 감소",
+    category: "passive",
     apply: () => {
-      player.damageReduction = Math.min(0.6, player.damageReduction + 0.15);
+      player.damageReduction = Math.min(0.6, player.damageReduction + 0.15 * UPGRADE_SCALING_BONUS);
     },
   },
   {
     id: "mentalRegen",
     name: "멘탈 회복력",
-    desc: "자동 체력 회복량 +2%",
+    desc: "자동 체력 회복량 +2.6%",
+    category: "passive",
     apply: () => {
       player.regenLevel += 1;
       player.regenTimer = Math.min(player.regenTimer, 1.2);
@@ -597,6 +623,8 @@ const upgradePool = [
 ];
 
 const passiveUpgradeIds = new Set([
+  "magnet",
+  "maxhp",
   "nuisanceResist",
   "mentalRegen",
 ]);
@@ -661,19 +689,173 @@ function getUpgradeDisplay(choice) {
   };
 }
 
+function scaledLevelValue(base, perLevel, level, multiplier = UPGRADE_SCALING_BONUS) {
+  const safeLevel = Math.max(1, Number(level) || 1);
+  return base + Math.max(0, safeLevel - 1) * perLevel * multiplier;
+}
+
+function getTrainingSkillLevel(id) {
+  switch (id) {
+    case "multi":
+      return Math.max(1, player.basicWeaponLevel || 1);
+    case "lightning":
+      return weapons.lightning.level;
+    case "boomerang":
+      return weapons.card.level;
+    case "strapOrbit":
+      return weapons.strapOrbit.level;
+    case "tearGas":
+      return weapons.tearGas.level;
+    case "expressTrain":
+      return weapons.expressTrain.level;
+    case "customerMissile":
+      return weapons.customerMissile.level;
+    case "subwayPolice":
+      return weapons.subwayPolice.level;
+    case "magnet":
+      return Math.max(0, Math.round(Math.log(Math.max(1, player.magnet / (START_MAGNET_RANGE * 1.3))) / Math.log(1 + 0.45 * UPGRADE_SCALING_BONUS)));
+    case "maxhp":
+      return player.maxHpTrainingLevel || 0;
+    case "nuisanceResist":
+      return Math.round((player.damageReduction || 0) / (0.15 * UPGRADE_SCALING_BONUS));
+    case "mentalRegen":
+      return player.regenLevel || 0;
+    default:
+      return 0;
+  }
+}
+
+function getTrainingNextCost(level) {
+  const nextLevel = Math.min(TRAINING_MAX_LEVEL, level + 1);
+  return TRAINING_LEVEL_COSTS[nextLevel] ?? TRAINING_LEVEL_COSTS.at(-1);
+}
+
+function getTrainingStars(level) {
+  return Array.from({ length: TRAINING_MAX_LEVEL }, (_, index) => (index < level ? "★" : "☆")).join("");
+}
+
+function getLevelTrainingBonus(level) {
+  const bucket = Math.min(10, Math.max(1, Math.ceil(level / 5)));
+  return bucket * 100;
+}
+
+function addTmoneyPoints(amount, x = player.x, y = player.y, label = "티머니", showPopup = true) {
+  const points = Math.max(0, Math.round(amount || 0));
+  if (points <= 0) return;
+  player.tmoney += points;
+  if (showPopup) addPopup(`${label} +${formatScore(points)}`, x, y - 38, "#ffd166", 0.8, 15);
+}
+
+function getTrainableSkills(category = game.trainingTab) {
+  return upgradePool.filter((choice) => {
+    if (!choice) return false;
+    if (category === "passive") return choice.category === "passive";
+    return choice.category === "weapon";
+  });
+}
+
+function renderTrainingPanel() {
+  if (!refs.trainingList || !refs.trainingPanel || refs.trainingPanel.classList.contains("hidden")) return;
+  const skills = getTrainableSkills(game.trainingTab);
+  if (!skills.some((skill) => skill.id === game.selectedTrainingSkill)) {
+    game.selectedTrainingSkill = skills[0]?.id ?? "multi";
+  }
+  if (refs.tmoneyBalance) refs.tmoneyBalance.textContent = formatScore(player.tmoney);
+  refs.trainingWeaponTab?.classList.toggle("active", game.trainingTab === "weapon");
+  refs.trainingPassiveTab?.classList.toggle("active", game.trainingTab === "passive");
+  const selected = upgradePool.find((skill) => skill.id === game.selectedTrainingSkill) ?? skills[0];
+  if (refs.trainingDetail && selected) {
+    const display = getUpgradeDisplay(selected);
+    const level = getTrainingSkillLevel(selected.id);
+    const nextCost = level >= TRAINING_MAX_LEVEL ? "MAX" : formatScore(getTrainingNextCost(level));
+    refs.trainingDetail.innerHTML = `<strong>${display.name}</strong><span>${display.desc}</span><em>${getTrainingStars(level)} / 다음 비용 ${nextCost}</em>`;
+  }
+  refs.trainingList.innerHTML = "";
+  for (const skill of skills) {
+    const display = getUpgradeDisplay(skill);
+    const level = getTrainingSkillLevel(skill.id);
+    const cost = getTrainingNextCost(level);
+    const maxed = level >= TRAINING_MAX_LEVEL;
+    const affordable = player.tmoney >= cost;
+    const button = document.createElement("button");
+    const type = getUpgradeType(skill);
+    button.type = "button";
+    button.className = `training-card ${type} ${skill.id === game.selectedTrainingSkill ? "selected" : ""}`;
+    button.innerHTML = `
+      <i class="upgrade-icon ${getUpgradeIconClass(skill)}" aria-hidden="true"></i>
+      <span class="training-copy">
+        <strong>${display.name}</strong>
+        <em>${getTrainingStars(level)}</em>
+        <small>${maxed ? "최대 훈련 완료" : `스킬 훈련 ${formatScore(cost)}P`}</small>
+      </span>
+      <b>${maxed ? "MAX" : affordable ? "훈련" : "부족"}</b>
+    `;
+    button.addEventListener("click", () => {
+      game.selectedTrainingSkill = skill.id;
+      if (!maxed && affordable) {
+        buyTrainingSkill(skill);
+      } else {
+        playSound("ui");
+        renderTrainingPanel();
+      }
+    });
+    refs.trainingList.append(button);
+  }
+}
+
+function buyTrainingSkill(skill) {
+  const level = getTrainingSkillLevel(skill.id);
+  if (level >= TRAINING_MAX_LEVEL) return;
+  const cost = getTrainingNextCost(level);
+  if (player.tmoney < cost) {
+    addPopup("잔액 부족", player.x, player.y - 52, "#ff8fab", 0.7, 16);
+    playSound("ui");
+    renderTrainingPanel();
+    return;
+  }
+  player.tmoney -= cost;
+  if (skill.id === "maxhp") player.maxHpTrainingLevel = (player.maxHpTrainingLevel || 0) + 1;
+  skill.apply();
+  playSound("levelUp");
+  addPopup("스킬 훈련", player.x, player.y - 58, "#ffd166", 0.85, 17);
+  renderTrainingPanel();
+  updateHud();
+}
+
+function openTrainingPanel() {
+  if (game.state !== "playing" || game.pendingHeroChoice) return;
+  game.trainingTab = game.trainingTab || "weapon";
+  game.selectedTrainingSkill = game.selectedTrainingSkill || "multi";
+  refs.trainingPanel?.classList.remove("hidden");
+  renderTrainingPanel();
+  playSound("ui");
+}
+
+function closeTrainingPanel() {
+  refs.trainingPanel?.classList.add("hidden");
+  playSound("ui");
+}
+
+function switchTrainingTab(tab) {
+  game.trainingTab = tab;
+  game.selectedTrainingSkill = getTrainableSkills(tab)[0]?.id ?? "multi";
+  renderTrainingPanel();
+  playSound("ui");
+}
+
 function getTearGasRadius() {
   const level = Math.max(1, weapons.tearGas.level);
-  return (58 + level * 8) * 1.3 * 1.7 * 1.5 * 1.4625 * 0.8 * (1 + (level - 1) * 0.08);
+  return scaledLevelValue(66, 8, level) * 1.3 * 1.7 * 1.5 * 1.4625 * 0.8 * 0.7 * (1 + (level - 1) * 0.08 * UPGRADE_SCALING_BONUS);
 }
 
 function getTearGasDamage() {
   const level = Math.max(1, weapons.tearGas.level);
-  return Math.round((9 + (level - 1) * 6) * 1.8 * 3 * (player.meleeDamageMultiplier || 1));
+  return Math.round(scaledLevelValue(9, 6, level) * 1.8 * 3 * (player.meleeDamageMultiplier || 1));
 }
 
 function getStrapOrbitRadius() {
   const level = Math.max(1, weapons.strapOrbit.level);
-  return (58 + level * 6) * 1.69 * 1.2 * (1 + (level - 1) * 0.04);
+  return scaledLevelValue(64, 6, level) * 1.69 * 1.2 * (1 + (level - 1) * 0.04 * UPGRADE_SCALING_BONUS);
 }
 
 function getStrapHandleRadius() {
@@ -779,6 +961,8 @@ const player = {
   nextXp: 90,
   kills: 0,
   score: 0,
+  tmoney: START_TMONEY_POINTS,
+  bossKills: 0,
   elapsed: 0,
   damage: 32.5,
   attackPower: 100,
@@ -786,9 +970,11 @@ const player = {
   fireRate: 0.35,
   fireCooldown: 0,
   shots: 1,
+  basicWeaponLevel: 1,
   bulletSpeed: 452,
-  magnet: START_MAGNET_RANGE,
+  magnet: START_MAGNET_RANGE * 1.3,
   damageReduction: 0,
+  maxHpTrainingLevel: 0,
   dodgeChance: 0,
   specialLabels: [],
   healMultiplier: 1,
@@ -836,6 +1022,8 @@ const game = {
   pendingHeroChoice: false,
   pendingStarterChoices: 0,
   pendingLevelChoices: 0,
+  trainingTab: "weapon",
+  selectedTrainingSkill: "multi",
 };
 
 function resize() {
@@ -1243,6 +1431,8 @@ function resetGame() {
     nextXp: 90,
     kills: 0,
     score: 0,
+    tmoney: START_TMONEY_POINTS,
+    bossKills: 0,
     elapsed: 0,
     damage: 32.5,
     attackPower: 100,
@@ -1250,9 +1440,11 @@ function resetGame() {
     fireRate: 0.35,
     fireCooldown: 0.18,
     shots: 1,
+    basicWeaponLevel: 1,
     bulletSpeed: 452,
-    magnet: START_MAGNET_RANGE,
+    magnet: START_MAGNET_RANGE * 1.3,
     damageReduction: 0,
+    maxHpTrainingLevel: 0,
     dodgeChance: 0,
     specialLabels: [],
     healMultiplier: 1,
@@ -1296,6 +1488,8 @@ function resetGame() {
   game.pendingHeroChoice = true;
   game.pendingStarterChoices = 0;
   game.pendingLevelChoices = 0;
+  game.trainingTab = "weapon";
+  game.selectedTrainingSkill = "multi";
   pendingDansoBoomerangs.length = 0;
   input.pointers.clear();
   refs.message.classList.remove("start-screen");
@@ -1303,6 +1497,7 @@ function resetGame() {
   if (refs.leaderboardOpenButton) refs.leaderboardOpenButton.hidden = true;
   refs.heroPanel.classList.remove("hidden");
   refs.upgradePanel.classList.add("hidden");
+  refs.trainingPanel?.classList.add("hidden");
   refs.bossBanner.classList.remove("active");
   updateHud();
   renderHeroChoices();
@@ -1358,9 +1553,10 @@ function selectHero(heroId) {
   snapCameraToPlayer();
   refs.heroPanel.classList.add("hidden");
   game.pendingHeroChoice = false;
-  game.pendingStarterChoices = 3;
+  game.pendingStarterChoices = 0;
+  game.paused = false;
+  game.manualPaused = false;
   updateHud();
-  openUpgradePanel();
 }
 
 function setupAllyPreview(mode = "pacemaker") {
@@ -1998,7 +2194,7 @@ function strikeLightning() {
   }
   for (const enemy of targets) {
     const damage = getLightningDamageForLevel(weapons.lightning.level);
-    const strikeRadius = (65 + (weapons.lightning.level - 1) * 4) * 1.183 * 1.3 * 1.2 * 1.15;
+    const strikeRadius = scaledLevelValue(65, 4, weapons.lightning.level) * 1.183 * 1.3 * 1.2 * 1.15;
     const bossStun = 0.5;
     const monsterStun = 3;
     damageEnemy(enemy, enemy.boss ? Math.round(damage * 1.25) : damage, "#9bf6ff");
@@ -2026,7 +2222,7 @@ function strikeLightning() {
 
 function getLightningDamageForLevel(level = 1) {
   const safeLevel = Math.max(1, level || 1);
-  return Math.round((121 + (safeLevel - 1) * 32) * 1.105 * 1.3 * 0.8);
+  return Math.round(scaledLevelValue(121, 32, safeLevel) * 1.105 * 1.3 * 0.8);
 }
 
 function pickClusterTarget(maxDistance = 900) {
@@ -2116,10 +2312,10 @@ function spawnExpressTrain() {
     x: target ? target.x : player.x,
     y: target ? target.y : player.y,
     vertical,
-    width: (92 + level * 13) * trainWidthScale,
-    trainLength: (520 + level * 34) * trainLengthScale,
-    damage: (105 + level * 42) * 3,
-    push: 470 + level * 62,
+    width: scaledLevelValue(105, 13, level) * trainWidthScale,
+    trainLength: scaledLevelValue(554, 34, level) * trainLengthScale,
+    damage: scaledLevelValue(147, 42, level) * 3,
+    push: scaledLevelValue(532, 62, level),
     stun: 3,
     bossStun: 0.5,
     angle: vertical ? (direction > 0 ? Math.PI / 2 : -Math.PI / 2) : direction > 0 ? 0 : Math.PI,
@@ -2209,8 +2405,8 @@ function spawnTransferGate() {
 
 function explodeCustomerMissile(missile) {
   const level = weapons.customerMissile.level;
-  const radius = 54 + level * 12;
-  const damage = Math.round((32 + level * 24) * 1.04 * 0.6 * 0.85);
+  const radius = scaledLevelValue(66, 12, level);
+  const damage = Math.round(scaledLevelValue(56, 24, level) * 1.04 * 0.6 * 0.85);
   damageZones.push({
     x: missile.x,
     y: missile.y,
@@ -2235,15 +2431,15 @@ function spawnCustomerMissiles() {
     const target = findCustomerMissileTarget(900 + level * 40);
     if (!target) return;
     const angle = angleTo(player, target) + (i - (count - 1) / 2) * 0.32;
-    const speed = 265 + level * 23;
+    const speed = scaledLevelValue(288, 23, level);
     missiles.push({
       x: player.x + Math.cos(angle) * 22,
       y: player.y + Math.sin(angle) * 22,
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
       speed,
-      turnRate: 7.2 + level * 0.5,
-      damage: Math.round((22 + level * 15) * 1.04 * 0.85),
+      turnRate: scaledLevelValue(7.7, 0.5, level),
+      damage: Math.round(scaledLevelValue(37, 15, level) * 1.04 * 0.85),
       radius: 8,
       life: 3.2,
       target,
@@ -2319,8 +2515,8 @@ function updatePlayer(delta) {
       player.regenTimer = Math.max(2.2, 5.2 - player.regenLevel * 0.32);
     }
   }
-  const cooldownDelta = getStimCooldownDelta(delta);
-  player.fireCooldown -= cooldownDelta;
+  const basicCooldownDelta = getBasicWeaponCooldownDelta(delta);
+  player.fireCooldown -= basicCooldownDelta;
   if (!stunned && player.fireCooldown <= 0) {
     fireBullets();
     player.fireCooldown = getBasicBulletFireRate();
@@ -2328,19 +2524,19 @@ function updatePlayer(delta) {
 
   const strapSpeedMultiplier = player.heroId === "changwoo" ? 0.6 : 1;
   weapons.strapOrbit.angle += delta * (5.3 + weapons.strapOrbit.level * 0.32) * strapSpeedMultiplier * 1.3;
-  weapons.lightning.cooldown -= cooldownDelta;
+  weapons.lightning.cooldown -= delta;
   if (weapons.lightning.cooldown <= 0) {
     strikeLightning();
     weapons.lightning.cooldown = 3;
   }
 
-  weapons.card.cooldown -= cooldownDelta;
+  weapons.card.cooldown -= delta;
   if (weapons.card.level > 0 && weapons.card.cooldown <= 0) {
     spawnCard();
     weapons.card.cooldown = 2.37;
   }
 
-  weapons.tearGas.cooldown -= cooldownDelta;
+  weapons.tearGas.cooldown -= delta;
   if (weapons.tearGas.level > 0 && weapons.tearGas.cooldown <= 0) {
     throwTearGas();
     weapons.tearGas.cooldown = 3;
@@ -2358,7 +2554,7 @@ function updatePlayer(delta) {
     weapons.transferGate.cooldown = Math.max(2.1, 6.8 - weapons.transferGate.level * 0.38);
   }
 
-  weapons.customerMissile.cooldown -= cooldownDelta;
+  weapons.customerMissile.cooldown -= delta;
   if (weapons.customerMissile.level > 0 && weapons.customerMissile.cooldown <= 0) {
     spawnCustomerMissiles();
     weapons.customerMissile.cooldown = 0.68;
@@ -3257,7 +3453,7 @@ function updateBlade(delta = 0) {
     const strapCount = getStrapCount();
     const strapRadius = getStrapOrbitRadius();
     const strapHandleRadius = getStrapHandleRadius();
-    const strapDamage = Math.round((14 + (weapons.strapOrbit.level - 1) * 8) * 1.5 * 2 * (player.meleeDamageMultiplier || 1));
+    const strapDamage = Math.round(scaledLevelValue(14, 8, weapons.strapOrbit.level) * 1.5 * 2 * (player.meleeDamageMultiplier || 1));
     for (let i = 0; i < strapCount; i += 1) {
       const strapAngle = weapons.strapOrbit.angle + (TAU * i) / strapCount;
       const strap = {
@@ -3296,7 +3492,7 @@ function damageEnemy(enemy, amount, color = "#fff2a8") {
 
 function getChickenChargeDamage() {
   const expressLevel = Math.max(1, weapons.expressTrain.level || 1);
-  const expressDamage = (105 + expressLevel * 42) * 3;
+  const expressDamage = scaledLevelValue(147, 42, expressLevel) * 3;
   return Math.max(1, Math.round(expressDamage * 0.5));
 }
 
@@ -3304,7 +3500,7 @@ function isStimpackActive() {
   return player.stimTimer > 0;
 }
 
-function getStimCooldownDelta(delta) {
+function getBasicWeaponCooldownDelta(delta) {
   return isStimpackActive() ? delta * STIMPACK_ATTACK_SPEED_MULTIPLIER : delta;
 }
 
@@ -3323,8 +3519,11 @@ function killEnemy(enemy) {
   player.kills += 1;
   const earnedScore = Math.max(1, Math.round((enemy.score ?? 0) / 10));
   player.score += earnedScore;
+  addTmoneyPoints(earnedScore, enemy.x, enemy.y, "티머니", false);
   dropXp(enemy.x, enemy.y, enemy.xp);
   if (enemy.boss) {
+    player.bossKills += 1;
+    addTmoneyPoints(player.bossKills * 100, enemy.x, enemy.y - 18, "보스 보너스");
     addPopup("보스퇴치 완료", player.x, player.y - 148, "#ffe066", 2.65, 56);
     playSound("bossKill");
     speakSystemVoice("보스 퇴치 완료", 1600);
@@ -3878,9 +4077,8 @@ function applyCompanionSplashDamage(target, damage, color = "#8ecae6") {
 
 function updateComradePets(delta) {
   const count = stationPolicePets.length;
-  const cooldownDelta = getStimCooldownDelta(delta);
   for (const pet of stationPolicePets) {
-    pet.attackCooldown = Math.max(0, pet.attackCooldown - cooldownDelta);
+    pet.attackCooldown = Math.max(0, pet.attackCooldown - delta);
     pet.swingTimer = Math.max(0, pet.swingTimer - delta);
     const side = pet.slot % 2 === 0 ? -1 : 1;
     const row = Math.floor(pet.slot / 2);
@@ -4168,11 +4366,7 @@ function gainXp(amount) {
     increaseLevelStats();
     player.nextXp = getNextXpRequirement(player.nextXp, player.level);
     playSound("levelUp");
-    if (refs.upgradePanel.classList.contains("hidden")) {
-      openUpgradePanel();
-    } else {
-      game.pendingLevelChoices += 1;
-    }
+    addTmoneyPoints(getLevelTrainingBonus(player.level), player.x, player.y - 18, "레벨 보너스");
   }
   updateHud();
 }
@@ -4851,6 +5045,7 @@ function updateHud() {
   refs.level.textContent = player.level;
   refs.time.textContent = formatTime(player.elapsed);
   refs.score.textContent = formatScore(player.score);
+  if (refs.tmoneyBalance) refs.tmoneyBalance.textContent = formatScore(player.tmoney);
   if (refs.attackStat) refs.attackStat.textContent = Math.round(player.attackPower || 100);
   if (refs.defenseStat) refs.defenseStat.textContent = Math.round(player.defensePower || 100);
   if (refs.speedStat) refs.speedStat.textContent = Math.round((player.speed / 205) * 100);
@@ -4919,9 +5114,10 @@ function updateHud() {
     player.damageReduction > 0 ? { label: `내성 ${Math.round(player.damageReduction * 100)}%`, type: "passive", power: chipPower(Math.round(player.damageReduction / 0.15)), desc: "받는 피해가 감소합니다." } : null,
     player.regenLevel > 0 ? { label: `회복 Lv.${player.regenLevel}`, type: "passive", power: chipPower(player.regenLevel), desc: `일정 시간마다 최대 체력의 ${Number(((BASE_REGEN_RATIO + player.regenLevel * REGEN_UPGRADE_RATIO) * 100).toFixed(1))}%를 회복합니다.` } : null,
     player.chickenTimer > 0 ? { label: `${getChickenItemName()} ${Math.ceil(player.chickenTimer)}초`, type: "status", desc: "몸집이 커지고 접촉한 적에게 몸통박치기 피해와 넉백을 줍니다." } : null,
-    player.stimTimer > 0 ? { label: `스팀팩 ${Math.ceil(player.stimTimer)}초`, type: "status", desc: "일부 무기 쿨타임이 1/3로 줄지만 매초 최대 체력 3%를 잃습니다." } : null,
+    player.stimTimer > 0 ? { label: `스팀팩 ${Math.ceil(player.stimTimer)}초`, type: "status", desc: "기본 무기 발사 간격만 1/4로 줄지만 매초 최대 체력 3%를 잃습니다." } : null,
   ].filter(Boolean);
   renderLoadoutItems(loadoutItems);
+  if (refs.trainingPanel && !refs.trainingPanel.classList.contains("hidden")) renderTrainingPanel();
 }
 
 function renderCodex() {
@@ -5638,19 +5834,6 @@ function drawProjectiles() {
     if (bullet.style === "slap") {
       const r = bullet.radius;
       if (canDrawGameImage(slapProjectileImage)) {
-        ctx.shadowColor = "#ff8fab";
-        ctx.shadowBlur = 16;
-        const trail = ctx.createLinearGradient(-r * 4.4, 0, -r * 0.7, 0);
-        trail.addColorStop(0, "rgba(255, 143, 171, 0)");
-        trail.addColorStop(0.54, "rgba(255, 143, 171, 0.24)");
-        trail.addColorStop(1, "rgba(255, 214, 232, 0.66)");
-        ctx.fillStyle = trail;
-        ctx.beginPath();
-        ctx.moveTo(-r * 4.2, 0);
-        ctx.lineTo(-r * 0.68, -r * 0.82);
-        ctx.lineTo(-r * 0.68, r * 0.82);
-        ctx.closePath();
-        ctx.fill();
         const imageHeight = r * 3.95;
         const imageWidth = imageHeight * (slapProjectileImage.naturalWidth / slapProjectileImage.naturalHeight);
         ctx.drawImage(slapProjectileImage, -imageWidth * 0.5, -imageHeight * 0.5, imageWidth, imageHeight);
@@ -5659,20 +5842,8 @@ function drawProjectiles() {
       }
       const slapFlash = 0.92 + Math.sin(performance.now() * 0.028 + bullet.x * 0.02) * 0.08;
       ctx.scale(slapFlash, 1);
-      ctx.shadowColor = "#ff8fab";
-      ctx.shadowBlur = 18;
-
-      const trail = ctx.createLinearGradient(-r * 4.4, 0, -r * 0.7, 0);
-      trail.addColorStop(0, "rgba(255, 143, 171, 0)");
-      trail.addColorStop(0.54, "rgba(255, 143, 171, 0.24)");
-      trail.addColorStop(1, "rgba(255, 214, 232, 0.66)");
-      ctx.fillStyle = trail;
-      ctx.beginPath();
-      ctx.moveTo(-r * 4.2, 0);
-      ctx.lineTo(-r * 0.68, -r * 0.82);
-      ctx.lineTo(-r * 0.68, r * 0.82);
-      ctx.closePath();
-      ctx.fill();
+      ctx.shadowColor = "rgba(0, 0, 0, 0.32)";
+      ctx.shadowBlur = 5;
 
       const skin = ctx.createRadialGradient(r * 0.16, -r * 0.2, r * 0.1, 0, 0, r * 2.1);
       skin.addColorStop(0, "#fff0d2");
@@ -8572,7 +8743,7 @@ function frame(now) {
 function shouldIgnoreMovePointer(event) {
   if (game.state !== "playing" || game.paused) return true;
   if (input.touchId !== null && input.pointers.size < 1) return true;
-  return Boolean(event.target?.closest?.("button, input, form, .message, .hero-panel, .upgrade-panel, .leaderboard-panel"));
+  return Boolean(event.target?.closest?.("button, input, form, .message, .hero-panel, .upgrade-panel, .training-panel, .leaderboard-panel"));
 }
 
 function positionFloatingStick(clientX, clientY) {
@@ -8662,6 +8833,10 @@ refs.chickenButton?.addEventListener("click", useChickenBreast);
 refs.stimButton?.addEventListener("click", useStimPack);
 refs.pauseButton?.addEventListener("click", togglePause);
 refs.upgradePauseButton?.addEventListener("click", toggleUpgradePause);
+refs.trainingButton?.addEventListener("click", openTrainingPanel);
+refs.trainingCloseButton?.addEventListener("click", closeTrainingPanel);
+refs.trainingWeaponTab?.addEventListener("click", () => switchTrainingTab("weapon"));
+refs.trainingPassiveTab?.addEventListener("click", () => switchTrainingTab("passive"));
 refs.rankForm?.addEventListener("submit", submitLeaderboardEntry);
 
 refs.app.addEventListener("pointerdown", (event) => {
