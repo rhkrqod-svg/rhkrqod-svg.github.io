@@ -675,13 +675,13 @@ function getUpgradeDisplay(choice) {
     const basicAttackName = getBasicAttackName();
     const atShotCap = player.shots >= 5;
     return {
-      name: `${basicAttackName} 강화`,
+      name: "기본 무기 강화",
       desc: atShotCap ? `${basicAttackName} 피해 +20%` : `${basicAttackName} 발사 수 +1`,
     };
   }
   if (choice?.id === "subwayPolice") {
     return {
-      name: getCompanionSkillName(),
+      name: "동료 소환",
       desc: getCompanionSkillDesc(),
     };
   }
