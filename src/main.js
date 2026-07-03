@@ -741,7 +741,7 @@ function getLevelTrainingBonus(level) {
   return bucket * 100;
 }
 
-function addTmoneyPoints(amount, x = player.x, y = player.y, label = "티머니", showPopup = true) {
+function addTmoneyPoints(amount, x = player.x, y = player.y, label = "T머니", showPopup = true) {
   const points = Math.max(0, Math.round(amount || 0));
   if (points <= 0) return;
   player.tmoney += points;
@@ -778,7 +778,7 @@ function renderTrainingPanel() {
       <em>${getTrainingStars(level)} / 다음 비용 ${nextCost}</em>
       ${
         isConfirming
-          ? `<div class="training-confirm"><p>${formatScore(cost)} 티머니 포인트를 사용하여 훈련하시겠습니까?</p><button id="trainingConfirmBuy" type="button">훈련</button><button id="trainingConfirmCancel" type="button">취소</button></div>`
+          ? `<div class="training-confirm"><p>${formatScore(cost)} T머니 포인트를 사용하여 훈련하시겠습니까?</p><button id="trainingConfirmBuy" type="button">훈련</button><button id="trainingConfirmCancel" type="button">취소</button></div>`
           : ""
       }
     `;
@@ -3562,7 +3562,7 @@ function killEnemy(enemy) {
   player.kills += 1;
   const earnedScore = Math.max(1, Math.round((enemy.score ?? 0) / 10));
   player.score += earnedScore;
-  addTmoneyPoints(earnedScore, enemy.x, enemy.y, "티머니", false);
+  addTmoneyPoints(earnedScore, enemy.x, enemy.y, "T머니", false);
   dropXp(enemy.x, enemy.y, enemy.xp);
   if (enemy.boss) {
     player.bossKills += 1;
