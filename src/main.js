@@ -161,7 +161,7 @@ const STIMPACK_VISUAL_SCALE_RATIO = 0.5;
 const BASIC_ATTACK_DAMAGE = 32.5;
 const FIST_BULLET_RADIUS = 15;
 const FIST_EXPLOSION_RADIUS = 88;
-const FIST_EXPLOSION_DAMAGE_RATIO = 0.58;
+const FIST_EXPLOSION_DAMAGE = 20;
 const FIST_MONSTER_STUN = 0.5;
 const SLAP_BULLET_RADIUS = 17;
 const SLAP_BOUNCE_LIMIT = 2;
@@ -177,7 +177,7 @@ const heroTypes = [
     quote: "정의는 방향이 아니라 선택입니다.",
     hp: 120,
     maxHp: 120,
-    atk: 90,
+    atk: 30,
     def: 120,
     spd: 90,
     color: "#1f2327",
@@ -192,7 +192,7 @@ const heroTypes = [
     quote: "작은 용기 하나가 내일을 바꿉니다.",
     hp: 100,
     maxHp: 100,
-    atk: 120,
+    atk: 40,
     def: 90,
     spd: 120,
     color: "#5a4632",
@@ -207,7 +207,7 @@ const heroTypes = [
     quote: "그날 빌런은 떠올렸다, 지배 당해왔던 공포를",
     hp: 90,
     maxHp: 90,
-    atk: 135,
+    atk: 50,
     def: 70,
     spd: 140,
     dodgeChance: 0.2,
@@ -227,7 +227,7 @@ const heroTypes = [
     quote: "강한 육군, 약한 빌런",
     hp: 150,
     maxHp: 150,
-    atk: 65,
+    atk: 30,
     def: 140,
     spd: 100,
     healMultiplier: 1.5,
@@ -2144,7 +2144,7 @@ function fireBulletVolley(source, target, count, {
 
 function explodeFistBullet(bullet) {
   const explosionRadius = bullet.splashRadius ?? FIST_EXPLOSION_RADIUS;
-  const splashDamage = Math.max(1, Math.round(bullet.damage * FIST_EXPLOSION_DAMAGE_RATIO));
+  const splashDamage = FIST_EXPLOSION_DAMAGE;
   damageZones.push({
     x: bullet.x,
     y: bullet.y,
@@ -2161,7 +2161,7 @@ function explodeFistBullet(bullet) {
     const distance = Math.hypot(enemy.x - bullet.x, enemy.y - bullet.y);
     if (distance > enemy.radius + explosionRadius) continue;
     const falloff = clamp(1 - distance / Math.max(1, explosionRadius + enemy.radius), 0.35, 1);
-    damageEnemy(enemy, Math.round(splashDamage * falloff), "#ffb703");
+    damageEnemy(enemy, Math.round(splashDamage * falloff), "#ffb703", { applyAttack: false });
     if (!enemy.boss) {
       enemy.stunTimer = Math.max(enemy.stunTimer ?? 0, FIST_MONSTER_STUN);
       addPopup("STUN", enemy.x, enemy.y - enemy.radius - 20, "#ffd166", 0.42, 12);
@@ -3520,9 +3520,10 @@ function updateBlade(delta = 0) {
   }
 }
 
-function damageEnemy(enemy, amount, color = "#fff2a8") {
+function damageEnemy(enemy, amount, color = "#fff2a8", { applyAttack = true } = {}) {
   const guarded = enemy.defenseBoostTimer > 0 ? enemy.defenseBoostPower ?? 0 : 0;
-  const finalAmount = Math.max(1, Math.round(applyPlayerAttack(amount) * (1 - guarded)));
+  const baseAmount = applyAttack ? applyPlayerAttack(amount) : amount;
+  const finalAmount = Math.max(1, Math.round(baseAmount * (1 - guarded)));
   enemy.hp -= finalAmount;
   enemy.hitFlash = 0.08;
   playSound("hit");
