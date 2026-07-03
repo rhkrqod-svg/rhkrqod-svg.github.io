@@ -49,6 +49,7 @@ const refs = {
   trainingList: document.querySelector("#trainingList"),
   trainingDetail: document.querySelector("#trainingDetail"),
   tmoneyBalance: document.querySelector("#tmoneyBalance"),
+  tmoneyHudBalance: document.querySelector("#tmoneyHudBalance"),
   leaderboardPanel: document.querySelector("#leaderboardPanel"),
   leaderboardList: document.querySelector("#leaderboardList"),
   rankForm: document.querySelector("#rankForm"),
@@ -768,7 +769,24 @@ function renderTrainingPanel() {
     const display = getUpgradeDisplay(selected);
     const level = getTrainingSkillLevel(selected.id);
     const nextCost = level >= TRAINING_MAX_LEVEL ? "MAX" : formatScore(getTrainingNextCost(level));
-    refs.trainingDetail.innerHTML = `<strong>${display.name}</strong><span>${display.desc}</span><em>${getTrainingStars(level)} / 다음 비용 ${nextCost}</em>`;
+    const cost = getTrainingNextCost(level);
+    const isConfirming = game.trainingConfirmSkillId === selected.id && level < TRAINING_MAX_LEVEL && player.tmoney >= cost;
+    refs.trainingDetail.innerHTML = `
+      <strong>${display.name}</strong>
+      <span>${display.desc}</span>
+      <em>${getTrainingStars(level)} / 다음 비용 ${nextCost}</em>
+      ${
+        isConfirming
+          ? `<div class="training-confirm"><p>${formatScore(cost)} 티머니 포인트를 사용하여 훈련하시겠습니까?</p><button id="trainingConfirmBuy" type="button">훈련</button><button id="trainingConfirmCancel" type="button">취소</button></div>`
+          : ""
+      }
+    `;
+    refs.trainingDetail.querySelector("#trainingConfirmBuy")?.addEventListener("click", () => buyTrainingSkill(selected));
+    refs.trainingDetail.querySelector("#trainingConfirmCancel")?.addEventListener("click", () => {
+      game.trainingConfirmSkillId = "";
+      renderTrainingPanel();
+      playSound("ui");
+    });
   }
   refs.trainingList.innerHTML = "";
   for (const skill of skills) {
@@ -792,12 +810,14 @@ function renderTrainingPanel() {
     `;
     button.addEventListener("click", () => {
       game.selectedTrainingSkill = skill.id;
+      game.trainingConfirmSkillId = "";
       if (!maxed && affordable) {
-        buyTrainingSkill(skill);
-      } else {
-        playSound("ui");
-        renderTrainingPanel();
+        game.trainingConfirmSkillId = skill.id;
+      } else if (!maxed && !affordable) {
+        addPopup("잔액 부족", player.x, player.y - 52, "#ff8fab", 0.7, 16);
       }
+      playSound("ui");
+      renderTrainingPanel();
     });
     refs.trainingList.append(button);
   }
@@ -814,6 +834,7 @@ function buyTrainingSkill(skill) {
     return;
   }
   player.tmoney -= cost;
+  game.trainingConfirmSkillId = "";
   if (skill.id === "maxhp") player.maxHpTrainingLevel = (player.maxHpTrainingLevel || 0) + 1;
   skill.apply();
   playSound("levelUp");
@@ -826,19 +847,34 @@ function openTrainingPanel() {
   if (game.state !== "playing" || game.pendingHeroChoice) return;
   game.trainingTab = game.trainingTab || "weapon";
   game.selectedTrainingSkill = game.selectedTrainingSkill || "multi";
+  game.trainingConfirmSkillId = "";
+  if (refs.trainingPanel?.classList.contains("hidden")) {
+    game.trainingWasPaused = game.paused;
+  }
+  game.paused = true;
+  game.manualPaused = true;
+  resetFloatingStickMove();
   refs.trainingPanel?.classList.remove("hidden");
   renderTrainingPanel();
+  updateHud();
   playSound("ui");
 }
 
 function closeTrainingPanel() {
   refs.trainingPanel?.classList.add("hidden");
+  game.trainingConfirmSkillId = "";
+  if (!game.trainingWasPaused && game.state === "playing" && !game.pendingHeroChoice) {
+    game.manualPaused = false;
+    game.paused = false;
+  }
+  updateHud();
   playSound("ui");
 }
 
 function switchTrainingTab(tab) {
   game.trainingTab = tab;
   game.selectedTrainingSkill = getTrainableSkills(tab)[0]?.id ?? "multi";
+  game.trainingConfirmSkillId = "";
   renderTrainingPanel();
   playSound("ui");
 }
@@ -1024,6 +1060,8 @@ const game = {
   pendingLevelChoices: 0,
   trainingTab: "weapon",
   selectedTrainingSkill: "multi",
+  trainingConfirmSkillId: "",
+  trainingWasPaused: false,
 };
 
 function resize() {
@@ -1490,6 +1528,8 @@ function resetGame() {
   game.pendingLevelChoices = 0;
   game.trainingTab = "weapon";
   game.selectedTrainingSkill = "multi";
+  game.trainingConfirmSkillId = "";
+  game.trainingWasPaused = false;
   pendingDansoBoomerangs.length = 0;
   input.pointers.clear();
   refs.message.classList.remove("start-screen");
@@ -1557,6 +1597,7 @@ function selectHero(heroId) {
   game.paused = false;
   game.manualPaused = false;
   updateHud();
+  openTrainingPanel();
 }
 
 function setupAllyPreview(mode = "pacemaker") {
@@ -4921,11 +4962,25 @@ async function showStartLeaderboard() {
   }
   refs.leaderboardPanel.classList.remove("hidden");
   refs.rankForm?.classList.add("hidden");
+  if (refs.leaderboardOpenButton) refs.leaderboardOpenButton.disabled = true;
   if (refs.rankHint) refs.rankHint.textContent = "랭킹 확인 중";
   renderLeaderboardMessage("서버 랭킹을 불러오는 중", "잠시만 기다려 주세요");
-  await loadLeaderboardSnapshot();
-  await loadLeaderboard();
-  if (refs.rankHint) refs.rankHint.textContent = leaderboardServerOnline ? "전체 유저 공유 랭킹" : "공유 랭킹 백업 표시 중";
+  const loaded = await loadLeaderboard();
+  if (!loaded || leaderboardEntries.length <= 0) {
+    await loadLeaderboardSnapshot();
+  }
+  if (leaderboardEntries.length <= 0) {
+    const localEntries = readLocalLeaderboard();
+    if (localEntries.length > 0) applyLeaderboard(localEntries);
+  }
+  if (leaderboardEntries.length <= 0) {
+    renderLeaderboardMessage("랭킹 데이터가 비어 있습니다", "서버 응답을 다시 확인해 주세요");
+  }
+  if (refs.rankHint) {
+    refs.rankHint.textContent =
+      leaderboardServerOnline && leaderboardEntries.length > 0 ? "전체 유저 공유 랭킹" : "공유 랭킹 백업 표시 중";
+  }
+  if (refs.leaderboardOpenButton) refs.leaderboardOpenButton.disabled = false;
   playSound("ui");
 }
 
@@ -5046,6 +5101,7 @@ function updateHud() {
   refs.time.textContent = formatTime(player.elapsed);
   refs.score.textContent = formatScore(player.score);
   if (refs.tmoneyBalance) refs.tmoneyBalance.textContent = formatScore(player.tmoney);
+  if (refs.tmoneyHudBalance) refs.tmoneyHudBalance.textContent = formatScore(player.tmoney);
   if (refs.attackStat) refs.attackStat.textContent = Math.round(player.attackPower || 100);
   if (refs.defenseStat) refs.defenseStat.textContent = Math.round(player.defensePower || 100);
   if (refs.speedStat) refs.speedStat.textContent = Math.round((player.speed / 205) * 100);
