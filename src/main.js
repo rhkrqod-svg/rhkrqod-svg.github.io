@@ -112,7 +112,7 @@ const NORMAL_SPAWN_SAFE_RADIUS = 560;
 const BOSS_SPAWN_SAFE_RADIUS = 760;
 const PLAYER_RADIUS = 19 * CHARACTER_SIZE_SCALE;
 const FIRST_AID_HEAL_RATIO = 0.5;
-const BASE_REGEN_RATIO = 0.015;
+const BASE_REGEN_RATIO = 0.02;
 const REGEN_UPGRADE_RATIO = 0.026;
 const ENEMY_HP_GLOBAL_MULTIPLIER = 1.6;
 const ENEMY_SPEED_GLOBAL_MULTIPLIER = 1.38;
@@ -3659,7 +3659,7 @@ function usePoliceCall() {
 function useComradeDropCall() {
   announceSkill("예비군 훈련", { color: "#b7ef64", minGap: 500, source: "item" });
   const comrades = [];
-  const count = 36;
+  const count = 25;
   for (let i = 0; i < count; i += 1) {
     const angle = (TAU * i) / count + rand(-0.06, 0.06);
     const ring = i % 3;
