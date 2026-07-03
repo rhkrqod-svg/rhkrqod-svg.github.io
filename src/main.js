@@ -158,6 +158,7 @@ const STIMPACK_ATTACK_SPEED_MULTIPLIER = 4;
 const STIMPACK_DRAIN_RATIO = 0.03;
 const STIMPACK_DRAIN_TICK = 1;
 const STIMPACK_VISUAL_SCALE_RATIO = 0.5;
+const BASIC_ATTACK_DAMAGE = 32.5;
 const FIST_BULLET_RADIUS = 15;
 const FIST_EXPLOSION_RADIUS = 88;
 const FIST_EXPLOSION_DAMAGE_RATIO = 0.58;
@@ -1000,7 +1001,7 @@ const player = {
   tmoney: START_TMONEY_POINTS,
   bossKills: 0,
   elapsed: 0,
-  damage: 32.5,
+  damage: BASIC_ATTACK_DAMAGE,
   attackPower: 100,
   defensePower: 100,
   fireRate: 0.35,
@@ -1472,7 +1473,7 @@ function resetGame() {
     tmoney: START_TMONEY_POINTS,
     bossKills: 0,
     elapsed: 0,
-    damage: 32.5,
+    damage: BASIC_ATTACK_DAMAGE,
     attackPower: 100,
     defensePower: 100,
     fireRate: 0.35,
@@ -1579,7 +1580,7 @@ function selectHero(heroId) {
   player.heroAccent = hero.accent;
   player.maxHp = hero.maxHp;
   player.hp = hero.maxHp;
-  player.damage = 25;
+  player.damage = BASIC_ATTACK_DAMAGE;
   player.attackPower = hero.atk;
   player.defensePower = hero.def;
   player.speed = 205 * (hero.spd / 100);
