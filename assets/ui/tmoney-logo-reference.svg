@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 84">
+  <defs>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.58" stop-color="#f2f3ef"/>
+      <stop offset="1" stop-color="#e3e5df"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-25%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#7d847d" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+  <rect x="4" y="5" width="252" height="74" rx="15" fill="url(#card)" filter="url(#softShadow)"/>
+  <rect x="28" y="22" width="42" height="40" rx="8" fill="#f8f9f6" stroke="#ccd1cc" stroke-width="3"/>
+  <path d="M43 31H60C64 31 66 33 66 37C66 40 64 42 60 42H55V58C55 61 52 63 49 63C46 63 44 61 44 58V42H38C35 42 33 40 33 37C33 33 36 31 39 31H43Z" fill="#d74866"/>
+  <path d="M54 31H62C65 31 66 33 66 36C66 39 64 41 61 41H55V58C55 61 52 63 49 63C52 60 53 57 53 53V38C53 35 53 33 54 31Z" fill="#e7949d" opacity="0.95"/>
+  <text x="84" y="55" font-family="Arial, Helvetica, sans-serif" font-size="35" font-weight="700" fill="#3b4247" letter-spacing="-1.2">Tmoney</text>
+</svg>
