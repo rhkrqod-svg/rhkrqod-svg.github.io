@@ -107,6 +107,8 @@ const MAX_PLAYER_HP_LIMIT = 300;
 const START_MAGNET_RANGE = 313;
 const START_TMONEY_POINTS = 750;
 const TRAINING_MAX_LEVEL = 5;
+const WEAPON_STAR_MAX_LEVEL = 5;
+const WEAPON_OVERLEVEL_DAMAGE_MULTIPLIER = 1.25;
 const WEAPON_TRAINING_START_COST = 500;
 const WEAPON_TRAINING_COST_MULTIPLIER = 2.5;
 const PASSIVE_TRAINING_START_COST = 1000;
@@ -290,7 +292,9 @@ function isRunnerCompanionHero() {
 }
 
 function getStationPoliceDamage() {
-  return Math.round((29 + Math.max(0, weapons.subwayPolice.level - 1) * 3 * UPGRADE_SCALING_BONUS) * SUBWAY_POLICE_DAMAGE_MULTIPLIER);
+  const level = Math.max(1, weapons.subwayPolice.level || 1);
+  const utilityLevel = getWeaponUtilityLevel(level);
+  return Math.round((29 + Math.max(0, utilityLevel - 1) * 3 * UPGRADE_SCALING_BONUS) * SUBWAY_POLICE_DAMAGE_MULTIPLIER * getWeaponOverlevelDamageMultiplier(level));
 }
 
 function getBuffedCompanionDamage() {
@@ -526,15 +530,15 @@ const upgradePool = [
   {
     id: "multi",
     name: "기본 무기 강화",
-    desc: "최대 5발까지 발사 수 +1, 이후 피해 +20%",
+    desc: "5레벨까지 발사 수 +1, 6레벨부터 피해 +25%",
     category: "weapon",
     basic: true,
     apply: () => {
-      player.basicWeaponLevel = Math.min(TRAINING_MAX_LEVEL, (player.basicWeaponLevel || 1) + 1);
-      if (player.shots < 5) {
+      player.basicWeaponLevel = (player.basicWeaponLevel || 1) + 1;
+      if (player.basicWeaponLevel <= WEAPON_STAR_MAX_LEVEL && player.shots < 5) {
         player.shots += 1;
       } else {
-        player.bulletDamageMultiplier *= 1.2;
+        player.bulletDamageMultiplier *= WEAPON_OVERLEVEL_DAMAGE_MULTIPLIER;
       }
     },
   },
@@ -697,7 +701,7 @@ function getUpgradeDisplay(choice) {
     const atShotCap = player.shots >= 5;
     return {
       name: "기본 무기 강화",
-      desc: atShotCap ? `${basicAttackName} 피해 +20%` : `${basicAttackName} 발사 수 +1`,
+      desc: atShotCap ? `${basicAttackName} 피해 +25%` : `${basicAttackName} 발사 수 +1`,
     };
   }
   if (choice?.id === "subwayPolice") {
@@ -715,6 +719,14 @@ function getUpgradeDisplay(choice) {
 function scaledLevelValue(base, perLevel, level, multiplier = UPGRADE_SCALING_BONUS) {
   const safeLevel = Math.max(1, Number(level) || 1);
   return base + Math.max(0, safeLevel - 1) * perLevel * multiplier;
+}
+
+function getWeaponUtilityLevel(level = 1) {
+  return Math.min(WEAPON_STAR_MAX_LEVEL, Math.max(1, Number(level) || 1));
+}
+
+function getWeaponOverlevelDamageMultiplier(level = 1) {
+  return WEAPON_OVERLEVEL_DAMAGE_MULTIPLIER ** Math.max(0, Math.max(1, Number(level) || 1) - WEAPON_STAR_MAX_LEVEL);
 }
 
 function getTrainingSkillLevel(id) {
@@ -749,16 +761,24 @@ function getTrainingSkillLevel(id) {
 }
 
 function getTrainingNextCost(level, skillOrId = "") {
-  const nextLevel = Math.min(TRAINING_MAX_LEVEL, level + 1);
   const skillId = typeof skillOrId === "string" ? skillOrId : skillOrId?.id;
   if (passiveUpgradeIds.has(skillId)) {
+    const nextLevel = Math.min(TRAINING_MAX_LEVEL, level + 1);
     return Math.round(PASSIVE_TRAINING_START_COST * PASSIVE_TRAINING_COST_MULTIPLIER ** Math.max(0, nextLevel - 1));
   }
+  const nextLevel = Math.max(1, level + 1);
   return Math.round(WEAPON_TRAINING_START_COST * WEAPON_TRAINING_COST_MULTIPLIER ** Math.max(0, nextLevel - 1));
 }
 
 function getTrainingStars(level) {
-  return Array.from({ length: TRAINING_MAX_LEVEL }, (_, index) => (index < level ? "★" : "☆")).join("");
+  const safeLevel = Math.max(0, Number(level) || 0);
+  const stars = Array.from({ length: WEAPON_STAR_MAX_LEVEL }, (_, index) => (index < Math.min(safeLevel, WEAPON_STAR_MAX_LEVEL) ? "★" : "☆")).join("");
+  const overLevel = Math.max(0, safeLevel - WEAPON_STAR_MAX_LEVEL);
+  return overLevel > 0 ? `${stars} +${overLevel}` : stars;
+}
+
+function isTrainingMaxed(skill, level = getTrainingSkillLevel(skill?.id)) {
+  return passiveUpgradeIds.has(skill?.id) && level >= TRAINING_MAX_LEVEL;
 }
 
 function getTrainingIconSrc(skill) {
@@ -845,8 +865,9 @@ function renderTrainingPanel() {
     const display = getUpgradeDisplay(selected);
     const level = getTrainingSkillLevel(selected.id);
     const cost = getTrainingNextCost(level, selected);
-    const nextCost = level >= TRAINING_MAX_LEVEL ? "MAX" : formatScore(cost);
-    const isConfirming = game.trainingConfirmSkillId === selected.id && level < TRAINING_MAX_LEVEL && player.tmoney >= cost;
+    const maxed = isTrainingMaxed(selected, level);
+    const nextCost = maxed ? "MAX" : formatScore(cost);
+    const isConfirming = game.trainingConfirmSkillId === selected.id && !maxed && player.tmoney >= cost;
     refs.trainingDetail.innerHTML = `
       <strong>${display.name}</strong>
       <span>${display.desc}</span>
@@ -869,7 +890,7 @@ function renderTrainingPanel() {
     const display = getUpgradeDisplay(skill);
     const level = getTrainingSkillLevel(skill.id);
     const cost = getTrainingNextCost(level, skill);
-    const maxed = level >= TRAINING_MAX_LEVEL;
+    const maxed = isTrainingMaxed(skill, level);
     const affordable = player.tmoney >= cost;
     const button = document.createElement("button");
     const type = getUpgradeType(skill);
@@ -903,7 +924,7 @@ function renderTrainingPanel() {
 
 function buyTrainingSkill(skill) {
   const level = getTrainingSkillLevel(skill.id);
-  if (level >= TRAINING_MAX_LEVEL) return;
+  if (isTrainingMaxed(skill, level)) return;
   const cost = getTrainingNextCost(level, skill);
   if (player.tmoney < cost) {
     addPopup("잔액 부족", player.x, player.y - 52, "#ff8fab", 0.7, 16);
@@ -978,17 +999,18 @@ function switchTrainingTab(tab) {
 }
 
 function getTearGasRadius() {
-  const level = Math.max(1, weapons.tearGas.level);
+  const level = getWeaponUtilityLevel(weapons.tearGas.level);
   return scaledLevelValue(66, 8, level) * 1.3 * 1.7 * 1.5 * 1.4625 * 0.8 * 0.7 * (1 + (level - 1) * 0.08 * UPGRADE_SCALING_BONUS);
 }
 
 function getTearGasDamage() {
   const level = Math.max(1, weapons.tearGas.level);
-  return Math.round(scaledLevelValue(9, 6, level) * 1.8 * 3 * (player.meleeDamageMultiplier || 1));
+  const utilityLevel = getWeaponUtilityLevel(level);
+  return Math.round(scaledLevelValue(9, 6, utilityLevel) * 1.8 * 3 * (player.meleeDamageMultiplier || 1) * getWeaponOverlevelDamageMultiplier(level));
 }
 
 function getStrapOrbitRadius() {
-  const level = Math.max(1, weapons.strapOrbit.level);
+  const level = getWeaponUtilityLevel(weapons.strapOrbit.level);
   return scaledLevelValue(64, 6, level) * 1.69 * 1.2 * (1 + (level - 1) * 0.04 * UPGRADE_SCALING_BONUS);
 }
 
@@ -997,7 +1019,7 @@ function getStrapHandleRadius() {
 }
 
 function getStrapCount() {
-  return Math.min(14, Math.max(2, weapons.strapOrbit.level * 2));
+  return Math.min(14, Math.max(2, getWeaponUtilityLevel(weapons.strapOrbit.level) * 2));
 }
 
 function getBasicBulletFireRate() {
@@ -2303,7 +2325,8 @@ function spawnCard() {
   if (!target) return;
   const angle = angleTo(player, target);
   const level = weapons.card.level;
-  const count = Math.max(1, level);
+  const utilityLevel = getWeaponUtilityLevel(level);
+  const count = Math.max(1, utilityLevel);
   const spread = Math.min(0.62, 0.14 * (count - 1));
   const speed = 662;
   for (let i = 0; i < count; i += 1) {
@@ -2313,7 +2336,7 @@ function spawnCard() {
       y: player.y,
       vx: Math.cos(cardAngle) * speed,
       vy: Math.sin(cardAngle) * speed,
-      damage: 64,
+      damage: Math.round(64 * getWeaponOverlevelDamageMultiplier(level)),
       life: 7.85,
       maxLife: 7.85,
       radius: 27,
@@ -2329,7 +2352,8 @@ function spawnCard() {
 
 function strikeLightning() {
   if (weapons.lightning.level <= 0 || enemies.length === 0) return;
-  const strikes = Math.min(7, Math.max(1, weapons.lightning.level));
+  const utilityLevel = getWeaponUtilityLevel(weapons.lightning.level);
+  const strikes = Math.min(7, Math.max(1, utilityLevel));
   const bossTarget = enemies
     .filter((enemy) => enemy.boss)
     .sort((a, b) => distance(player, a) - distance(player, b))[0];
@@ -2345,7 +2369,7 @@ function strikeLightning() {
   }
   for (const enemy of targets) {
     const damage = getLightningDamageForLevel(weapons.lightning.level);
-    const strikeRadius = scaledLevelValue(65, 4, weapons.lightning.level) * 1.183 * 1.3 * 1.2 * 1.15;
+    const strikeRadius = scaledLevelValue(65, 4, utilityLevel) * 1.183 * 1.3 * 1.2 * 1.15;
     const bossStun = 0.5;
     const monsterStun = 3;
     damageEnemy(enemy, enemy.boss ? Math.round(damage * 1.25) : damage, "#9bf6ff");
@@ -2373,7 +2397,8 @@ function strikeLightning() {
 
 function getLightningDamageForLevel(level = 1) {
   const safeLevel = Math.max(1, level || 1);
-  return Math.round(scaledLevelValue(121, 32, safeLevel) * 1.105 * 1.3 * 0.8);
+  const utilityLevel = getWeaponUtilityLevel(safeLevel);
+  return Math.round(scaledLevelValue(121, 32, utilityLevel) * 1.105 * 1.3 * 0.8 * getWeaponOverlevelDamageMultiplier(safeLevel));
 }
 
 function pickClusterTarget(maxDistance = 900) {
@@ -2454,6 +2479,7 @@ function spawnAnnouncementWave() {
 function spawnExpressTrain() {
   const level = weapons.expressTrain.level;
   if (level <= 0) return;
+  const utilityLevel = getWeaponUtilityLevel(level);
   const trainWidthScale = 1.56;
   const trainLengthScale = 3.9;
   const vertical = Math.random() < 0.5;
@@ -2463,10 +2489,10 @@ function spawnExpressTrain() {
     x: target ? target.x : player.x,
     y: target ? target.y : player.y,
     vertical,
-    width: scaledLevelValue(105, 13, level) * trainWidthScale,
-    trainLength: scaledLevelValue(554, 34, level) * trainLengthScale,
-    damage: scaledLevelValue(147, 42, level) * 3,
-    push: scaledLevelValue(532, 62, level),
+    width: scaledLevelValue(105, 13, utilityLevel) * trainWidthScale,
+    trainLength: scaledLevelValue(554, 34, utilityLevel) * trainLengthScale,
+    damage: scaledLevelValue(147, 42, utilityLevel) * 3 * getWeaponOverlevelDamageMultiplier(level),
+    push: scaledLevelValue(532, 62, utilityLevel),
     stun: 3,
     bossStun: 0.5,
     angle: vertical ? (direction > 0 ? Math.PI / 2 : -Math.PI / 2) : direction > 0 ? 0 : Math.PI,
@@ -2556,8 +2582,9 @@ function spawnTransferGate() {
 
 function explodeCustomerMissile(missile) {
   const level = weapons.customerMissile.level;
-  const radius = scaledLevelValue(66, 12, level);
-  const damage = Math.round(scaledLevelValue(56, 24, level) * 1.04 * 0.6 * 0.85);
+  const utilityLevel = getWeaponUtilityLevel(level);
+  const radius = scaledLevelValue(66, 12, utilityLevel);
+  const damage = Math.round(scaledLevelValue(56, 24, utilityLevel) * 1.04 * 0.6 * 0.85 * getWeaponOverlevelDamageMultiplier(level));
   damageZones.push({
     x: missile.x,
     y: missile.y,
@@ -2569,7 +2596,7 @@ function explodeCustomerMissile(missile) {
     hits: new Set(),
     kind: "missileExplosion",
   });
-  addParticles(missile.x, missile.y, "#80ffdb", 14 + level * 2);
+  addParticles(missile.x, missile.y, "#80ffdb", 14 + utilityLevel * 2);
   addParticles(missile.x, missile.y, "#fff3b0", 8);
   playSound("explosion");
 }
@@ -2577,20 +2604,21 @@ function explodeCustomerMissile(missile) {
 function spawnCustomerMissiles() {
   const level = weapons.customerMissile.level;
   if (level <= 0 || enemies.length === 0) return;
-  const count = Math.max(1, level);
+  const utilityLevel = getWeaponUtilityLevel(level);
+  const count = Math.max(1, utilityLevel);
   for (let i = 0; i < count; i += 1) {
-    const target = findCustomerMissileTarget(900 + level * 40);
+    const target = findCustomerMissileTarget(900 + utilityLevel * 40);
     if (!target) return;
     const angle = angleTo(player, target) + (i - (count - 1) / 2) * 0.32;
-    const speed = scaledLevelValue(288, 23, level);
+    const speed = scaledLevelValue(288, 23, utilityLevel);
     missiles.push({
       x: player.x + Math.cos(angle) * 22,
       y: player.y + Math.sin(angle) * 22,
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
       speed,
-      turnRate: scaledLevelValue(7.7, 0.5, level),
-      damage: Math.round(scaledLevelValue(37, 15, level) * 1.04 * 0.85),
+      turnRate: scaledLevelValue(7.7, 0.5, utilityLevel),
+      damage: Math.round(scaledLevelValue(37, 15, utilityLevel) * 1.04 * 0.85 * getWeaponOverlevelDamageMultiplier(level)),
       radius: 8,
       life: 3.2,
       target,
@@ -2674,7 +2702,7 @@ function updatePlayer(delta) {
   }
 
   const strapSpeedMultiplier = player.heroId === "changwoo" ? 0.6 : 1;
-  weapons.strapOrbit.angle += delta * (5.3 + weapons.strapOrbit.level * 0.32) * strapSpeedMultiplier * 1.3;
+  weapons.strapOrbit.angle += delta * (5.3 + getWeaponUtilityLevel(weapons.strapOrbit.level) * 0.32) * strapSpeedMultiplier * 1.3;
   weapons.lightning.cooldown -= delta;
   if (weapons.lightning.cooldown <= 0) {
     strikeLightning();
@@ -2696,7 +2724,7 @@ function updatePlayer(delta) {
   weapons.expressTrain.cooldown -= delta;
   if (weapons.expressTrain.level > 0 && weapons.expressTrain.cooldown <= 0) {
     spawnExpressTrain();
-    weapons.expressTrain.cooldown = Math.max(4.4, 9 - weapons.expressTrain.level * 0.45);
+    weapons.expressTrain.cooldown = Math.max(4.4, 9 - getWeaponUtilityLevel(weapons.expressTrain.level) * 0.45);
   }
 
   weapons.transferGate.cooldown -= delta;
@@ -3463,7 +3491,7 @@ function updateProjectiles(delta) {
 
     card.x += card.vx * delta;
     card.y += card.vy * delta;
-    card.rotation += delta * (12 + weapons.card.level * 1.8);
+    card.rotation += delta * (12 + getWeaponUtilityLevel(weapons.card.level) * 1.8);
     card.life -= delta;
     const bounds = {
       left: Math.max(24, camera.x + card.radius),
@@ -3604,7 +3632,9 @@ function updateBlade(delta = 0) {
     const strapCount = getStrapCount();
     const strapRadius = getStrapOrbitRadius();
     const strapHandleRadius = getStrapHandleRadius();
-    const strapDamage = Math.round(scaledLevelValue(14, 8, weapons.strapOrbit.level) * 1.5 * 2 * (player.meleeDamageMultiplier || 1));
+    const strapLevel = weapons.strapOrbit.level;
+    const strapUtilityLevel = getWeaponUtilityLevel(strapLevel);
+    const strapDamage = Math.round(scaledLevelValue(14, 8, strapUtilityLevel) * 1.5 * 2 * (player.meleeDamageMultiplier || 1) * getWeaponOverlevelDamageMultiplier(strapLevel));
     for (let i = 0; i < strapCount; i += 1) {
       const strapAngle = weapons.strapOrbit.angle + (TAU * i) / strapCount;
       const strap = {
@@ -3625,7 +3655,7 @@ function updateBlade(delta = 0) {
   }
 
   if (weapons.tearGas.level > 0) {
-    weapons.tearGas.pulse += delta * (2.2 + weapons.tearGas.level * 0.22);
+    weapons.tearGas.pulse += delta * (2.2 + getWeaponUtilityLevel(weapons.tearGas.level) * 0.22);
   }
 }
 
@@ -3644,7 +3674,8 @@ function damageEnemy(enemy, amount, color = "#fff2a8", { applyAttack = true } = 
 
 function getChickenChargeDamage() {
   const expressLevel = Math.max(1, weapons.expressTrain.level || 1);
-  const expressDamage = scaledLevelValue(147, 42, expressLevel) * 3;
+  const expressUtilityLevel = getWeaponUtilityLevel(expressLevel);
+  const expressDamage = scaledLevelValue(147, 42, expressUtilityLevel) * 3 * getWeaponOverlevelDamageMultiplier(expressLevel);
   return Math.max(1, Math.round(expressDamage * 0.5 * 3));
 }
 
@@ -4197,7 +4228,7 @@ function updateStationPoliceCallSquad(squad, delta) {
 }
 
 function syncStationPolicePets() {
-  const wanted = Math.max(0, weapons.subwayPolice.level);
+  const wanted = Math.max(0, weapons.subwayPolice.level > 0 ? getWeaponUtilityLevel(weapons.subwayPolice.level) : 0);
   while (stationPolicePets.length < wanted) {
     const index = stationPolicePets.length;
     const angle = -Math.PI / 2 + (TAU * index) / Math.max(1, wanted || 1);
