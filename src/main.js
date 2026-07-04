@@ -889,20 +889,40 @@ function openTrainingPanel() {
   game.paused = true;
   game.manualPaused = true;
   resetFloatingStickMove();
-  refs.trainingPanel?.classList.remove("hidden");
+  refs.trainingPanel?.classList.remove("hidden", "closing");
+  refs.trainingPanel?.style.removeProperty("--training-suck-x");
+  refs.trainingPanel?.style.removeProperty("--training-suck-y");
   renderTrainingPanel();
   updateHud();
   playSound("ui");
 }
 
 function closeTrainingPanel() {
-  refs.trainingPanel?.classList.add("hidden");
-  game.trainingConfirmSkillId = "";
-  if (!game.trainingWasPaused && game.state === "playing" && !game.pendingHeroChoice) {
-    game.manualPaused = false;
-    game.paused = false;
+  const panel = refs.trainingPanel;
+  if (!panel || panel.classList.contains("hidden") || panel.classList.contains("closing")) return;
+  const shell = panel.querySelector(".training-shell");
+  const target = refs.trainingButton;
+  if (shell && target) {
+    const shellRect = shell.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const dx = targetRect.left + targetRect.width / 2 - (shellRect.left + shellRect.width / 2);
+    const dy = targetRect.top + targetRect.height / 2 - (shellRect.top + shellRect.height / 2);
+    panel.style.setProperty("--training-suck-x", `${Math.round(dx)}px`);
+    panel.style.setProperty("--training-suck-y", `${Math.round(dy)}px`);
   }
-  updateHud();
+  panel.classList.add("closing");
+  window.setTimeout(() => {
+    panel.classList.add("hidden");
+    panel.classList.remove("closing");
+    panel.style.removeProperty("--training-suck-x");
+    panel.style.removeProperty("--training-suck-y");
+    game.trainingConfirmSkillId = "";
+    if (!game.trainingWasPaused && game.state === "playing" && !game.pendingHeroChoice) {
+      game.manualPaused = false;
+      game.paused = false;
+    }
+    updateHud();
+  }, 620);
   playSound("ui");
 }
 
