@@ -107,7 +107,8 @@ const MAX_PLAYER_HP_LIMIT = 300;
 const START_MAGNET_RANGE = 313;
 const START_TMONEY_POINTS = 750;
 const TRAINING_MAX_LEVEL = 5;
-const TRAINING_LEVEL_COSTS = [0, 250, 500, 1000, 2000, 3000];
+const WEAPON_TRAINING_START_COST = 500;
+const WEAPON_TRAINING_COST_MULTIPLIER = 2.5;
 const PASSIVE_TRAINING_START_COST = 1000;
 const PASSIVE_TRAINING_COST_MULTIPLIER = 2.5;
 const UPGRADE_SCALING_BONUS = 1.3;
@@ -750,7 +751,7 @@ function getTrainingNextCost(level, skillOrId = "") {
   if (passiveUpgradeIds.has(skillId)) {
     return Math.round(PASSIVE_TRAINING_START_COST * PASSIVE_TRAINING_COST_MULTIPLIER ** Math.max(0, nextLevel - 1));
   }
-  return TRAINING_LEVEL_COSTS[nextLevel] ?? TRAINING_LEVEL_COSTS.at(-1);
+  return Math.round(WEAPON_TRAINING_START_COST * WEAPON_TRAINING_COST_MULTIPLIER ** Math.max(0, nextLevel - 1));
 }
 
 function getTrainingStars(level) {
