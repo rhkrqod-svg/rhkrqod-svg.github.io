@@ -131,6 +131,8 @@ const COMMUTE_PROTEST_HP_MULTIPLIER = 1.1;
 const ENEMY_XP_REWARD_MULTIPLIER = 1.35;
 const XP_ORB_LIFETIME = 18;
 const XP_ORB_FADE_TIME = 5;
+const ITEM_PICKUP_POPUP_LIFE = 1.35;
+const ITEM_PICKUP_POPUP_SIZE = 24;
 const NORMAL_MUSIC_SRC = "/assets/audio/neon-arcade-normal.mp3";
 const NORMAL_MUSIC_VOLUME = 0.16;
 const BOSS_MUSIC_SRC = "/assets/audio/neon-circuit-boss.mp3";
@@ -1484,6 +1486,12 @@ function playSound(id) {
     case "heal":
       playTone({ type: "sine", frequency: 440, endFrequency: 660, duration: 0.12, volume: 0.16 });
       playTone({ type: "sine", frequency: 660, endFrequency: 880, duration: 0.14, volume: 0.14, when: 0.08 });
+      break;
+    case "itemPickup":
+      if (!soundAllowed(id, 120)) return;
+      playTone({ type: "triangle", frequency: 740, endFrequency: 1180, duration: 0.1, volume: 0.18 });
+      playTone({ type: "sine", frequency: 1180, endFrequency: 1568, duration: 0.16, volume: 0.14, when: 0.08 });
+      playNoise({ duration: 0.08, volume: 0.06, filter: 3200, when: 0.04 });
       break;
     case "xp":
       if (!soundAllowed(id, 95)) return;
@@ -3660,38 +3668,38 @@ function killEnemy(enemy) {
   updateHud();
 }
 
+function showItemPickupPopup(text, x, y, color, offset = 48) {
+  addPopup(text, x, y - offset, color, ITEM_PICKUP_POPUP_LIFE, ITEM_PICKUP_POPUP_SIZE);
+  playSound("itemPickup");
+}
+
 function grantFirstAidKit(count = 1, x = player.x, y = player.y) {
   player.firstAidKits += count;
-  addPopup(`구급팩 +${count}`, x, y - 24, "#b8ffe4", 0.9, 16);
-  playSound("heal");
+  showItemPickupPopup(`구급팩 +${count}`, x, y, "#b8ffe4", 30);
   updateHud();
 }
 
 function grantPoliceCall(count = 1, x = player.x, y = player.y) {
   player.policeCalls += count;
-  addPopup(`${getPoliceItemName()} +${count}`, x, y - 48, "#b8dcff", 0.9, 16);
-  playSound("levelUp");
+  showItemPickupPopup(`${getPoliceItemName()} +${count}`, x, y, "#b8dcff", 50);
   updateHud();
 }
 
 function grantTaserGun(count = 1, x = player.x, y = player.y) {
   player.taserGuns += count;
-  addPopup(`테이저건 +${count}`, x, y - 66, "#fff3b0", 0.9, 16);
-  playSound("levelUp");
+  showItemPickupPopup(`테이저건 +${count}`, x, y, "#fff3b0", 70);
   updateHud();
 }
 
 function grantChickenBreast(count = 1, x = player.x, y = player.y) {
   player.chickenBreasts += count;
-  addPopup(`${getChickenItemName()} +${count}`, x, y - 84, "#ffd166", 0.9, 16);
-  playSound("levelUp");
+  showItemPickupPopup(`${getChickenItemName()} +${count}`, x, y, "#ffd166", 90);
   updateHud();
 }
 
 function grantStimPack(count = 1, x = player.x, y = player.y) {
   player.stimPacks += count;
-  addPopup(`스팀팩 +${count}`, x, y - 102, "#ff8a80", 0.9, 16);
-  playSound("levelUp");
+  showItemPickupPopup(`스팀팩 +${count}`, x, y, "#ff8a80", 110);
   updateHud();
 }
 
@@ -4420,23 +4428,18 @@ function updateEnergyPickups(delta) {
     if (d < player.radius + pickup.radius + 8) {
       if (pickup.kind === "radio") {
         grantPoliceCall(1, pickup.x, pickup.y);
-        addPopup("무전기", pickup.x, pickup.y - 18, "#b8dcff", 0.8, 14);
         addParticles(pickup.x, pickup.y, "#77beff", 18);
       } else if (pickup.kind === "taser") {
         grantTaserGun(1, pickup.x, pickup.y);
-        addPopup("테이저건", pickup.x, pickup.y - 18, "#fff3b0", 0.8, 14);
         addParticles(pickup.x, pickup.y, "#fff3b0", 20);
       } else if (pickup.kind === "chicken") {
         grantChickenBreast(1, pickup.x, pickup.y);
-        addPopup(getChickenItemName(), pickup.x, pickup.y - 18, "#ffd166", 0.8, 14);
         addParticles(pickup.x, pickup.y, "#ffd166", 22);
       } else if (pickup.kind === "stim") {
         grantStimPack(1, pickup.x, pickup.y);
-        addPopup("스팀팩", pickup.x, pickup.y - 18, "#ff8a80", 0.8, 14);
         addParticles(pickup.x, pickup.y, "#ff6b6b", 22);
       } else if (pickup.kind === "firstAid") {
         grantFirstAidKit(1, pickup.x, pickup.y);
-        addPopup("구급팩", pickup.x, pickup.y - 18, "#b8ffe4", 0.8, 14);
         addParticles(pickup.x, pickup.y, "#36d399", 18);
       } else {
         healPlayer(Math.round(pickup.heal));
