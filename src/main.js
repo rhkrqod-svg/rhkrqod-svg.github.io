@@ -151,6 +151,8 @@ const TASER_DOT_DAMAGE_RATIO = 0.4875;
 const SUBWAY_POLICE_DAMAGE_MULTIPLIER = 2.535;
 const SUBWAY_POLICE_SPLASH_RADIUS = 60;
 const COMPANION_BASIC_SPLASH_DAMAGE_RATIO = 0.5;
+const POLICE_CALL_OFFICER_COUNT = 25;
+const POLICE_CALL_DURATION = 10;
 const COMRADE_DROP_DESCENT_TIME = 1.8;
 const CHICKEN_BUFF_DURATION = 10;
 const CHICKEN_VISUAL_SCALE = 3;
@@ -3763,30 +3765,29 @@ function usePoliceCall() {
     return;
   }
   announceSkill("지하철 경찰대", { color: "#b8dcff", minGap: 500, source: "item" });
-  const officers = [];
-  const officerCount = 60;
-  for (let i = 0; i < officerCount; i += 1) {
-    const angle = (TAU * i) / officerCount + rand(-0.035, 0.035);
-    const ring = i % 2;
-    officers.push({
-      angle,
-      startRadius: 42 + ring * 28 + rand(-6, 6),
-      speedOffset: rand(-28, 36),
+  const pets = [];
+  for (let i = 0; i < POLICE_CALL_OFFICER_COUNT; i += 1) {
+    const angle = -Math.PI / 2 + (TAU * i) / POLICE_CALL_OFFICER_COUNT;
+    const ring = i % 4;
+    const spawnOrbit = 92 + ring * 18 + rand(-5, 8);
+    pets.push({
+      x: player.x + Math.cos(angle) * spawnOrbit,
+      y: player.y + Math.sin(angle) * spawnOrbit,
+      slot: i,
+      attackCooldown: rand(0.04, 0.42),
+      swingTimer: 0,
+      target: null,
       bob: Math.random() * TAU,
+      facing: angle,
     });
   }
   policeSquads.push({
+    kind: "stationPoliceCall",
     x: player.x,
     y: player.y,
-    officers,
-    distance: 0,
-    speed: 110,
-    damage: 38.4,
-    radius: 28,
-    life: 7.2,
-    maxLife: 7.2,
-    hitTimers: new Map(),
-    hitCounts: new Map(),
+    pets,
+    life: POLICE_CALL_DURATION,
+    maxLife: POLICE_CALL_DURATION,
   });
   addPopup("지하철 경찰대 출동!", player.x, player.y - 72, "#b8dcff", 0.9, 18);
   addParticles(player.x, player.y, "#77beff", 26);
@@ -4004,6 +4005,10 @@ function updatePoliceSquads(delta) {
       updateComradeDropSquad(squad, delta);
       continue;
     }
+    if (squad.kind === "stationPoliceCall") {
+      updateStationPoliceCallSquad(squad, delta);
+      continue;
+    }
     if (squad.kind === "pacemakerWave") {
       updatePacemakerMedalSquad(squad, delta);
       if (squad.finished) policeSquads.splice(policeSquads.indexOf(squad), 1);
@@ -4044,6 +4049,73 @@ function updatePoliceSquads(delta) {
     if (squad.life <= 0 || squad.distance > Math.max(viewWidth, viewHeight) * 0.95) {
       policeSquads.splice(policeSquads.indexOf(squad), 1);
     }
+  }
+}
+
+function updateStationPoliceCallSquad(squad, delta) {
+  squad.life -= delta;
+  const count = squad.pets.length;
+  for (const pet of squad.pets) {
+    pet.attackCooldown = Math.max(0, pet.attackCooldown - delta);
+    pet.swingTimer = Math.max(0, pet.swingTimer - delta);
+    const slotAngle = -Math.PI / 2 + (TAU * pet.slot) / Math.max(1, count);
+    const ringIndex = Math.floor(pet.slot / 8);
+    const orbit = 86 + ringIndex * 32 + Math.min(4, count) * 4;
+    const floatAngle = slotAngle + Math.sin(player.elapsed * 1.8 + pet.bob) * 0.13;
+    const idleX = player.x + Math.cos(floatAngle) * orbit;
+    const idleY = player.y + Math.sin(floatAngle) * orbit;
+    const target = findPriorityEnemyFrom(pet, 860);
+    pet.target = target;
+
+    let goalX = idleX;
+    let goalY = idleY;
+    if (target) {
+      const baseAngle = angleTo(target, player);
+      const ringSlot = pet.slot % 8;
+      const formationAngle = baseAngle + (TAU * ringSlot) / 8 + ringIndex * 0.17;
+      const standOff = target.radius + 46 + ringIndex * 18;
+      goalX = target.x + Math.cos(formationAngle) * standOff;
+      goalY = target.y + Math.sin(formationAngle) * standOff;
+    }
+
+    const dx = goalX - pet.x;
+    const dy = goalY - pet.y;
+    const distanceToGoal = Math.hypot(dx, dy) || 1;
+    const moveSpeed = target ? 385 : 265;
+    const step = Math.min(distanceToGoal, moveSpeed * delta);
+    pet.x = clamp(pet.x + (dx / distanceToGoal) * step, 25, WORLD_SIZE - 25);
+    pet.y = clamp(pet.y + (dy / distanceToGoal) * step, 25, WORLD_SIZE - 25);
+    if (distanceToGoal > 1) pet.facing = Math.atan2(dy, dx);
+
+    for (const other of squad.pets) {
+      if (other === pet) continue;
+      const gapX = pet.x - other.x;
+      const gapY = pet.y - other.y;
+      const gap = Math.hypot(gapX, gapY) || 1;
+      const minGap = 40;
+      if (gap >= minGap) continue;
+      const push = (minGap - gap) * 0.48;
+      pet.x = clamp(pet.x + (gapX / gap) * push, 25, WORLD_SIZE - 25);
+      pet.y = clamp(pet.y + (gapY / gap) * push, 25, WORLD_SIZE - 25);
+    }
+
+    if (!target) continue;
+    const attackDistance = Math.hypot(target.x - pet.x, target.y - pet.y);
+    if (attackDistance > target.radius + 54 || pet.attackCooldown > 0) continue;
+    pet.attackCooldown = 0.58;
+    pet.swingTimer = 0.22;
+    pet.facing = angleTo(pet, target);
+    const damage = getBuffedCompanionDamage();
+    damageEnemy(target, damage, "#b8dcff");
+    applyCompanionSplashDamage(target, "#8ecae6");
+    const pushAmount = target.boss ? 7 : 22;
+    target.x = clamp(target.x + Math.cos(pet.facing) * pushAmount, 35, WORLD_SIZE - 35);
+    target.y = clamp(target.y + Math.sin(pet.facing) * pushAmount, 35, WORLD_SIZE - 35);
+    addParticles(target.x, target.y, "#b8dcff", target.boss ? 8 : 5);
+    if (Math.random() < 0.34) playSound("police");
+  }
+  if (squad.life <= 0) {
+    policeSquads.splice(policeSquads.indexOf(squad), 1);
   }
 }
 
@@ -6689,6 +6761,10 @@ function drawPoliceSquads() {
       drawComradeDropSquad(squad);
       continue;
     }
+    if (squad.kind === "stationPoliceCall") {
+      drawStationPoliceCallSquad(squad);
+      continue;
+    }
     if (squad.kind === "pacemakerWave") {
       drawPacemakerMedalSquad(squad);
       continue;
@@ -7030,6 +7106,14 @@ function drawComradeDropSquad(squad) {
   }
 }
 
+function drawStationPoliceCallSquad(squad) {
+  const fade = clamp(Math.min(squad.life, squad.maxLife - squad.life) / 0.55, 0, 1);
+  const sortedPets = [...squad.pets].sort((a, b) => a.y - b.y);
+  for (const pet of sortedPets) {
+    drawStationPoliceAlly(pet, fade);
+  }
+}
+
 function drawStationPolicePets() {
   if (isComradeHero()) {
     drawComradePets();
@@ -7041,95 +7125,100 @@ function drawStationPolicePets() {
   }
   const sortedPets = [...stationPolicePets].sort((a, b) => a.y - b.y);
   for (const pet of sortedPets) {
-    const p = worldToScreen(pet.x, pet.y);
-    const step = Math.sin(pet.bob + player.elapsed * 10);
-    const swing = clamp(pet.swingTimer / 0.22, 0, 1);
-    const batonAngle = -0.55 + Math.sin((1 - swing) * Math.PI) * 1.2;
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    if (canDrawGameImage(subwayPoliceImage)) {
-      const facing = Math.cos(pet.facing) >= 0 ? 1 : -1;
-      const recoil = clamp(pet.swingTimer / 0.22, 0, 1);
-      drawAllyCutout(subwayPoliceImage, {
-        height: 92,
-        facing,
-        naturalFacing: -1,
-        alpha: 1,
-        glow: "#77beff",
-        bob: pet.bob,
-        recoil,
-      });
-      if (recoil > 0.18) {
-        ctx.globalAlpha = 0.52 * recoil;
-        ctx.strokeStyle = "#b8dcff";
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.arc(facing * 22, 0, 18 + recoil * 18, -0.72, 0.72);
-        ctx.stroke();
-      }
-      ctx.restore();
-      continue;
-    }
-    ctx.rotate(pet.facing);
-    ctx.scale(1.22, 1.22);
-    ctx.shadowColor = "#77beff";
-    ctx.shadowBlur = 12;
-    ctx.fillStyle = "rgba(119, 190, 255, 0.18)";
-    ctx.beginPath();
-    ctx.ellipse(0, 12, 23, 12, 0, 0, TAU);
-    ctx.fill();
-
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = "#123f84";
-    roundedRect(-10, -14, 20, 28, 7);
-    ctx.fill();
-    ctx.strokeStyle = "#b8dcff";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    ctx.fillStyle = "#f1c9a4";
-    ctx.beginPath();
-    ctx.arc(0, -25, 9, 0, TAU);
-    ctx.fill();
-    ctx.fillStyle = "#183f7a";
-    roundedRect(-10, -34, 20, 8, 4);
-    ctx.fill();
-    ctx.fillStyle = "#ffd166";
-    ctx.fillRect(-3, -36, 6, 3);
-
-    ctx.strokeStyle = "#0b234a";
-    ctx.lineWidth = 4;
-    ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.moveTo(-7, 13);
-    ctx.lineTo(-12, 23 + step * 3);
-    ctx.moveTo(7, 13);
-    ctx.lineTo(12, 23 - step * 3);
-    ctx.stroke();
-
-    ctx.save();
-    ctx.rotate(batonAngle);
-    ctx.strokeStyle = "#2a1608";
-    ctx.lineWidth = 5;
-    ctx.beginPath();
-    ctx.moveTo(10, -2);
-    ctx.lineTo(31, -15);
-    ctx.stroke();
-    ctx.strokeStyle = "#ffd166";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(15, -5);
-    ctx.lineTo(28, -13);
-    ctx.stroke();
-    ctx.restore();
-
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "900 7px system-ui";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("경찰", 0, -3);
-    ctx.restore();
+    drawStationPoliceAlly(pet, 1);
   }
+}
+
+function drawStationPoliceAlly(pet, alpha = 1) {
+  const p = worldToScreen(pet.x, pet.y);
+  const step = Math.sin(pet.bob + player.elapsed * 10);
+  const swing = clamp(pet.swingTimer / 0.22, 0, 1);
+  const batonAngle = -0.55 + Math.sin((1 - swing) * Math.PI) * 1.2;
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  if (canDrawGameImage(subwayPoliceImage)) {
+    const facing = Math.cos(pet.facing) >= 0 ? 1 : -1;
+    const recoil = clamp(pet.swingTimer / 0.22, 0, 1);
+    drawAllyCutout(subwayPoliceImage, {
+      height: 92,
+      facing,
+      naturalFacing: -1,
+      alpha,
+      glow: "#77beff",
+      bob: pet.bob,
+      recoil,
+    });
+    if (recoil > 0.18) {
+      ctx.globalAlpha = 0.52 * recoil * alpha;
+      ctx.strokeStyle = "#b8dcff";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(facing * 22, 0, 18 + recoil * 18, -0.72, 0.72);
+      ctx.stroke();
+    }
+    ctx.restore();
+    return;
+  }
+  ctx.globalAlpha = alpha;
+  ctx.rotate(pet.facing);
+  ctx.scale(1.22, 1.22);
+  ctx.shadowColor = "#77beff";
+  ctx.shadowBlur = 12;
+  ctx.fillStyle = "rgba(119, 190, 255, 0.18)";
+  ctx.beginPath();
+  ctx.ellipse(0, 12, 23, 12, 0, 0, TAU);
+  ctx.fill();
+
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = "#123f84";
+  roundedRect(-10, -14, 20, 28, 7);
+  ctx.fill();
+  ctx.strokeStyle = "#b8dcff";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.fillStyle = "#f1c9a4";
+  ctx.beginPath();
+  ctx.arc(0, -25, 9, 0, TAU);
+  ctx.fill();
+  ctx.fillStyle = "#183f7a";
+  roundedRect(-10, -34, 20, 8, 4);
+  ctx.fill();
+  ctx.fillStyle = "#ffd166";
+  ctx.fillRect(-3, -36, 6, 3);
+
+  ctx.strokeStyle = "#0b234a";
+  ctx.lineWidth = 4;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(-7, 13);
+  ctx.lineTo(-12, 23 + step * 3);
+  ctx.moveTo(7, 13);
+  ctx.lineTo(12, 23 - step * 3);
+  ctx.stroke();
+
+  ctx.save();
+  ctx.rotate(batonAngle);
+  ctx.strokeStyle = "#2a1608";
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(10, -2);
+  ctx.lineTo(31, -15);
+  ctx.stroke();
+  ctx.strokeStyle = "#ffd166";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(15, -5);
+  ctx.lineTo(28, -13);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "900 7px system-ui";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("경찰", 0, -3);
+  ctx.restore();
 }
 
 function drawComradePets() {
