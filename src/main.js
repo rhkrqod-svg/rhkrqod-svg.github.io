@@ -497,6 +497,7 @@ const reserveSoldierImage = createGameImage("/assets/heroes/changwoo-reserve-sol
 const subwayPoliceImage = createGameImage("/assets/heroes/subway-police-officer-game.png?v=20260630");
 const fistProjectileImage = createGameImage("/assets/projectiles/byeongu-fist.png?v=20260702");
 const slapProjectileImage = createGameImage("/assets/projectiles/heebin-slap.png?v=20260702");
+const praiseThumbProjectileImage = createGameImage("/assets/projectiles/praise-thumb-simple.png?v=20260704");
 
 const monsterImages = new Map();
 for (const monster of monsterTypes) {
@@ -749,6 +750,9 @@ function getTrainingIconSrc(skill) {
       changwoo: "basic-k2",
     };
     const iconName = basicIconMap[player.heroId] ?? "basic-upgrade";
+    if (iconName === "basic-medal" || iconName === "basic-k2") {
+      return `/assets/ui/training-icon-${iconName}.png`;
+    }
     return trainingIconData[iconName] ?? `/assets/ui/training-icon-${iconName}.png`;
   }
   const uploadedTrainingIconMap = {
@@ -8244,13 +8248,22 @@ function drawDamageZones() {
 
     if (zone.kind === "thumbShot") {
       ctx.translate(p.x, p.y);
-      ctx.rotate(progress * 6);
-      ctx.globalAlpha = 0.9;
-      ctx.font = `900 ${Math.round(zone.radius * 1.7)}px system-ui`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillStyle = "#fff3b0";
-      ctx.fillText("굿", 0, 0);
+      ctx.rotate(Math.atan2(zone.vy ?? 0, zone.vx ?? 1) + Math.sin(progress * Math.PI * 2) * 0.12);
+      const size = zone.radius * 2.35;
+      ctx.globalAlpha = 0.96;
+      if (praiseThumbProjectileImage.complete && praiseThumbProjectileImage.naturalWidth > 0) {
+        ctx.drawImage(praiseThumbProjectileImage, -size / 2, -size / 2, size, size);
+      } else {
+        ctx.fillStyle = "#ffbc80";
+        ctx.strokeStyle = "#5c2a18";
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.roundRect(-size * 0.18, -size * 0.44, size * 0.26, size * 0.48, size * 0.13);
+        ctx.roundRect(-size * 0.28, -size * 0.04, size * 0.62, size * 0.22, size * 0.1);
+        ctx.roundRect(-size * 0.28, size * 0.16, size * 0.52, size * 0.2, size * 0.09);
+        ctx.fill();
+        ctx.stroke();
+      }
       ctx.restore();
       continue;
     }
