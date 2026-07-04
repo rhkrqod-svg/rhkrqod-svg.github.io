@@ -207,64 +207,48 @@ button {
 
 .tmoney-balance {
   min-width: 0;
-  width: 86px;
+  width: 116px;
   min-height: 33px;
   display: grid;
-  grid-template-columns: 26px minmax(0, 1fr);
+  grid-template-columns: 76px minmax(0, 1fr);
   align-items: center;
-  column-gap: 5px;
-  padding: 5px 7px 5px 6px;
-  border: 1px solid rgba(255, 255, 255, 0.76);
-  border-radius: 8px;
-  background:
-    radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.94), rgba(245, 247, 239, 0.82) 45%, rgba(216, 220, 210, 0.9) 100%),
-    linear-gradient(145deg, #ffffff, #d8ddd4);
+  column-gap: 4px;
+  padding: 3px 6px 3px 4px;
+  border: 1px solid rgba(222, 226, 221, 0.95);
+  border-radius: 9px;
+  background: linear-gradient(145deg, #fff, #eef0eb 62%, #dfe3dc);
   color: #1f2933;
   font-size: 8px;
   font-weight: 1000;
   line-height: 1;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24), inset 0 0 0 1px rgba(255, 255, 255, 0.72);
+  box-shadow: 0 7px 16px rgba(0, 0, 0, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.9);
 }
 
 .tmoney-balance i {
   flex: 0 0 auto;
   grid-row: span 2;
-  position: relative;
-  width: 25px;
-  height: 20px;
-  border: 1px solid rgba(190, 198, 192, 0.92);
+  width: 76px;
+  height: 25px;
   border-radius: 5px;
-  background: linear-gradient(145deg, #ffffff, #ecefe8);
-  box-shadow: inset 0 0 4px rgba(100, 110, 100, 0.12), 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: url("/assets/ui/tmoney-logo-reference.svg") left center / contain no-repeat;
+  filter: saturate(0.96);
 }
 
 .tmoney-balance i::before {
-  content: "T";
-  position: absolute;
-  left: 7px;
-  top: 2px;
-  color: #e43b55;
-  font-size: 15px;
-  font-weight: 1000;
-  line-height: 1;
-  text-shadow: 8px 0 0 #ee8a8a;
+  content: none;
 }
 
 .tmoney-balance span {
-  display: block;
-  color: rgba(35, 42, 48, 0.82);
-  font-size: 10px;
-  font-weight: 1000;
-  line-height: 1;
-  letter-spacing: 0;
+  display: none;
 }
 
 .tmoney-balance b {
   min-width: 0;
-  color: #111827;
+  color: #2f363b;
   font-size: 11px;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-align: right;
 }
 
 .dodge-stat {
@@ -2239,27 +2223,24 @@ button {
   }
 
   .tmoney-balance {
-    width: 80px;
+    width: 106px;
     min-height: 30px;
-    grid-template-columns: 23px minmax(0, 1fr);
-    column-gap: 4px;
-    padding: 4px 6px 4px 5px;
+    grid-template-columns: 70px minmax(0, 1fr);
+    column-gap: 3px;
+    padding: 3px 5px 3px 4px;
   }
 
   .tmoney-balance i {
-    width: 22px;
-    height: 18px;
+    width: 70px;
+    height: 23px;
   }
 
   .tmoney-balance i::before {
-    left: 6px;
-    top: 2px;
-    font-size: 13px;
-    text-shadow: 7px 0 0 #ee8a8a;
+    content: none;
   }
 
   .tmoney-balance span {
-    font-size: 9px;
+    display: none;
   }
 
   .tmoney-balance b {
