@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <filter id="noise">
+      <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="4" seed="23"/>
+      <feColorMatrix type="saturate" values="1.4"/>
+      <feBlend in2="SourceGraphic" mode="screen"/>
+    </filter>
+    <radialGradient id="glow" cx="50%" cy="50%" r="60%">
+      <stop offset="0" stop-color="#99ffc7"/>
+      <stop offset="0.42" stop-color="#2f8e6c"/>
+      <stop offset="1" stop-color="#10251e"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="#0f251d"/>
+  <rect width="512" height="512" fill="url(#glow)" filter="url(#noise)" opacity="0.8"/>
+  <g fill="none" stroke-linecap="round">
+    <path d="M56 220 C125 140 175 302 256 212 S389 108 464 198" stroke="#9dffca" stroke-width="10" opacity="0.82"/>
+    <path d="M73 354 C148 279 216 390 292 314 S404 256 466 324" stroke="#42ff95" stroke-width="7" opacity="0.72"/>
+    <path d="M124 74 C176 110 194 118 236 84 M302 444 C345 410 400 418 440 368" stroke="#05110c" stroke-width="15" opacity="0.55"/>
+  </g>
+  <g fill="#c5ffd9" opacity="0.88">
+    <circle cx="146" cy="198" r="13"/>
+    <circle cx="378" cy="162" r="10"/>
+    <circle cx="278" cy="344" r="16"/>
+    <circle cx="432" cy="332" r="7"/>
+  </g>
+</svg>

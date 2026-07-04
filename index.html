@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <title>지하철 빌런헌터</title>
+    <meta name="description" content="지하철 빌런을 처치하는 모바일 액션 생존 게임" />
+    <meta property="og:title" content="지하철 빌런헌터" />
+    <meta property="og:description" content="지하철 빌런을 처치하는 모바일 액션 생존 게임" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://rhkrqod-svg.github.io/" />
+    <meta property="og:image" content="https://rhkrqod-svg.github.io/assets/images/start-screen.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png" />
+    <meta name="theme-color" content="#6f38ff" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="빌런헌터" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="지하철 빌런헌터" />
+    <meta name="twitter:description" content="지하철 빌런을 처치하는 모바일 액션 생존 게임" />
+    <meta name="twitter:image" content="https://rhkrqod-svg.github.io/assets/images/start-screen.png" />
+    <script type="module" crossorigin src="/assets/index-DwevkTxF.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CukkIEAF.css">
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="game"></canvas>
+
+      <div class="hud hp-bar" aria-label="체력">
+        <div class="hp-row">
+          <span>체력</span>
+          <strong id="health">100 / 100</strong>
+        </div>
+        <div class="hp-track">
+          <div id="healthFill" class="hp-fill"></div>
+        </div>
+      </div>
+
+      <section class="hud top-hud" aria-label="게임 상태">
+        <div class="stat">
+          <span>레벨</span>
+          <strong id="level">1</strong>
+        </div>
+        <div class="stat">
+          <span>시간</span>
+          <strong id="time">0:00</strong>
+        </div>
+        <div class="stat">
+          <span>점수</span>
+          <strong id="score">0</strong>
+        </div>
+        <div class="stat compact-stat">
+          <span>ATK</span>
+          <strong id="attackStat">100</strong>
+        </div>
+        <div class="stat compact-stat">
+          <span>DEF</span>
+          <strong id="defenseStat">100</strong>
+        </div>
+        <div class="stat compact-stat">
+          <span>SPD</span>
+          <strong id="speedStat">100</strong>
+          <em id="dodgeStat" class="dodge-stat hidden">회피 20%</em>
+        </div>
+      </section>
+
+      <div class="hud tmoney-panel" aria-label="T머니와 훈련소">
+        <button id="trainingButton" class="training-button" type="button" aria-label="훈련소 열기">
+          <i aria-hidden="true"></i>
+          <span>훈련소</span>
+        </button>
+        <span class="tmoney-balance">
+          <i aria-hidden="true"></i>
+          <span>T머니</span>
+          <b id="tmoneyHudBalance">500</b>
+        </span>
+      </div>
+
+      <div class="xp-bar" aria-hidden="true">
+        <div id="xpFill" class="xp-fill"></div>
+      </div>
+
+      <aside class="hud loadout" aria-label="스킬">
+        <div id="skillTooltip" class="skill-tooltip" role="status" aria-live="polite"></div>
+        <div id="weaponList"></div>
+      </aside>
+
+      <aside class="hud best">
+        <span>최고 점수</span>
+        <strong id="bestScore">0</strong>
+      </aside>
+
+      <button id="firstAidButton" class="hud first-aid" type="button" aria-label="역무원 구급팩 사용">
+        <span>구급팩</span>
+        <strong id="firstAidCount">1</strong>
+      </button>
+
+      <button id="policeButton" class="hud police-call" type="button" aria-label="지하철 경찰대 호출">
+        <span>지하철 경찰대</span>
+        <strong id="policeCount">0</strong>
+      </button>
+
+      <button id="taserButton" class="hud taser-call" type="button" aria-label="테이저건 발사">
+        <span>테이저건</span>
+        <strong id="taserCount">0</strong>
+      </button>
+
+      <button id="chickenButton" class="hud chicken-call" type="button" aria-label="닭가슴살 사용">
+        <span>닭가슴살</span>
+        <strong id="chickenCount">0</strong>
+      </button>
+
+      <button id="stimButton" class="hud stim-call" type="button" aria-label="스팀팩 사용">
+        <span>스팀팩</span>
+        <strong id="stimCount">0</strong>
+      </button>
+
+      <button id="pauseButton" class="hud pause-button" type="button" aria-label="일시정지">Ⅱ</button>
+
+      <aside class="hud codex" aria-label="빌런 도감">
+        <strong>출몰 빌런</strong>
+        <div id="codexList"></div>
+      </aside>
+
+      <div id="bossBanner" class="boss-banner" aria-live="polite"></div>
+
+      <div id="heroPanel" class="hero-panel hidden" role="dialog" aria-modal="true">
+        <div class="hero-shell">
+          <h2>주인공 선택</h2>
+          <div id="heroChoices" class="hero-choices"></div>
+        </div>
+      </div>
+
+      <div id="upgradePanel" class="upgrade-panel hidden" role="dialog" aria-modal="true">
+        <div class="upgrade-shell">
+          <h2 id="upgradeTitle">스킬 선택</h2>
+          <button id="upgradePauseButton" class="upgrade-pause-button" type="button">일시정지</button>
+          <div id="upgradeChoices" class="upgrade-choices"></div>
+        </div>
+      </div>
+
+      <div id="trainingPanel" class="training-panel hidden" role="dialog" aria-modal="true">
+        <div class="training-shell">
+          <div class="training-head">
+            <div>
+              <span>T머니 잔액</span>
+              <strong id="tmoneyBalance">500</strong>
+            </div>
+            <button id="trainingCloseButton" type="button">닫기</button>
+          </div>
+          <div class="training-tabs">
+            <button id="trainingWeaponTab" class="active" type="button">무기</button>
+            <button id="trainingPassiveTab" type="button">패시브</button>
+          </div>
+          <div id="trainingDetail" class="training-detail">스킬을 누르면 설명이 표시됩니다.</div>
+          <div id="trainingList" class="training-list"></div>
+        </div>
+      </div>
+
+      <div id="message" class="message start-screen">
+        <div class="title-block">
+          <img class="start-poster" src="/assets/images/start-screen.png" alt="지하철 빌런헌터 시작 화면" />
+          <span>민폐 퇴치 서바이버</span>
+          <h1 id="messageTitle">지하철 빌런헌터</h1>
+          <p id="messageText">지하철 빌런들이 몰려옵니다. 살아남고 에너지를 지키세요.</p>
+          <section id="leaderboardPanel" class="leaderboard-panel hidden" aria-label="랭킹">
+            <div class="leaderboard-head">
+              <strong>랭킹 TOP 10</strong>
+              <span id="rankHint">서버 랭킹을 불러오는 중</span>
+            </div>
+            <form id="rankForm" class="rank-form hidden">
+              <input id="playerNameInput" name="name" type="text" maxlength="12" autocomplete="name" placeholder="이름 입력" />
+              <button id="submitScoreButton" type="submit">등록</button>
+            </form>
+            <ol id="leaderboardList" class="leaderboard-list">
+              <li><strong>...</strong><span>랭킹 불러오는 중<em>잠시만 기다려 주세요</em></span><span>-</span></li>
+            </ol>
+          </section>
+          <button id="startButton" type="button" aria-label="터치하여 시작">터치하여 시작</button>
+          <button id="leaderboardOpenButton" class="leaderboard-open-button" type="button">랭킹보기</button>
+        </div>
+      </div>
+
+      <div class="mobile-controls" aria-hidden="true">
+        <div id="moveStick" class="move-stick">
+          <div id="moveStickThumb" class="move-stick-thumb"></div>
+        </div>
+      </div>
+    </div>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("/sw.js").then((registration) => registration.update()).catch(() => {});
+        });
+      }
+    </script>
+  </body>
+</html>
+
