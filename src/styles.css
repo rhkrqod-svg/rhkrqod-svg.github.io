@@ -207,13 +207,13 @@ button {
 
 .tmoney-balance {
   min-width: 0;
-  width: 116px;
+  width: 112px;
   min-height: 33px;
   display: grid;
-  grid-template-columns: 76px minmax(0, 1fr);
+  grid-template-columns: 74px minmax(0, 1fr);
   align-items: center;
-  column-gap: 4px;
-  padding: 3px 6px 3px 4px;
+  column-gap: 2px;
+  padding: 3px 3px 3px 4px;
   border: 1px solid rgba(222, 226, 221, 0.95);
   border-radius: 9px;
   background: linear-gradient(145deg, #fff, #eef0eb 62%, #dfe3dc);
@@ -227,7 +227,7 @@ button {
 .tmoney-balance i {
   flex: 0 0 auto;
   grid-row: span 2;
-  width: 76px;
+  width: 74px;
   height: 25px;
   border-radius: 5px;
   background: url("/assets/ui/tmoney-logo-reference.svg") left center / contain no-repeat;
@@ -245,7 +245,7 @@ button {
 .tmoney-balance b {
   min-width: 0;
   color: #2f363b;
-  font-size: 11px;
+  font-size: 14px;
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: right;
@@ -2224,15 +2224,15 @@ button {
   }
 
   .tmoney-balance {
-    width: 106px;
+    width: 101px;
     min-height: 30px;
-    grid-template-columns: 70px minmax(0, 1fr);
-    column-gap: 3px;
-    padding: 3px 5px 3px 4px;
+    grid-template-columns: 67px minmax(0, 1fr);
+    column-gap: 2px;
+    padding: 3px 3px 3px 4px;
   }
 
   .tmoney-balance i {
-    width: 70px;
+    width: 67px;
     height: 23px;
   }
 
@@ -2245,7 +2245,7 @@ button {
   }
 
   .tmoney-balance b {
-    font-size: 9px;
+    font-size: 12px;
   }
 
   .hp-bar {
