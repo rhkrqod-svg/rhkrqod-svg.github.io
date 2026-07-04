@@ -2,7 +2,7 @@
       <strong>${i.name}</strong>
       <span>${i.desc}</span>
       <em>${ca(o)} / 다음 비용 ${n}</em>
-      ${r?`<div class="training-confirm"><p>${fe(l)} T머니 포인트를 사용하여 훈련하시겠습니까?</p><button id="trainingConfirmBuy" type="button">훈련</button><button id="trainingConfirmCancel" type="button">취소</button></div>`:""}
+      ${r?`<div class="training-confirm"><i aria-hidden="true"></i><p>${fe(l)} T머니 포인트를 사용하여 훈련하시겠습니까?</p><div class="training-confirm-actions"><button id="trainingConfirmBuy" type="button">훈련</button><button id="trainingConfirmCancel" type="button">취소</button></div></div>`:""}
     `,u.trainingDetail.querySelector("#trainingConfirmBuy")?.addEventListener("click",()=>bn(a)),u.trainingDetail.querySelector("#trainingConfirmCancel")?.addEventListener("click",()=>{y.trainingConfirmSkillId="",Be(),C("ui")})}u.trainingList.innerHTML="";for(const i of t){const o=ra(i),n=wt(i.id),l=st(n),r=n>=Ce,c=s.tmoney>=l,f=document.createElement("button"),d=xn(i);f.type="button",f.className=`training-card ${d} ${i.id===y.selectedTrainingSkill?"selected":""}`,f.innerHTML=`
       <i class="upgrade-icon ${Mn(i)}" aria-hidden="true"></i>
       <span class="training-copy">
