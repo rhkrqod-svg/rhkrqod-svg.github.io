@@ -778,7 +778,7 @@ function renderTrainingPanel() {
       <em>${getTrainingStars(level)} / 다음 비용 ${nextCost}</em>
       ${
         isConfirming
-          ? `<div class="training-confirm"><p>${formatScore(cost)} T머니 포인트를 사용하여 훈련하시겠습니까?</p><button id="trainingConfirmBuy" type="button">훈련</button><button id="trainingConfirmCancel" type="button">취소</button></div>`
+          ? `<div class="training-confirm"><i aria-hidden="true"></i><p>${formatScore(cost)} T머니 포인트를 사용하여 훈련하시겠습니까?</p><div class="training-confirm-actions"><button id="trainingConfirmBuy" type="button">훈련</button><button id="trainingConfirmCancel" type="button">취소</button></div></div>`
           : ""
       }
     `;

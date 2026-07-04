@@ -1624,6 +1624,72 @@ button {
   font-weight: 1000;
 }
 
+.training-confirm {
+  position: relative;
+  min-height: 86px;
+  margin-top: 8px;
+  padding: 23px 13px 10px;
+  border: 1px solid rgba(255, 209, 102, 0.38);
+  border-radius: 9px;
+  background:
+    linear-gradient(180deg, rgba(5, 14, 24, 0.48), rgba(5, 8, 14, 0.72)),
+    url("/assets/ui/training-confirm-gpt2.png") center / 124% auto no-repeat;
+  box-shadow: 0 0 22px rgba(255, 209, 102, 0.13), inset 0 0 22px rgba(0, 217, 255, 0.08);
+  overflow: hidden;
+}
+
+.training-confirm > i {
+  position: absolute;
+  left: 50%;
+  top: 4px;
+  width: 34px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 209, 102, 0.55), transparent 72%);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.training-confirm p {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  color: #fff7c2;
+  font-size: 11px;
+  font-weight: 1000;
+  line-height: 1.28;
+  text-align: center;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.9);
+}
+
+.training-confirm-actions {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.training-confirm-actions button {
+  min-height: 27px;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 243, 176, 0.38);
+  color: #061018;
+  font-size: 11px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.training-confirm-actions button:first-child {
+  background: linear-gradient(180deg, #ffe08a, #ffad33);
+  box-shadow: 0 0 14px rgba(255, 209, 102, 0.28);
+}
+
+.training-confirm-actions button:last-child {
+  background: linear-gradient(180deg, rgba(159, 211, 255, 0.95), rgba(65, 144, 214, 0.92));
+}
+
 .training-list {
   min-height: 0;
   display: grid;
