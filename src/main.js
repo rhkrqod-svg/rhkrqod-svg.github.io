@@ -854,7 +854,7 @@ function renderTrainingPanel() {
       <span class="training-copy">
         <strong>${display.name}</strong>
         <em>${getTrainingStars(level)}</em>
-        <small>${maxed ? "최대 강화 완료" : `역무실 강화 ${formatScore(cost)}P`}</small>
+        <small>${maxed ? "최대 강화 완료" : `${formatScore(cost)}P`}</small>
       </span>
       <b>${maxed ? "MAX" : affordable ? "강화" : "부족"}</b>
     `;
@@ -888,7 +888,7 @@ function buyTrainingSkill(skill) {
   if (skill.id === "maxhp") player.maxHpTrainingLevel = (player.maxHpTrainingLevel || 0) + 1;
   skill.apply();
   playSound("levelUp");
-  addPopup("역무실 강화", player.x, player.y - 58, "#ffd166", 0.85, 17);
+  addPopup("강화 완료", player.x, player.y - 58, "#ffd166", 0.85, 17);
   renderTrainingPanel();
   updateHud();
 }
