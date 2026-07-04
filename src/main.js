@@ -115,7 +115,10 @@ const BOSS_SPAWN_SAFE_RADIUS = 760;
 const PLAYER_RADIUS = 19 * CHARACTER_SIZE_SCALE;
 const FIRST_AID_HEAL_RATIO = 0.5;
 const BASE_REGEN_RATIO = 0.02;
-const REGEN_UPGRADE_RATIO = 0.026;
+const REGEN_UPGRADE_RATIO = 0.025;
+const MAGNET_PASSIVE_RATIO = 0.5;
+const MAX_HP_PASSIVE_RATIO = 0.2;
+const DAMAGE_REDUCTION_PASSIVE_RATIO = 0.15;
 const ENEMY_HP_GLOBAL_MULTIPLIER = 1.6;
 const ENEMY_SPEED_GLOBAL_MULTIPLIER = 1.38;
 const ENEMY_DAMAGE_GLOBAL_MULTIPLIER = 1.3;
@@ -521,20 +524,20 @@ const upgradePool = [
   {
     id: "magnet",
     name: "민심 흡수기",
-    desc: "경험치 흡수 범위 +58%",
+    desc: "경험치 흡수 범위 +50%",
     category: "passive",
     apply: () => {
-      player.magnet *= 1 + 0.45 * UPGRADE_SCALING_BONUS;
+      player.magnet *= 1 + MAGNET_PASSIVE_RATIO;
     },
   },
   {
     id: "maxhp",
     name: "멘탈 강화",
-    desc: "최대 체력 +19.5%, 즉시 회복",
+    desc: "최대 체력 +20%, 즉시 회복",
     category: "passive",
     apply: () => {
       const previousMaxHp = player.maxHp;
-      player.maxHp = Math.min(MAX_PLAYER_HP_LIMIT, player.maxHp * (1 + 0.15 * UPGRADE_SCALING_BONUS));
+      player.maxHp = Math.min(MAX_PLAYER_HP_LIMIT, player.maxHp * (1 + MAX_HP_PASSIVE_RATIO));
       player.hp = Math.min(player.maxHp, player.hp + player.maxHp - previousMaxHp);
     },
   },
@@ -607,16 +610,16 @@ const upgradePool = [
   {
     id: "nuisanceResist",
     name: "민폐 내성",
-    desc: "받는 피해 19.5% 감소",
+    desc: "받는 피해 15% 감소",
     category: "passive",
     apply: () => {
-      player.damageReduction = Math.min(0.6, player.damageReduction + 0.15 * UPGRADE_SCALING_BONUS);
+      player.damageReduction = Math.min(0.6, player.damageReduction + DAMAGE_REDUCTION_PASSIVE_RATIO);
     },
   },
   {
     id: "mentalRegen",
     name: "멘탈 회복력",
-    desc: "자동 체력 회복량 +2.6%",
+    desc: "자동 체력 회복량 +2.5%",
     category: "passive",
     apply: () => {
       player.regenLevel += 1;
@@ -716,11 +719,11 @@ function getTrainingSkillLevel(id) {
     case "subwayPolice":
       return weapons.subwayPolice.level;
     case "magnet":
-      return Math.max(0, Math.round(Math.log(Math.max(1, player.magnet / (START_MAGNET_RANGE * 1.3))) / Math.log(1 + 0.45 * UPGRADE_SCALING_BONUS)));
+      return Math.max(0, Math.round(Math.log(Math.max(1, player.magnet / (START_MAGNET_RANGE * 1.3))) / Math.log(1 + MAGNET_PASSIVE_RATIO)));
     case "maxhp":
       return player.maxHpTrainingLevel || 0;
     case "nuisanceResist":
-      return Math.round((player.damageReduction || 0) / (0.15 * UPGRADE_SCALING_BONUS));
+      return Math.round((player.damageReduction || 0) / DAMAGE_REDUCTION_PASSIVE_RATIO);
     case "mentalRegen":
       return player.regenLevel || 0;
     default:
@@ -5200,7 +5203,7 @@ function updateHud() {
     player.defenseBreakTimer > 0 ? { label: `방어저하 ${Math.ceil(player.defenseBreakTimer)}초`, type: "status", desc: "현재 방어력이 감소한 상태입니다." } : null,
     player.stunTimer > 0 ? { label: `경직 ${Math.ceil(player.stunTimer)}초`, type: "status", desc: "잠시 움직일 수 없는 상태입니다." } : null,
     player.slowTimer > 0 ? { label: `둔화 ${Math.ceil(player.slowTimer)}초`, type: "status", desc: "이동 속도가 느려진 상태입니다." } : null,
-    player.damageReduction > 0 ? { label: `내성 ${Math.round(player.damageReduction * 100)}%`, type: "passive", power: chipPower(Math.round(player.damageReduction / 0.15)), desc: "받는 피해가 감소합니다." } : null,
+    player.damageReduction > 0 ? { label: `내성 ${Math.round(player.damageReduction * 100)}%`, type: "passive", power: chipPower(Math.round(player.damageReduction / DAMAGE_REDUCTION_PASSIVE_RATIO)), desc: "받는 피해가 감소합니다." } : null,
     player.regenLevel > 0 ? { label: `회복 Lv.${player.regenLevel}`, type: "passive", power: chipPower(player.regenLevel), desc: `일정 시간마다 최대 체력의 ${Number(((BASE_REGEN_RATIO + player.regenLevel * REGEN_UPGRADE_RATIO) * 100).toFixed(1))}%를 회복합니다.` } : null,
     player.chickenTimer > 0 ? { label: `${getChickenItemName()} ${Math.ceil(player.chickenTimer)}초`, type: "status", desc: "몸집이 커지고 접촉한 적에게 몸통박치기 피해와 넉백을 줍니다." } : null,
     player.stimTimer > 0 ? { label: `스팀팩 ${Math.ceil(player.stimTimer)}초`, type: "status", desc: "기본 무기 발사 간격만 1/4로 줄지만 매초 최대 체력 3%를 잃습니다." } : null,
