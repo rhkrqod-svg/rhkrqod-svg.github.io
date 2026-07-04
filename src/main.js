@@ -156,14 +156,15 @@ const CHICKEN_BUFF_DURATION = 10;
 const CHICKEN_VISUAL_SCALE = 3;
 const CHICKEN_COLLISION_RADIUS_MULTIPLIER = 2.25;
 const CHICKEN_HIT_COOLDOWN = 0.5;
-const CHICKEN_KNOCKBACK = 132;
+const CHICKEN_KNOCKBACK = 264;
 const CHICKEN_RELEASE_INVULN = 1;
 const TANK_CANNON_COOLDOWN = 1.5;
 const TANK_CANNON_RADIUS = 112;
 const TANK_CANNON_BOSS_STUN = 0.5;
 const TANK_CANNON_MONSTER_STUN = 3;
 const STIMPACK_DURATION = 8;
-const STIMPACK_ATTACK_SPEED_MULTIPLIER = 4;
+const STIMPACK_ATTACK_SPEED_MULTIPLIER = 3;
+const STIMPACK_BASIC_DAMAGE_MULTIPLIER = 3;
 const STIMPACK_DRAIN_RATIO = 0.03;
 const STIMPACK_DRAIN_TICK = 1;
 const STIMPACK_VISUAL_SCALE_RATIO = 0.5;
@@ -998,6 +999,11 @@ function getBasicBulletStyle() {
   if (player.heroId === "changwoo") return "military";
   if (player.heroId === "juyeon") return "medal";
   return "default";
+}
+
+function getPlayerBasicAttackDamage() {
+  const baseDamage = player.damage * (player.bulletDamageMultiplier || 1);
+  return isStimpackActive() ? baseDamage * STIMPACK_BASIC_DAMAGE_MULTIPLIER : baseDamage;
 }
 
 function getUpgradeType(choice) {
@@ -2263,6 +2269,7 @@ function fireBullets() {
   if (!target) return;
   const bulletStyle = getBasicBulletStyle();
   fireBulletVolley(player, target, player.shots, {
+    damage: getPlayerBasicAttackDamage(),
     style: bulletStyle,
     radius: bulletStyle === "fist" ? FIST_BULLET_RADIUS : bulletStyle === "slap" ? SLAP_BULLET_RADIUS : 10,
     color: bulletStyle === "fist"
@@ -3624,7 +3631,7 @@ function damageEnemy(enemy, amount, color = "#fff2a8", { applyAttack = true } = 
 function getChickenChargeDamage() {
   const expressLevel = Math.max(1, weapons.expressTrain.level || 1);
   const expressDamage = scaledLevelValue(147, 42, expressLevel) * 3;
-  return Math.max(1, Math.round(expressDamage * 0.5));
+  return Math.max(1, Math.round(expressDamage * 0.5 * 3));
 }
 
 function isStimpackActive() {
@@ -5277,7 +5284,7 @@ function updateHud() {
     player.damageReduction > 0 ? { label: `내성 ${Math.round(player.damageReduction * 100)}%`, type: "passive", power: chipPower(Math.round(player.damageReduction / DAMAGE_REDUCTION_PASSIVE_RATIO)), desc: "받는 피해가 감소합니다." } : null,
     player.regenLevel > 0 ? { label: `회복 Lv.${player.regenLevel}`, type: "passive", power: chipPower(player.regenLevel), desc: `일정 시간마다 최대 체력의 ${Number(((BASE_REGEN_RATIO + player.regenLevel * REGEN_UPGRADE_RATIO) * 100).toFixed(1))}%를 회복합니다.` } : null,
     player.chickenTimer > 0 ? { label: `${getChickenItemName()} ${Math.ceil(player.chickenTimer)}초`, type: "status", desc: "몸집이 커지고 접촉한 적에게 몸통박치기 피해와 넉백을 줍니다." } : null,
-    player.stimTimer > 0 ? { label: `스팀팩 ${Math.ceil(player.stimTimer)}초`, type: "status", desc: "기본 무기 발사 간격만 1/4로 줄지만 매초 최대 체력 3%를 잃습니다." } : null,
+    player.stimTimer > 0 ? { label: `스팀팩 ${Math.ceil(player.stimTimer)}초`, type: "status", desc: "기본 무기 공격속도와 피해가 3배가 되지만 매초 최대 체력 3%를 잃습니다." } : null,
   ].filter(Boolean);
   renderLoadoutItems(loadoutItems);
   if (refs.trainingPanel && !refs.trainingPanel.classList.contains("hidden")) renderTrainingPanel();
