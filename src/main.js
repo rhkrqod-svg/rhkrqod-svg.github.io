@@ -1,4 +1,5 @@
 ﻿import "./styles.css";
+import { trainingIconData } from "./trainingIconData.js";
 
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
@@ -744,7 +745,8 @@ function getTrainingIconSrc(skill) {
       juyeon: "basic-medal",
       changwoo: "basic-k2",
     };
-    return `/assets/ui/training-icon-${basicIconMap[player.heroId] ?? "basic-upgrade"}.png`;
+    const iconName = basicIconMap[player.heroId] ?? "basic-upgrade";
+    return trainingIconData[iconName] ?? `/assets/ui/training-icon-${iconName}.png`;
   }
   const iconMap = {
     lightning: "lightning",
@@ -760,7 +762,7 @@ function getTrainingIconSrc(skill) {
     mentalRegen: "mental-regen",
   };
   const iconName = iconMap[skill?.id] ?? "basic-weapon";
-  return `/assets/ui/training-icon-${iconName}.png`;
+  return trainingIconData[iconName] ?? `/assets/ui/training-icon-${iconName}.png`;
 }
 
 function getLevelTrainingBonus(level) {
