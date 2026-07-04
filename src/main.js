@@ -145,7 +145,7 @@ const TASER_DOT_TICK = 0.5;
 const TASER_DOT_DAMAGE_RATIO = 0.4875;
 const SUBWAY_POLICE_DAMAGE_MULTIPLIER = 2.535;
 const SUBWAY_POLICE_SPLASH_RADIUS = 60;
-const SUBWAY_POLICE_SPLASH_DAMAGE_RATIO = 0.28;
+const COMPANION_BASIC_SPLASH_DAMAGE_RATIO = 0.5;
 const COMRADE_DROP_DESCENT_TIME = 1.8;
 const CHICKEN_BUFF_DURATION = 10;
 const CHICKEN_VISUAL_SCALE = 3;
@@ -3937,7 +3937,7 @@ function updatePacemakerMedalSquad(squad, delta) {
       hitTimers.set(enemy, 0.28);
       hitCounts.set(enemy, (hitCounts.get(enemy) ?? 0) + 1);
       damageEnemy(enemy, squad.damage, "#7fc8ff");
-      applyCompanionSplashDamage(enemy.x, enemy.y, squad.damage * 0.28, 52, enemy, "#7fc8ff");
+      applyAreaSplashDamage(enemy.x, enemy.y, squad.damage * 0.28, 52, enemy, "#7fc8ff");
       const pushAmount = enemy.boss ? 12 : 34;
       enemy.x = clamp(enemy.x + Math.cos(runner.angle) * pushAmount, 35, WORLD_SIZE - 35);
       enemy.y = clamp(enemy.y + Math.sin(runner.angle) * pushAmount, 35, WORLD_SIZE - 35);
@@ -4098,7 +4098,7 @@ function updateStationPolicePets(delta) {
     pet.facing = angleTo(pet, target);
     const damage = getBuffedCompanionDamage();
     damageEnemy(target, damage, "#b8dcff");
-    applyCompanionSplashDamage(target, damage);
+    applyCompanionSplashDamage(target, "#8ecae6");
     const pushAmount = target.boss ? 7 : 22;
     target.x = clamp(target.x + Math.cos(pet.facing) * pushAmount, 35, WORLD_SIZE - 35);
     target.y = clamp(target.y + Math.sin(pet.facing) * pushAmount, 35, WORLD_SIZE - 35);
@@ -4157,19 +4157,41 @@ function updateComradeDropSquad(squad, delta) {
   }
 }
 
-function applyCompanionSplashDamage(target, damage, color = "#8ecae6") {
-  const splashDamage = Math.max(1, Math.round(damage * SUBWAY_POLICE_SPLASH_DAMAGE_RATIO));
+function getCompanionBasicSplashDamage() {
+  return Math.max(1, Math.round(player.damage * (player.bulletDamageMultiplier || 1) * COMPANION_BASIC_SPLASH_DAMAGE_RATIO));
+}
+
+function addCompanionSplashVisual(x, y, radius, color = "#8ecae6") {
+  damageZones.push({
+    x,
+    y,
+    radius,
+    damage: 0,
+    life: 0.22,
+    maxLife: 0.22,
+    color,
+    kind: "fistExplosion",
+  });
+}
+
+function applyAreaSplashDamage(x, y, damage, radius, ignoredEnemy = null, color = "#8ecae6") {
+  const splashDamage = Math.max(1, Math.round(damage));
   for (const enemy of [...enemies]) {
-    if (enemy === target) continue;
-    if (Math.hypot(enemy.x - target.x, enemy.y - target.y) > enemy.radius + SUBWAY_POLICE_SPLASH_RADIUS) continue;
+    if (enemy === ignoredEnemy) continue;
+    if (Math.hypot(enemy.x - x, enemy.y - y) > enemy.radius + radius) continue;
     damageEnemy(enemy, splashDamage, color);
     if (enemies.includes(enemy)) {
-      const splashPush = angleTo(target, enemy);
+      const splashPush = Math.atan2(enemy.y - y, enemy.x - x);
       const splashPushAmount = enemy.boss ? 3 : 9;
       enemy.x = clamp(enemy.x + Math.cos(splashPush) * splashPushAmount, 35, WORLD_SIZE - 35);
       enemy.y = clamp(enemy.y + Math.sin(splashPush) * splashPushAmount, 35, WORLD_SIZE - 35);
     }
   }
+}
+
+function applyCompanionSplashDamage(target, color = "#8ecae6") {
+  addCompanionSplashVisual(target.x, target.y, SUBWAY_POLICE_SPLASH_RADIUS, color);
+  applyAreaSplashDamage(target.x, target.y, getCompanionBasicSplashDamage(), SUBWAY_POLICE_SPLASH_RADIUS, null, color);
 }
 
 function updateComradePets(delta) {
@@ -4262,7 +4284,7 @@ function updateRunnerCompanionPets(delta) {
     pet.facing = angleTo(pet, target);
     const damage = getBuffedCompanionDamage();
     damageEnemy(target, damage, "#9fd3ff");
-    applyCompanionSplashDamage(target, damage, "#6ecbff");
+    applyCompanionSplashDamage(target, "#6ecbff");
     const pushAmount = target.boss ? 9 : 28;
     target.x = clamp(target.x + Math.cos(pet.facing) * pushAmount, 35, WORLD_SIZE - 35);
     target.y = clamp(target.y + Math.sin(pet.facing) * pushAmount, 35, WORLD_SIZE - 35);
