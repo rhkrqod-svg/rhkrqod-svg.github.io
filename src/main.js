@@ -8853,9 +8853,6 @@ function drawSkillAnnouncement() {
   ctx.fillStyle = skillAnnouncement.color;
   ctx.fillText(text, 0, 1);
   ctx.shadowBlur = 0;
-  ctx.fillStyle = "rgba(255,255,255,0.82)";
-  ctx.font = "900 12px system-ui";
-  ctx.fillText("SKILL", 0, -31);
   ctx.restore();
 }
 
