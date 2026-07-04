@@ -751,6 +751,21 @@ function getTrainingIconSrc(skill) {
     const iconName = basicIconMap[player.heroId] ?? "basic-upgrade";
     return trainingIconData[iconName] ?? `/assets/ui/training-icon-${iconName}.png`;
   }
+  const uploadedTrainingIconMap = {
+    lightning: "lightning",
+    boomerang: "card",
+    strapOrbit: "strap-orbit",
+    tearGas: "tear-gas",
+    expressTrain: "express-train",
+    customerMissile: "customer-message",
+    subwayPolice: "companion",
+    magnet: "magnet",
+    maxhp: "maxhp",
+    nuisanceResist: "nuisance-resist",
+  };
+  if (uploadedTrainingIconMap[skill?.id]) {
+    return `/assets/ui/training-icon-${uploadedTrainingIconMap[skill.id]}.png`;
+  }
   const iconMap = {
     lightning: "lightning",
     boomerang: "card",
