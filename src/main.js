@@ -810,7 +810,7 @@ function renderTrainingPanel() {
       <em>${getTrainingStars(level)} / 다음 비용 ${nextCost}</em>
       ${
         isConfirming
-          ? `<div class="training-confirm"><i aria-hidden="true"></i><p>${formatScore(cost)} T머니 포인트를 사용하여 훈련하시겠습니까?</p><div class="training-confirm-actions"><button id="trainingConfirmBuy" type="button">훈련</button><button id="trainingConfirmCancel" type="button">취소</button></div></div>`
+          ? `<div class="training-confirm"><i aria-hidden="true"></i><p>${formatScore(cost)} T머니 포인트를 사용하여 역무실에서 강화하시겠습니까?</p><div class="training-confirm-actions"><button id="trainingConfirmBuy" type="button">강화</button><button id="trainingConfirmCancel" type="button">취소</button></div></div>`
           : ""
       }
     `;
@@ -839,9 +839,9 @@ function renderTrainingPanel() {
       <span class="training-copy">
         <strong>${display.name}</strong>
         <em>${getTrainingStars(level)}</em>
-        <small>${maxed ? "최대 훈련 완료" : `스킬 훈련 ${formatScore(cost)}P`}</small>
+        <small>${maxed ? "최대 강화 완료" : `역무실 강화 ${formatScore(cost)}P`}</small>
       </span>
-      <b>${maxed ? "MAX" : affordable ? "훈련" : "부족"}</b>
+      <b>${maxed ? "MAX" : affordable ? "강화" : "부족"}</b>
     `;
     button.addEventListener("click", () => {
       game.selectedTrainingSkill = skill.id;
@@ -873,7 +873,7 @@ function buyTrainingSkill(skill) {
   if (skill.id === "maxhp") player.maxHpTrainingLevel = (player.maxHpTrainingLevel || 0) + 1;
   skill.apply();
   playSound("levelUp");
-  addPopup("스킬 훈련", player.x, player.y - 58, "#ffd166", 0.85, 17);
+  addPopup("역무실 강화", player.x, player.y - 58, "#ffd166", 0.85, 17);
   renderTrainingPanel();
   updateHud();
 }

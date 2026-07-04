@@ -188,8 +188,8 @@ button {
   width: 20px;
   height: 20px;
   border-radius: 5px;
-  background: url("/assets/ui/training-pad-gpt2.png") center / 140% auto no-repeat;
-  filter: drop-shadow(0 0 4px rgba(128, 255, 219, 0.45));
+  background: url("/assets/ui/station-office-icon.svg") center / 118% auto no-repeat;
+  filter: drop-shadow(0 0 5px rgba(255, 211, 106, 0.42));
 }
 
 .training-button span {
