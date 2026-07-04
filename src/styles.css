@@ -168,10 +168,10 @@ button {
 
 .training-button {
   position: relative;
-  width: 45px;
+  width: 53px;
   height: 33px;
   display: grid;
-  grid-template-columns: 20px 1fr;
+  grid-template-columns: 26px 1fr;
   align-items: center;
   gap: 1px;
   border: 1px solid rgba(128, 255, 219, 0.42);
@@ -185,10 +185,10 @@ button {
 }
 
 .training-button i {
-  width: 20px;
-  height: 20px;
+  width: 26px;
+  height: 26px;
   border-radius: 5px;
-  background: url("/assets/ui/station-office-icon.svg") center / 118% auto no-repeat;
+  background: url("/assets/ui/station-office-icon.svg") center / 124% auto no-repeat;
   filter: drop-shadow(0 0 5px rgba(255, 211, 106, 0.42));
 }
 
@@ -2209,13 +2209,14 @@ button {
   }
 
   .training-button {
-    width: 41px;
+    width: 49px;
     height: 30px;
+    grid-template-columns: 24px 1fr;
   }
 
   .training-button i {
-    width: 18px;
-    height: 18px;
+    width: 24px;
+    height: 24px;
   }
 
   .training-button span {
