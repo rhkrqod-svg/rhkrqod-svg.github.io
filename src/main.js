@@ -737,8 +737,16 @@ function getTrainingStars(level) {
 }
 
 function getTrainingIconSrc(skill) {
+  if (skill?.id === "multi") {
+    const basicIconMap = {
+      "gae-hwanam": "basic-fist",
+      "gae-hwani": "basic-slap",
+      juyeon: "basic-medal",
+      changwoo: "basic-k2",
+    };
+    return `/assets/training-icons/${basicIconMap[player.heroId] ?? "basic-upgrade"}.png`;
+  }
   const iconMap = {
-    multi: "basic-upgrade",
     lightning: "lightning",
     boomerang: "card",
     strapOrbit: "strap-orbit",
@@ -819,7 +827,9 @@ function renderTrainingPanel() {
     const type = getUpgradeType(skill);
     button.type = "button";
     button.className = `training-card ${type} ${skill.id === game.selectedTrainingSkill ? "selected" : ""}`;
+    const tagLabel = type === "passive" ? "패시브" : type === "basic" ? "기본 강화" : "무기";
     button.innerHTML = `
+      <span class="training-tag">${tagLabel}</span>
       <span class="training-art"><img class="training-icon" src="${getTrainingIconSrc(skill)}" alt="" aria-hidden="true"></span>
       <span class="training-copy">
         <strong>${display.name}</strong>
