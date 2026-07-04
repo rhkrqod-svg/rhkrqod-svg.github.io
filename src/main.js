@@ -159,7 +159,7 @@ const STIMPACK_ATTACK_SPEED_MULTIPLIER = 4;
 const STIMPACK_DRAIN_RATIO = 0.03;
 const STIMPACK_DRAIN_TICK = 1;
 const STIMPACK_VISUAL_SCALE_RATIO = 0.5;
-const BASIC_ATTACK_DAMAGE = 32.5;
+const BASIC_ATTACK_DAMAGE = 37.5;
 const FIST_BULLET_RADIUS = 15;
 const FIST_EXPLOSION_RADIUS = 88;
 const FIST_EXPLOSION_DAMAGE = 20;
@@ -178,7 +178,7 @@ const heroTypes = [
     quote: "정의는 방향이 아니라 선택입니다.",
     hp: 120,
     maxHp: 120,
-    atk: 95,
+    atk: 90,
     def: 120,
     spd: 90,
     color: "#1f2327",
@@ -193,7 +193,7 @@ const heroTypes = [
     quote: "작은 용기 하나가 내일을 바꿉니다.",
     hp: 100,
     maxHp: 100,
-    atk: 125,
+    atk: 120,
     def: 90,
     spd: 120,
     color: "#5a4632",
