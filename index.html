@@ -62,12 +62,20 @@
           <span>SPD</span>
           <strong id="speedStat">100</strong>
           <em id="dodgeStat" class="dodge-stat hidden">회피 20%</em>
-          <div class="tmoney-mini">
-            <button id="trainingButton" class="training-button" type="button" aria-label="훈련소 열기"></button>
-            <span class="tmoney-balance"><i aria-hidden="true"></i><b id="tmoneyHudBalance">500</b></span>
-          </div>
         </div>
       </section>
+
+      <div class="hud tmoney-panel" aria-label="T머니와 훈련소">
+        <button id="trainingButton" class="training-button" type="button" aria-label="훈련소 열기">
+          <i aria-hidden="true"></i>
+          <span>훈련소</span>
+        </button>
+        <span class="tmoney-balance">
+          <i aria-hidden="true"></i>
+          <span>T머니</span>
+          <b id="tmoneyHudBalance">500</b>
+        </span>
+      </div>
 
       <div class="xp-bar" aria-hidden="true">
         <div id="xpFill" class="xp-fill"></div>
