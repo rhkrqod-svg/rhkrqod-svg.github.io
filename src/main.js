@@ -744,7 +744,7 @@ function getTrainingIconSrc(skill) {
       juyeon: "basic-medal",
       changwoo: "basic-k2",
     };
-    return `/assets/ui/training-icons/${basicIconMap[player.heroId] ?? "basic-upgrade"}.png`;
+    return `/assets/ui/training-icon-${basicIconMap[player.heroId] ?? "basic-upgrade"}.png`;
   }
   const iconMap = {
     lightning: "lightning",
@@ -760,7 +760,7 @@ function getTrainingIconSrc(skill) {
     mentalRegen: "mental-regen",
   };
   const iconName = iconMap[skill?.id] ?? "basic-weapon";
-  return `/assets/ui/training-icons/${iconName}.png`;
+  return `/assets/ui/training-icon-${iconName}.png`;
 }
 
 function getLevelTrainingBonus(level) {
