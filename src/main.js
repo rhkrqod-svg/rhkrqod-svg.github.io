@@ -736,6 +736,25 @@ function getTrainingStars(level) {
   return Array.from({ length: TRAINING_MAX_LEVEL }, (_, index) => (index < level ? "★" : "☆")).join("");
 }
 
+function getTrainingIconSrc(skill) {
+  const iconMap = {
+    multi: "basic-upgrade",
+    lightning: "lightning",
+    boomerang: "card",
+    strapOrbit: "strap-orbit",
+    tearGas: "tear-gas",
+    expressTrain: "express-train",
+    customerMissile: "customer-message",
+    subwayPolice: "companion",
+    magnet: "magnet",
+    maxhp: "maxhp",
+    nuisanceResist: "nuisance-resist",
+    mentalRegen: "mental-regen",
+  };
+  const iconName = iconMap[skill?.id] ?? "basic-weapon";
+  return `/assets/training-icons/${iconName}.png`;
+}
+
 function getLevelTrainingBonus(level) {
   const bucket = Math.min(10, Math.max(1, Math.ceil(level / 5)));
   return bucket * 100;
@@ -801,7 +820,7 @@ function renderTrainingPanel() {
     button.type = "button";
     button.className = `training-card ${type} ${skill.id === game.selectedTrainingSkill ? "selected" : ""}`;
     button.innerHTML = `
-      <i class="upgrade-icon ${getUpgradeIconClass(skill)}" aria-hidden="true"></i>
+      <span class="training-art"><img class="training-icon" src="${getTrainingIconSrc(skill)}" alt="" aria-hidden="true"></span>
       <span class="training-copy">
         <strong>${display.name}</strong>
         <em>${getTrainingStars(level)}</em>

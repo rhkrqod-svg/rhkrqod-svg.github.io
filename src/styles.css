@@ -1693,48 +1693,96 @@ button {
 .training-list {
   min-height: 0;
   display: grid;
-  gap: 7px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
   overflow-y: auto;
-  padding-right: 2px;
+  padding: 1px 2px 4px;
 }
 
 .training-card {
-  min-height: 58px;
-  border: 1px solid rgba(255, 243, 176, 0.18);
+  position: relative;
+  min-height: 194px;
+  border: 2px solid rgba(255, 111, 97, 0.84);
   border-radius: 8px;
-  background: rgba(23, 33, 43, 0.58);
+  background:
+    linear-gradient(180deg, rgba(9, 20, 34, 0.96), rgba(5, 10, 18, 0.98));
   color: #f8f9fa;
   cursor: pointer;
-  display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) 48px;
-  align-items: center;
-  gap: 8px;
-  padding: 8px;
-  text-align: left;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding: 8px 8px 7px;
+  text-align: center;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04), 0 12px 26px rgba(0, 0, 0, 0.24);
+  overflow: hidden;
 }
 
 .training-card.attack {
-  border-color: rgba(255, 111, 97, 0.32);
-  background: linear-gradient(180deg, rgba(62, 28, 31, 0.58), rgba(20, 13, 15, 0.58));
+  border-color: rgba(255, 71, 87, 0.92);
+  background: linear-gradient(180deg, rgba(35, 14, 18, 0.98), rgba(8, 12, 20, 0.98));
 }
 
 .training-card.basic {
-  border-color: rgba(255, 209, 102, 0.38);
-  background: linear-gradient(180deg, rgba(70, 50, 17, 0.56), rgba(27, 19, 8, 0.58));
+  border-color: rgba(255, 170, 35, 0.96);
+  background: linear-gradient(180deg, rgba(39, 25, 8, 0.98), rgba(8, 12, 20, 0.98));
 }
 
 .training-card.passive {
-  border-color: rgba(143, 199, 255, 0.32);
-  background: linear-gradient(180deg, rgba(22, 42, 68, 0.58), rgba(12, 21, 33, 0.58));
+  border-color: rgba(74, 144, 255, 0.96);
+  background: linear-gradient(180deg, rgba(10, 28, 55, 0.98), rgba(8, 12, 20, 0.98));
 }
 
 .training-card.selected {
-  border-color: rgba(128, 255, 219, 0.68);
-  box-shadow: inset 0 0 18px rgba(128, 255, 219, 0.08);
+  border-color: rgba(128, 255, 219, 0.9);
+  box-shadow: inset 0 0 20px rgba(128, 255, 219, 0.16), 0 0 18px rgba(128, 255, 219, 0.18);
+}
+
+.training-card::before {
+  content: "무기";
+  align-self: flex-start;
+  min-width: 42px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: #ff474f;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.training-card.basic::before {
+  content: "기본 강화";
+  background: #ff9f1c;
+}
+
+.training-card.passive::before {
+  content: "패시브";
+  background: #3d8bfd;
+}
+
+.training-art {
+  display: block;
+  width: 100%;
+  aspect-ratio: 304 / 352;
+  border-radius: 7px;
+  overflow: hidden;
+  background: #020812;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.training-icon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
 }
 
 .training-copy {
   min-width: 0;
+  display: grid;
+  gap: 3px;
 }
 
 .training-copy strong,
@@ -1744,40 +1792,48 @@ button {
 }
 
 .training-copy strong {
-  color: #ff6f61;
-  font-size: 12px;
-  line-height: 1.15;
+  display: grid;
+  place-items: center;
+  min-height: 31px;
+  padding: 4px 5px;
+  border: 1px solid rgba(143, 199, 255, 0.32);
+  border-radius: 7px;
+  background: rgba(5, 16, 31, 0.94);
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.05;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
 }
 
 .training-card.basic .training-copy strong {
-  color: #ffd166;
+  color: #fff3b0;
 }
 
 .training-card.passive .training-copy strong {
-  color: #8fc7ff;
+  color: #d8ebff;
 }
 
 .training-copy em {
-  margin-top: 4px;
   color: #ffd166;
-  font-size: 10px;
+  font-size: 9px;
   font-style: normal;
   letter-spacing: 0;
 }
 
 .training-copy small {
-  margin-top: 3px;
   color: rgba(248, 249, 250, 0.62);
-  font-size: 8.5px;
+  font-size: 8px;
   font-weight: 900;
 }
 
 .training-card b {
-  justify-self: end;
-  min-width: 42px;
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  min-width: 44px;
   border-radius: 999px;
   background: rgba(128, 255, 219, 0.14);
   color: #80ffdb;
