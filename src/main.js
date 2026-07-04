@@ -1,5 +1,8 @@
 ﻿import "./styles.css";
 import { trainingIconData } from "./trainingIconData.js";
+import basicK2IconUrl from "./assets/generated/training-icon-basic-k2.png";
+import basicMedalIconUrl from "./assets/generated/training-icon-basic-medal.png";
+import praiseThumbProjectileUrl from "./assets/generated/praise-thumb-simple.png";
 
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
@@ -497,7 +500,7 @@ const reserveSoldierImage = createGameImage("/assets/heroes/changwoo-reserve-sol
 const subwayPoliceImage = createGameImage("/assets/heroes/subway-police-officer-game.png?v=20260630");
 const fistProjectileImage = createGameImage("/assets/projectiles/byeongu-fist.png?v=20260702");
 const slapProjectileImage = createGameImage("/assets/projectiles/heebin-slap.png?v=20260702");
-const praiseThumbProjectileImage = createGameImage("/assets/projectiles/praise-thumb-simple.png?v=20260704");
+const praiseThumbProjectileImage = createGameImage(praiseThumbProjectileUrl);
 
 const monsterImages = new Map();
 for (const monster of monsterTypes) {
@@ -750,8 +753,12 @@ function getTrainingIconSrc(skill) {
       changwoo: "basic-k2",
     };
     const iconName = basicIconMap[player.heroId] ?? "basic-upgrade";
-    if (iconName === "basic-medal" || iconName === "basic-k2") {
-      return `/assets/ui/training-icon-${iconName}.png`;
+    const generatedBasicIconMap = {
+      "basic-medal": basicMedalIconUrl,
+      "basic-k2": basicK2IconUrl,
+    };
+    if (generatedBasicIconMap[iconName]) {
+      return generatedBasicIconMap[iconName];
     }
     return trainingIconData[iconName] ?? `/assets/ui/training-icon-${iconName}.png`;
   }
