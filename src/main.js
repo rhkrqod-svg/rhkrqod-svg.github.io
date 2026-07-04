@@ -108,6 +108,8 @@ const START_MAGNET_RANGE = 313;
 const START_TMONEY_POINTS = 750;
 const TRAINING_MAX_LEVEL = 5;
 const TRAINING_LEVEL_COSTS = [0, 250, 500, 1000, 2000, 3000];
+const PASSIVE_TRAINING_START_COST = 1000;
+const PASSIVE_TRAINING_COST_MULTIPLIER = 2.5;
 const UPGRADE_SCALING_BONUS = 1.3;
 const CHARACTER_SIZE_SCALE = 0.75;
 const MONSTER_SIZE_SCALE = 0.42;
@@ -742,8 +744,12 @@ function getTrainingSkillLevel(id) {
   }
 }
 
-function getTrainingNextCost(level) {
+function getTrainingNextCost(level, skillOrId = "") {
   const nextLevel = Math.min(TRAINING_MAX_LEVEL, level + 1);
+  const skillId = typeof skillOrId === "string" ? skillOrId : skillOrId?.id;
+  if (passiveUpgradeIds.has(skillId)) {
+    return Math.round(PASSIVE_TRAINING_START_COST * PASSIVE_TRAINING_COST_MULTIPLIER ** Math.max(0, nextLevel - 1));
+  }
   return TRAINING_LEVEL_COSTS[nextLevel] ?? TRAINING_LEVEL_COSTS.at(-1);
 }
 
@@ -834,8 +840,8 @@ function renderTrainingPanel() {
   if (refs.trainingDetail && selected) {
     const display = getUpgradeDisplay(selected);
     const level = getTrainingSkillLevel(selected.id);
-    const nextCost = level >= TRAINING_MAX_LEVEL ? "MAX" : formatScore(getTrainingNextCost(level));
-    const cost = getTrainingNextCost(level);
+    const cost = getTrainingNextCost(level, selected);
+    const nextCost = level >= TRAINING_MAX_LEVEL ? "MAX" : formatScore(cost);
     const isConfirming = game.trainingConfirmSkillId === selected.id && level < TRAINING_MAX_LEVEL && player.tmoney >= cost;
     refs.trainingDetail.innerHTML = `
       <strong>${display.name}</strong>
@@ -858,7 +864,7 @@ function renderTrainingPanel() {
   for (const skill of skills) {
     const display = getUpgradeDisplay(skill);
     const level = getTrainingSkillLevel(skill.id);
-    const cost = getTrainingNextCost(level);
+    const cost = getTrainingNextCost(level, skill);
     const maxed = level >= TRAINING_MAX_LEVEL;
     const affordable = player.tmoney >= cost;
     const button = document.createElement("button");
@@ -894,7 +900,7 @@ function renderTrainingPanel() {
 function buyTrainingSkill(skill) {
   const level = getTrainingSkillLevel(skill.id);
   if (level >= TRAINING_MAX_LEVEL) return;
-  const cost = getTrainingNextCost(level);
+  const cost = getTrainingNextCost(level, skill);
   if (player.tmoney < cost) {
     addPopup("잔액 부족", player.x, player.y - 52, "#ff8fab", 0.7, 16);
     playSound("ui");
