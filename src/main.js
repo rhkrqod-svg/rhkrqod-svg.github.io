@@ -1094,7 +1094,7 @@ let lastFrame = 0;
 let spawnTimer = 0;
 let bossIndex = 0;
 let bossBag = [];
-let nextBossAt = 20;
+let nextBossAt = 30;
 let bossWarningFor = 0;
 let specialStageBossMarks = new Set();
 let specialStageUntil = 0;
@@ -1605,7 +1605,7 @@ function resetGame() {
   stationPolicePets.length = 0;
   bossIndex = 0;
   bossBag = [];
-  nextBossAt = 20;
+  nextBossAt = 30;
   bossWarningFor = 0;
   specialStageBossMarks = new Set();
   specialStageUntil = 0;
