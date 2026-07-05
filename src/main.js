@@ -898,7 +898,7 @@ function renderTrainingPanel() {
     if (isConfirming) {
       const confirm = document.createElement("div");
       confirm.className = "training-confirm training-card-confirm";
-      confirm.innerHTML = `<i aria-hidden="true"></i><p>${formatScore(cost)} T머니 포인트를 사용하여 역무실에서 강화하시겠습니까?</p><div class="training-confirm-actions"><button class="training-confirm-buy" type="button">강화</button><button class="training-confirm-cancel" type="button">취소</button></div>`;
+      confirm.innerHTML = `<i aria-hidden="true"></i><p>${formatScore(cost)} T머니 포인트를 사용하여 강화하시겠습니까?</p><div class="training-confirm-actions"><button class="training-confirm-buy" type="button">강화</button><button class="training-confirm-cancel" type="button">취소</button></div>`;
       confirm.querySelector(".training-confirm-buy")?.addEventListener("click", (event) => {
         event.stopPropagation();
         buyTrainingSkill(skill);
