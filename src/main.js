@@ -555,12 +555,10 @@ const upgradePool = [
   {
     id: "maxhp",
     name: "멘탈 강화",
-    desc: "최대 체력 +20%, 즉시 회복",
+    desc: "최대 체력 +20%",
     category: "passive",
     apply: () => {
-      const previousMaxHp = player.maxHp;
       player.maxHp = Math.min(MAX_PLAYER_HP_LIMIT, player.maxHp * (1 + MAX_HP_PASSIVE_RATIO));
-      player.hp = Math.min(player.maxHp, player.hp + player.maxHp - previousMaxHp);
     },
   },
   {
