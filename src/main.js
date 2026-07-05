@@ -110,9 +110,8 @@ const TRAINING_MAX_LEVEL = 5;
 const WEAPON_STAR_MAX_LEVEL = 5;
 const WEAPON_OVERLEVEL_DAMAGE_MULTIPLIER = 1.25;
 const WEAPON_TRAINING_START_COST = 500;
-const WEAPON_TRAINING_COST_MULTIPLIER = 2.5;
 const PASSIVE_TRAINING_START_COST = 1000;
-const PASSIVE_TRAINING_COST_MULTIPLIER = 2.5;
+const TRAINING_COST_MULTIPLIERS = [2.5, 2, 1.5];
 const UPGRADE_SCALING_BONUS = 1.3;
 const CHARACTER_SIZE_SCALE = 0.75;
 const MONSTER_SIZE_SCALE = 0.42;
@@ -764,12 +763,19 @@ function getTrainingSkillLevel(id) {
 
 function getTrainingNextCost(level, skillOrId = "") {
   const skillId = typeof skillOrId === "string" ? skillOrId : skillOrId?.id;
+  const costForLevel = (startCost, targetLevel) => {
+    let cost = startCost;
+    for (let currentLevel = 2; currentLevel <= targetLevel; currentLevel += 1) {
+      cost *= TRAINING_COST_MULTIPLIERS[Math.min(currentLevel - 2, TRAINING_COST_MULTIPLIERS.length - 1)];
+    }
+    return Math.round(cost);
+  };
   if (passiveUpgradeIds.has(skillId)) {
     const nextLevel = Math.min(TRAINING_MAX_LEVEL, level + 1);
-    return Math.round(PASSIVE_TRAINING_START_COST * PASSIVE_TRAINING_COST_MULTIPLIER ** Math.max(0, nextLevel - 1));
+    return costForLevel(PASSIVE_TRAINING_START_COST, nextLevel);
   }
   const nextLevel = Math.max(1, level + 1);
-  return Math.round(WEAPON_TRAINING_START_COST * WEAPON_TRAINING_COST_MULTIPLIER ** Math.max(0, nextLevel - 1));
+  return costForLevel(WEAPON_TRAINING_START_COST, nextLevel);
 }
 
 function getTrainingStars(level) {
