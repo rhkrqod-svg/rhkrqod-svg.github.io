@@ -1,7 +1,9 @@
 ﻿import "./styles.css";
 import { trainingIconData } from "./trainingIconData.js";
 import basicK2IconUrl from "./assets/generated/training-icon-basic-k2.png";
+import basicFistIconUrl from "./assets/generated/training-icon-basic-fist.png";
 import basicMedalIconUrl from "./assets/generated/training-icon-basic-medal.png";
+import basicSlapIconUrl from "./assets/generated/training-icon-basic-slap.png";
 import praiseThumbProjectileUrl from "./assets/generated/praise-thumb-gpt2.png";
 
 const canvas = document.querySelector("#game");
@@ -797,6 +799,8 @@ function getTrainingIconSrc(skill) {
     };
     const iconName = basicIconMap[player.heroId] ?? "basic-upgrade";
     const generatedBasicIconMap = {
+      "basic-fist": basicFistIconUrl,
+      "basic-slap": basicSlapIconUrl,
       "basic-medal": basicMedalIconUrl,
       "basic-k2": basicK2IconUrl,
     };

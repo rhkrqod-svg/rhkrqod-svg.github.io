@@ -2051,13 +2051,13 @@ button {
 
 .upgrade-icon.basic-fist {
   background:
-    url("/assets/projectiles/byeongu-fist.png?v=20260702") center / 86% auto no-repeat,
+    url("/assets/ui/training-icon-basic-fist-gpt2.png?v=20260705") center / cover no-repeat,
     linear-gradient(145deg, rgba(88, 61, 20, 0.92), rgba(14, 12, 8, 0.94));
 }
 
 .upgrade-icon.basic-slap {
   background:
-    url("/assets/projectiles/heebin-slap.png?v=20260702") center / 62% auto no-repeat,
+    url("/assets/ui/training-icon-basic-slap-gpt2.png?v=20260705") center / cover no-repeat,
     linear-gradient(145deg, rgba(88, 61, 20, 0.92), rgba(14, 12, 8, 0.94));
 }
 
