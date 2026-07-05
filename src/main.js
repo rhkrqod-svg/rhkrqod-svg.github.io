@@ -124,7 +124,7 @@ const FIXED_VIEW_SCALE = 0.5984;
 const NORMAL_SPAWN_SAFE_RADIUS = 560;
 const BOSS_SPAWN_SAFE_RADIUS = 760;
 const PLAYER_RADIUS = 19 * CHARACTER_SIZE_SCALE;
-const FIRST_AID_HEAL_RATIO = 0.5;
+const FIRST_AID_HEAL_RATIO = 1;
 const BASE_REGEN_RATIO = 0;
 const REGEN_UPGRADE_RATIO = 0.015;
 const MAGNET_PASSIVE_RATIO = 0.5;
@@ -5312,6 +5312,7 @@ async function showStartLeaderboard() {
   if (refs.leaderboardOpenButton) refs.leaderboardOpenButton.disabled = true;
   if (refs.rankHint) refs.rankHint.textContent = "랭킹 확인 중";
   renderLeaderboardMessage("서버 랭킹을 불러오는 중", "잠시만 기다려 주세요");
+  await loadLeaderboardSnapshot();
   const loaded = await loadLeaderboard();
   if (!loaded || leaderboardEntries.length <= 0) {
     await loadLeaderboardSnapshot();

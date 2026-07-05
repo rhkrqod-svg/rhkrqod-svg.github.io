@@ -1000,14 +1000,24 @@ button {
   object-fit: cover;
 }
 
-.message.start-screen .title-block span,
-.message.start-screen .title-block h1,
-.message.start-screen .title-block p {
+.message.start-screen .title-block > span,
+.message.start-screen .title-block > h1,
+.message.start-screen .title-block > p {
   position: absolute;
   width: 1px;
   height: 1px;
   overflow: hidden;
   clip: rect(0 0 0 0);
+}
+
+.message.start-screen .leaderboard-panel span,
+.message.start-screen .leaderboard-panel strong,
+.message.start-screen .leaderboard-panel em {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip: auto;
 }
 
 .message.start-screen .title-block #startButton {
