@@ -3236,7 +3236,7 @@ function createPraiseThumb(enemy) {
       y: enemy.y + Math.sin(shotAngle) * 42,
       vx: Math.cos(shotAngle) * 304 * BOSS_BASIC_ATTACK_SPEED_MULTIPLIER,
       vy: Math.sin(shotAngle) * 304 * BOSS_BASIC_ATTACK_SPEED_MULTIPLIER,
-      radius: 62.4,
+      radius: 124.8,
       damage: scaleBossDamage(enemy, 20),
       life: 2.3,
       maxLife: 2.3,
