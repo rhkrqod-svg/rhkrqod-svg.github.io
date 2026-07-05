@@ -244,6 +244,10 @@ button {
 
 .tmoney-balance b {
   min-width: 54px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: #2f363b;
   font-size: 17px;
   line-height: 1;
@@ -2306,6 +2310,7 @@ button {
 
   .tmoney-balance b {
     min-width: 50px;
+    height: 29px;
     font-size: 15px;
   }
 
