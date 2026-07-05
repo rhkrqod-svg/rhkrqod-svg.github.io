@@ -2800,9 +2800,9 @@ function updateEnemies(delta) {
   spawnTimer -= delta;
   const earlyTimeSpawnBoost = minute < 1 ? 0.72 : minute < 2 ? 0.86 : 1;
   const earlyLevelSpawnBoost = player.level <= 5 ? 0.92 : 1;
-  const spawnGap = Math.max(0.62, (0.82 - minute * 0.014) * 1.95 * earlyTimeSpawnBoost * earlyLevelSpawnBoost);
+  const spawnGap = Math.max(0.74, (0.82 - minute * 0.01) * 1.95 * earlyTimeSpawnBoost * earlyLevelSpawnBoost);
   if (spawnTimer <= 0) {
-    const basePack = 1 + Math.floor(minute * 0.26) + (Math.random() < 0.14 + minute * 0.012 ? 1 : 0);
+    const basePack = 1 + Math.floor(minute * 0.21) + (Math.random() < 0.14 + minute * 0.009 ? 1 : 0);
     const levelSpawnMultiplier = 1 + Math.max(0, player.level - 1) * 0.03;
     const scaledPack = basePack * levelSpawnMultiplier;
     const pack = Math.floor(scaledPack) + (Math.random() < scaledPack % 1 ? 1 : 0);
