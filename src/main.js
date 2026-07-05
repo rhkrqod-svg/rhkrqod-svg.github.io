@@ -838,6 +838,10 @@ function getLevelTrainingBonus(level) {
   return bucket * 100;
 }
 
+function getLevelRewardRatio(level = player.level) {
+  return Math.max(0.1, 1 - Math.max(0, level - 1) * 0.1);
+}
+
 function addTmoneyPoints(amount, x = player.x, y = player.y, label = "T머니", showPopup = true) {
   const points = Math.max(0, Math.round(amount || 0));
   if (points <= 0) return;
@@ -3734,7 +3738,7 @@ function killEnemy(enemy) {
   const index = enemies.indexOf(enemy);
   if (index >= 0) enemies.splice(index, 1);
   player.kills += 1;
-  const earnedScore = Math.max(1, Math.round((enemy.score ?? 0) / 10));
+  const earnedScore = Math.max(1, Math.round(((enemy.score ?? 0) / 10) * getLevelRewardRatio()));
   player.score += earnedScore;
   addTmoneyPoints(earnedScore, enemy.x, enemy.y, "T머니", false);
   dropXp(enemy.x, enemy.y, enemy.xp);
