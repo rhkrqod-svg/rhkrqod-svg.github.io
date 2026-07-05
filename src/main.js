@@ -1033,7 +1033,7 @@ function getStrapOrbitRadius() {
 }
 
 function getStrapHandleRadius() {
-  return 13 * 1.44;
+  return 13 * 2.16;
 }
 
 function getStrapCount() {
