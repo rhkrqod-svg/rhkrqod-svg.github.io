@@ -105,7 +105,7 @@ const START_HP = 100;
 const MAX_PLAYER_HP = 200;
 const MAX_PLAYER_HP_LIMIT = 300;
 const START_MAGNET_RANGE = 313;
-const START_TMONEY_POINTS = 750;
+const START_TMONEY_POINTS = 1000;
 const TRAINING_MAX_LEVEL = 5;
 const WEAPON_STAR_MAX_LEVEL = 5;
 const WEAPON_OVERLEVEL_DAMAGE_MULTIPLIER = 1.25;
@@ -867,23 +867,11 @@ function renderTrainingPanel() {
     const cost = getTrainingNextCost(level, selected);
     const maxed = isTrainingMaxed(selected, level);
     const nextCost = maxed ? "MAX" : formatScore(cost);
-    const isConfirming = game.trainingConfirmSkillId === selected.id && !maxed && player.tmoney >= cost;
     refs.trainingDetail.innerHTML = `
       <strong>${display.name}</strong>
       <span>${display.desc}</span>
       <em>${getTrainingStars(level)} / 다음 비용 ${nextCost}</em>
-      ${
-        isConfirming
-          ? `<div class="training-confirm"><i aria-hidden="true"></i><p>${formatScore(cost)} T머니 포인트를 사용하여 역무실에서 강화하시겠습니까?</p><div class="training-confirm-actions"><button id="trainingConfirmBuy" type="button">강화</button><button id="trainingConfirmCancel" type="button">취소</button></div></div>`
-          : ""
-      }
     `;
-    refs.trainingDetail.querySelector("#trainingConfirmBuy")?.addEventListener("click", () => buyTrainingSkill(selected));
-    refs.trainingDetail.querySelector("#trainingConfirmCancel")?.addEventListener("click", () => {
-      game.trainingConfirmSkillId = "";
-      renderTrainingPanel();
-      playSound("ui");
-    });
   }
   refs.trainingList.innerHTML = "";
   for (const skill of skills) {
@@ -892,6 +880,25 @@ function renderTrainingPanel() {
     const cost = getTrainingNextCost(level, skill);
     const maxed = isTrainingMaxed(skill, level);
     const affordable = player.tmoney >= cost;
+    const isConfirming = game.trainingConfirmSkillId === skill.id && !maxed && affordable;
+    const wrapper = document.createElement("div");
+    wrapper.className = `training-card-wrap ${isConfirming ? "confirming" : ""}`;
+    if (isConfirming) {
+      const confirm = document.createElement("div");
+      confirm.className = "training-confirm training-card-confirm";
+      confirm.innerHTML = `<i aria-hidden="true"></i><p>${formatScore(cost)} T머니 포인트를 사용하여 역무실에서 강화하시겠습니까?</p><div class="training-confirm-actions"><button class="training-confirm-buy" type="button">강화</button><button class="training-confirm-cancel" type="button">취소</button></div>`;
+      confirm.querySelector(".training-confirm-buy")?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        buyTrainingSkill(skill);
+      });
+      confirm.querySelector(".training-confirm-cancel")?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        game.trainingConfirmSkillId = "";
+        renderTrainingPanel();
+        playSound("ui");
+      });
+      wrapper.append(confirm);
+    }
     const button = document.createElement("button");
     const type = getUpgradeType(skill);
     button.type = "button";
@@ -918,7 +925,8 @@ function renderTrainingPanel() {
       playSound("ui");
       renderTrainingPanel();
     });
-    refs.trainingList.append(button);
+    wrapper.append(button);
+    refs.trainingList.append(wrapper);
   }
 }
 
