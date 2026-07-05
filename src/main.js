@@ -122,8 +122,8 @@ const NORMAL_SPAWN_SAFE_RADIUS = 560;
 const BOSS_SPAWN_SAFE_RADIUS = 760;
 const PLAYER_RADIUS = 19 * CHARACTER_SIZE_SCALE;
 const FIRST_AID_HEAL_RATIO = 0.5;
-const BASE_REGEN_RATIO = 0.02;
-const REGEN_UPGRADE_RATIO = 0.025;
+const BASE_REGEN_RATIO = 0;
+const REGEN_UPGRADE_RATIO = 0.01;
 const MAGNET_PASSIVE_RATIO = 0.5;
 const MAX_HP_PASSIVE_RATIO = 0.2;
 const DAMAGE_REDUCTION_PASSIVE_RATIO = 0.15;
@@ -642,7 +642,7 @@ const upgradePool = [
   {
     id: "mentalRegen",
     name: "멘탈 회복력",
-    desc: "자동 체력 회복량 +2.5%",
+    desc: "자동 체력 회복량 +1%",
     category: "passive",
     apply: () => {
       player.regenLevel += 1;
@@ -2725,7 +2725,7 @@ function updatePlayer(delta) {
     player.defenseBreakTimer = Math.max(0, player.defenseBreakTimer - delta);
     if (player.defenseBreakTimer <= 0) player.defenseBreakPower = 0;
   }
-  if (player.hp < player.maxHp) {
+  if (player.regenLevel > 0 && player.hp < player.maxHp) {
     player.regenTimer -= delta;
     if (player.regenTimer <= 0) {
       healPlayer(getRegenHealAmount(), false);
