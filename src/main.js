@@ -155,9 +155,9 @@ const TASER_DOT_DAMAGE_RATIO = 0.4875;
 const SUBWAY_POLICE_DAMAGE_MULTIPLIER = 2.535;
 const SUBWAY_POLICE_SPLASH_RADIUS = 60;
 const COMPANION_BASIC_SPLASH_DAMAGE_RATIO = 0.5;
-const POLICE_CALL_OFFICER_COUNT = 25;
+const POLICE_CALL_OFFICER_COUNT = 20;
 const POLICE_CALL_DURATION = 10;
-const PACEMAKER_CALL_RUNNER_COUNT = 25;
+const PACEMAKER_CALL_RUNNER_COUNT = 20;
 const PACEMAKER_CALL_DURATION = 10;
 const COMRADE_DROP_DESCENT_TIME = 1.8;
 const CHICKEN_BUFF_DURATION = 10;
@@ -3883,7 +3883,7 @@ function usePoliceCall() {
 function useComradeDropCall() {
   announceSkill("예비군 훈련", { color: "#b7ef64", minGap: 500, source: "item" });
   const comrades = [];
-  const count = 25;
+  const count = 20;
   for (let i = 0; i < count; i += 1) {
     const angle = (TAU * i) / count + rand(-0.06, 0.06);
     const ring = i % 3;
