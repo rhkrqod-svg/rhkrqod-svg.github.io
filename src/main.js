@@ -2,7 +2,7 @@
 import { trainingIconData } from "./trainingIconData.js";
 import basicK2IconUrl from "./assets/generated/training-icon-basic-k2.png";
 import basicMedalIconUrl from "./assets/generated/training-icon-basic-medal.png";
-import praiseThumbProjectileUrl from "./assets/generated/praise-thumb-simple.png";
+import praiseThumbProjectileUrl from "./assets/generated/praise-thumb-gpt2.png";
 
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
@@ -3234,12 +3234,12 @@ function createPraiseThumb(enemy) {
     damageZones.push({
       x: enemy.x + Math.cos(shotAngle) * 42,
       y: enemy.y + Math.sin(shotAngle) * 42,
-      vx: Math.cos(shotAngle) * 434 * BOSS_BASIC_ATTACK_SPEED_MULTIPLIER,
-      vy: Math.sin(shotAngle) * 434 * BOSS_BASIC_ATTACK_SPEED_MULTIPLIER,
+      vx: Math.cos(shotAngle) * 304 * BOSS_BASIC_ATTACK_SPEED_MULTIPLIER,
+      vy: Math.sin(shotAngle) * 304 * BOSS_BASIC_ATTACK_SPEED_MULTIPLIER,
       radius: 62.4,
       damage: scaleBossDamage(enemy, 20),
-      life: 1.7,
-      maxLife: 1.7,
+      life: 2.3,
+      maxLife: 2.3,
       color: "#c77dff",
       hostile: true,
       consumeOnHit: true,
