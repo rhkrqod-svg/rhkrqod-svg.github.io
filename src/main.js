@@ -4,6 +4,8 @@ import basicK2IconUrl from "./assets/generated/training-icon-basic-k2.png";
 import basicFistIconUrl from "./assets/generated/training-icon-basic-fist.png";
 import basicMedalIconUrl from "./assets/generated/training-icon-basic-medal.png";
 import basicSlapIconUrl from "./assets/generated/training-icon-basic-slap.png";
+import companionPacemakerIconUrl from "./assets/generated/training-icon-companion-pacemaker.png";
+import companionReserveIconUrl from "./assets/generated/training-icon-companion-reserve.png";
 import praiseThumbProjectileUrl from "./assets/generated/praise-thumb-gpt2.png";
 
 const canvas = document.querySelector("#game");
@@ -181,6 +183,7 @@ const STIMPACK_DRAIN_RATIO = 0.03;
 const STIMPACK_DRAIN_TICK = 1;
 const STIMPACK_VISUAL_SCALE_RATIO = 0.5;
 const BASIC_ATTACK_DAMAGE = 37.5;
+const BYEONGU_BASIC_DAMAGE_MULTIPLIER = 1.2;
 const FIST_BULLET_RADIUS = 30;
 const FIST_EXPLOSION_RADIUS = 88;
 const FIST_EXPLOSION_DAMAGE = 20;
@@ -809,6 +812,10 @@ function getTrainingIconSrc(skill) {
     }
     return trainingIconData[iconName] ?? `/assets/ui/training-icon-${iconName}.png`;
   }
+  if (skill?.id === "subwayPolice") {
+    if (isRunnerCompanionHero()) return companionPacemakerIconUrl;
+    if (isComradeHero()) return companionReserveIconUrl;
+  }
   const uploadedTrainingIconMap = {
     lightning: "lightning",
     boomerang: "card",
@@ -1070,7 +1077,7 @@ function getByeonguBasicAttackDamage() {
   const byeongu = heroTypes.find((hero) => hero.id === "gae-hwanam");
   const overlevelMultiplier = getWeaponOverlevelDamageMultiplier(player.basicWeaponLevel || 1);
   const chickenMultiplier = isChickenBuffActive() ? CHICKEN_BASIC_DAMAGE_MULTIPLIER : 1;
-  return (byeongu?.atk ?? 90) * (byeongu?.bulletDamageMultiplier ?? 1) * overlevelMultiplier * chickenMultiplier;
+  return (byeongu?.atk ?? 90) * (byeongu?.bulletDamageMultiplier ?? 1) * BYEONGU_BASIC_DAMAGE_MULTIPLIER * overlevelMultiplier * chickenMultiplier;
 }
 
 function getBasicProjectileSizeMultiplier() {
@@ -2094,7 +2101,7 @@ function spawnEnemy(type = null, boss = false) {
   const normalScale = boss ? 1 + minute * 0.11 : 1 + Math.min(1.35, minute * 0.08);
   const normalLevelScale = getNormalEnemyLevelScale();
   const levelHpScale = boss ? getBossHpLevelScale() : getNormalEnemyHpLevelScale();
-  const hpScale = normalScale * levelHpScale * ENEMY_HP_GLOBAL_MULTIPLIER * (boss ? 1 : 1.15);
+  const hpScale = normalScale * levelHpScale * ENEMY_HP_GLOBAL_MULTIPLIER * (boss ? 1 : 1.265);
   const attackScale = boss ? getBossAttackLevelScale() : normalLevelScale;
   const enemy = {
     ...chosen,
@@ -3240,7 +3247,7 @@ function createPraiseThumb(enemy) {
       y: enemy.y + Math.sin(shotAngle) * 42,
       vx: Math.cos(shotAngle) * 304 * BOSS_BASIC_ATTACK_SPEED_MULTIPLIER,
       vy: Math.sin(shotAngle) * 304 * BOSS_BASIC_ATTACK_SPEED_MULTIPLIER,
-      radius: 124.8,
+      radius: 87.36,
       damage: scaleBossDamage(enemy, 20),
       life: 2.3,
       maxLife: 2.3,
