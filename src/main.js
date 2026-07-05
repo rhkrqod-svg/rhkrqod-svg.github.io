@@ -167,6 +167,8 @@ const CHICKEN_COLLISION_RADIUS_MULTIPLIER = 2.25;
 const CHICKEN_HIT_COOLDOWN = 0.5;
 const CHICKEN_KNOCKBACK = 264;
 const CHICKEN_RELEASE_INVULN = 1;
+const CHICKEN_BASIC_DAMAGE_MULTIPLIER = 3;
+const CHICKEN_BASIC_SIZE_MULTIPLIER = 3;
 const TANK_CANNON_COOLDOWN = 1.5;
 const TANK_CANNON_RADIUS = 112;
 const TANK_CANNON_BOSS_STUN = 0.5;
@@ -1047,7 +1049,20 @@ function getBasicBulletStyle() {
 
 function getPlayerBasicAttackDamage() {
   const baseDamage = player.damage * (player.bulletDamageMultiplier || 1);
-  return isStimpackActive() ? baseDamage * STIMPACK_BASIC_DAMAGE_MULTIPLIER : baseDamage;
+  const chickenMultiplier = isChickenBuffActive() ? CHICKEN_BASIC_DAMAGE_MULTIPLIER : 1;
+  const stimMultiplier = isStimpackActive() ? STIMPACK_BASIC_DAMAGE_MULTIPLIER : 1;
+  return baseDamage * chickenMultiplier * stimMultiplier;
+}
+
+function getByeonguBasicAttackDamage() {
+  const byeongu = heroTypes.find((hero) => hero.id === "gae-hwanam");
+  const overlevelMultiplier = getWeaponOverlevelDamageMultiplier(player.basicWeaponLevel || 1);
+  const chickenMultiplier = isChickenBuffActive() ? CHICKEN_BASIC_DAMAGE_MULTIPLIER : 1;
+  return (byeongu?.atk ?? 90) * (byeongu?.bulletDamageMultiplier ?? 1) * overlevelMultiplier * chickenMultiplier;
+}
+
+function getBasicProjectileSizeMultiplier() {
+  return isChickenBuffActive() ? CHICKEN_BASIC_SIZE_MULTIPLIER : 1;
 }
 
 function getUpgradeType(choice) {
@@ -2256,6 +2271,7 @@ function fireBulletVolley(source, target, count, {
   radius = 10,
   color = "#fff2a8",
   style = "default",
+  splashDamage = FIST_EXPLOSION_DAMAGE,
 } = {}) {
   if (!target) return;
   const safeCount = Math.max(1, count);
@@ -2274,6 +2290,7 @@ function fireBulletVolley(source, target, count, {
       hitEnemies: new Set(),
       color,
       style,
+      splashDamage,
       bounces: 0,
       bounceLimit: style === "slap" ? SLAP_BOUNCE_LIMIT : 0,
     });
@@ -2282,7 +2299,7 @@ function fireBulletVolley(source, target, count, {
 
 function explodeFistBullet(bullet) {
   const explosionRadius = bullet.splashRadius ?? FIST_EXPLOSION_RADIUS;
-  const splashDamage = FIST_EXPLOSION_DAMAGE;
+  const splashDamage = bullet.splashDamage ?? FIST_EXPLOSION_DAMAGE;
   damageZones.push({
     x: bullet.x,
     y: bullet.y,
@@ -2312,10 +2329,12 @@ function fireBullets() {
   const target = findPriorityEnemyFrom(player, 680);
   if (!target) return;
   const bulletStyle = getBasicBulletStyle();
+  const projectileSizeMultiplier = getBasicProjectileSizeMultiplier();
   fireBulletVolley(player, target, player.shots, {
     damage: getPlayerBasicAttackDamage(),
     style: bulletStyle,
-    radius: bulletStyle === "fist" ? FIST_BULLET_RADIUS : bulletStyle === "slap" ? SLAP_BULLET_RADIUS : 10,
+    radius: (bulletStyle === "fist" ? FIST_BULLET_RADIUS : bulletStyle === "slap" ? SLAP_BULLET_RADIUS : 10) * projectileSizeMultiplier,
+    splashDamage: FIST_EXPLOSION_DAMAGE * (isChickenBuffActive() ? CHICKEN_BASIC_DAMAGE_MULTIPLIER : 1),
     color: bulletStyle === "fist"
       ? "#ffb703"
       : bulletStyle === "slap"
@@ -2639,27 +2658,34 @@ function spawnCustomerMissiles() {
 }
 
 function getTankCannonDamage() {
-  return 1200;
+  return getByeonguBasicAttackDamage();
 }
 
 function fireTankCannon() {
   if (!isTankRadioHero() || !isChickenBuffActive()) return;
   const target = findPriorityEnemyFrom(player, 1500);
   if (!target) return;
-  const angle = angleTo(player, target);
-  tankShells.push({
-    x: player.x + Math.cos(angle) * 44,
-    y: player.y + Math.sin(angle) * 44,
-    vx: Math.cos(angle) * 360,
-    vy: Math.sin(angle) * 360,
-    damage: getTankCannonDamage(),
-    radius: 36,
-    blastRadius: TANK_CANNON_RADIUS,
-    life: 2.8,
-    target,
-    trail: [],
-  });
-  addPopup("K2 포격!", player.x, player.y - 96, "#ffd166", 0.55, 17);
+  const shellCount = Math.max(1, player.shots || 1);
+  const baseAngle = angleTo(player, target);
+  const spread = Math.min(0.82, 0.15 * (shellCount - 1));
+  const damage = getTankCannonDamage();
+  for (let i = 0; i < shellCount; i += 1) {
+    const offset = shellCount === 1 ? 0 : -spread / 2 + (spread * i) / (shellCount - 1);
+    const angle = baseAngle + offset;
+    tankShells.push({
+      x: player.x + Math.cos(angle) * 44,
+      y: player.y + Math.sin(angle) * 44,
+      vx: Math.cos(angle) * 360,
+      vy: Math.sin(angle) * 360,
+      damage,
+      radius: 36,
+      blastRadius: TANK_CANNON_RADIUS,
+      life: 2.8,
+      target,
+      trail: [],
+    });
+  }
+  addPopup(shellCount > 1 ? `K2 포격 x${shellCount}!` : "K2 포격!", player.x, player.y - 96, "#ffd166", 0.55, 17);
   playSound("explosion");
 }
 
