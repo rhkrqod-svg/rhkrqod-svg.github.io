@@ -6310,7 +6310,7 @@ function drawProjectiles() {
         ctx.lineTo(-r * 0.72, r * 0.86);
         ctx.closePath();
         ctx.fill();
-        const imageWidth = r * 4.05;
+        const imageWidth = r * 2.65;
         const imageHeight = imageWidth * (fistProjectileImage.naturalHeight / fistProjectileImage.naturalWidth);
         ctx.drawImage(fistProjectileImage, -imageWidth * 0.5, -imageHeight * 0.5, imageWidth, imageHeight);
         ctx.restore();
