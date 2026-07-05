@@ -126,8 +126,8 @@ const FIRST_AID_HEAL_RATIO = 0.5;
 const BASE_REGEN_RATIO = 0;
 const REGEN_UPGRADE_RATIO = 0.015;
 const MAGNET_PASSIVE_RATIO = 0.5;
-const MAX_HP_PASSIVE_RATIO = 0.2;
-const DAMAGE_REDUCTION_PASSIVE_RATIO = 0.15;
+const MAX_HP_PASSIVE_RATIO = 0.15;
+const DAMAGE_REDUCTION_PASSIVE_RATIO = 0.1;
 const ENEMY_HP_GLOBAL_MULTIPLIER = 0.672;
 const ENEMY_SPEED_GLOBAL_MULTIPLIER = 1.38;
 const ENEMY_DAMAGE_GLOBAL_MULTIPLIER = 2.366;
@@ -557,7 +557,7 @@ const upgradePool = [
   {
     id: "maxhp",
     name: "멘탈 강화",
-    desc: "최대 체력 +20%",
+    desc: "최대 체력 +15%",
     category: "passive",
     apply: () => {
       player.maxHp = Math.min(MAX_PLAYER_HP_LIMIT, player.maxHp * (1 + MAX_HP_PASSIVE_RATIO));
@@ -632,7 +632,7 @@ const upgradePool = [
   {
     id: "nuisanceResist",
     name: "민폐 내성",
-    desc: "받는 피해 15% 감소",
+    desc: "받는 피해 10% 감소",
     category: "passive",
     apply: () => {
       player.damageReduction = Math.min(0.6, player.damageReduction + DAMAGE_REDUCTION_PASSIVE_RATIO);
