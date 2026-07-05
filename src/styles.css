@@ -1537,7 +1537,7 @@ button {
 
 .training-panel.closing {
   pointer-events: none;
-  animation: training-panel-fade 620ms ease both;
+  animation: training-panel-fade 930ms ease both;
 }
 
 .training-panel.closing::after {
@@ -1551,7 +1551,7 @@ button {
   background: radial-gradient(circle, rgba(128, 255, 219, 0.32), rgba(74, 222, 255, 0.13) 38%, transparent 68%);
   transform: translate(calc(-50% + var(--training-suck-x, 0px)), calc(-50% + var(--training-suck-y, 0px))) scale(0.2);
   opacity: 0;
-  animation: training-target-glow 620ms ease both;
+  animation: training-target-glow 930ms ease both;
 }
 
 .training-shell {
@@ -1570,7 +1570,7 @@ button {
 
 .training-panel.closing .training-shell {
   transform-origin: center center;
-  animation: training-suck-to-button 620ms cubic-bezier(0.22, 0.86, 0.18, 1) both;
+  animation: training-suck-to-button 930ms cubic-bezier(0.22, 0.86, 0.18, 1) both;
 }
 
 @keyframes training-suck-to-button {

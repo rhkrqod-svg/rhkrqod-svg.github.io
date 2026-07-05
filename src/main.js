@@ -1006,7 +1006,7 @@ function closeTrainingPanel() {
       game.paused = false;
     }
     updateHud();
-  }, 620);
+  }, 930);
   playSound("ui");
 }
 
