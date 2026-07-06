@@ -2207,7 +2207,7 @@ function spawnBoss() {
 }
 
 const uiTextAssets = {
-  "보스출현": "/assets/ui/text-gpt2-style/boss-appear.png",
+  "보스출현": "/assets/ui/text-gpt2-style/boss-appear-gpt2.png",
   "보스퇴치 완료": "/assets/ui/text-gpt2-style/boss-clear.png",
   "칭찬남": "/assets/ui/text-gpt2-style/boss-praise.png",
   "공항도둑": "/assets/ui/text-gpt2-style/boss-airport.png",
