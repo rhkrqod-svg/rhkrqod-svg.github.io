@@ -6365,39 +6365,14 @@ function drawProjectiles() {
     if (bullet.style === "fist") {
       const r = bullet.radius;
       if (canDrawGameImage(fistProjectileImage)) {
-        ctx.shadowColor = "#ffb703";
-        ctx.shadowBlur = 18;
-        const trail = ctx.createLinearGradient(-r * 4.2, 0, -r * 0.8, 0);
-        trail.addColorStop(0, "rgba(255, 107, 53, 0)");
-        trail.addColorStop(0.52, "rgba(255, 107, 53, 0.26)");
-        trail.addColorStop(1, "rgba(255, 209, 102, 0.62)");
-        ctx.fillStyle = trail;
-        ctx.beginPath();
-        ctx.moveTo(-r * 4.4, 0);
-        ctx.lineTo(-r * 0.72, -r * 0.86);
-        ctx.lineTo(-r * 0.72, r * 0.86);
-        ctx.closePath();
-        ctx.fill();
+        ctx.shadowBlur = 0;
         const imageWidth = r * 2.65;
         const imageHeight = imageWidth * (fistProjectileImage.naturalHeight / fistProjectileImage.naturalWidth);
         ctx.drawImage(fistProjectileImage, -imageWidth * 0.5, -imageHeight * 0.5, imageWidth, imageHeight);
         ctx.restore();
         continue;
       }
-      ctx.shadowColor = "#ffb703";
-      ctx.shadowBlur = 18;
-
-      const trail = ctx.createLinearGradient(-r * 4.2, 0, -r * 0.8, 0);
-      trail.addColorStop(0, "rgba(255, 107, 53, 0)");
-      trail.addColorStop(0.52, "rgba(255, 107, 53, 0.26)");
-      trail.addColorStop(1, "rgba(255, 209, 102, 0.62)");
-      ctx.fillStyle = trail;
-      ctx.beginPath();
-      ctx.moveTo(-r * 4.4, 0);
-      ctx.lineTo(-r * 0.72, -r * 0.86);
-      ctx.lineTo(-r * 0.72, r * 0.86);
-      ctx.closePath();
-      ctx.fill();
+      ctx.shadowBlur = 0;
 
       ctx.fillStyle = "#273142";
       ctx.strokeStyle = "#0f172a";
