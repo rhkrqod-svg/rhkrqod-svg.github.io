@@ -2200,6 +2200,26 @@ function spawnBoss() {
   updateBgm();
 }
 
+const uiTextAssets = {
+  "보스출현": "/assets/ui/text-gpt2-style/boss-appear.png",
+  "보스퇴치 완료": "/assets/ui/text-gpt2-style/boss-clear.png",
+  "칭찬남": "/assets/ui/text-gpt2-style/boss-praise.png",
+  "공항도둑": "/assets/ui/text-gpt2-style/boss-airport.png",
+  "자르반 84세": "/assets/ui/text-gpt2-style/boss-jarvan.png",
+  "풍선껌녀": "/assets/ui/text-gpt2-style/boss-bubblegum.png",
+  "단소살인마": "/assets/ui/text-gpt2-style/boss-danso.png",
+};
+
+function getUiTextImage(label) {
+  return uiTextAssets[label] || "";
+}
+
+function makeUiTextImage(label, className = "") {
+  const src = getUiTextImage(label);
+  if (!src) return `<strong>${escapeHtml(label)}</strong>`;
+  return `<img class="ui-text-image ${className}" src="${src}" alt="${escapeHtml(label)}" />`;
+}
+
 function updateBossSchedule() {
   if (enemies.some((enemy) => enemy.boss)) return;
 
@@ -2222,15 +2242,16 @@ function updateBossSchedule() {
   }
 }
 
-function showBossBanner(name, { boss = false } = {}) {
+function showBossBanner(name, { boss = false, clear = false } = {}) {
   window.clearTimeout(bossBannerTimer);
   window.clearTimeout(bossBannerNameTimer);
   const bossNameDelay = 825;
   const bossNameDuration = 2700;
   refs.bossBanner.classList.toggle("boss-alert", boss);
+  refs.bossBanner.classList.toggle("boss-clear", clear);
   refs.bossBanner.classList.remove("name-phase");
   refs.bossBanner.classList.remove("boss-name-only");
-  refs.bossBanner.innerHTML = boss ? "<strong>보스출현</strong>" : `<strong>${name}</strong>`;
+  refs.bossBanner.innerHTML = boss ? makeUiTextImage("보스출현", "boss-appear-text") : makeUiTextImage(name);
   refs.bossBanner.classList.add("active");
   if (boss) speakSystemVoice("보스 출현", 1600);
   if (boss) {
@@ -2238,15 +2259,16 @@ function showBossBanner(name, { boss = false } = {}) {
       refs.bossBanner.classList.remove("boss-alert");
       refs.bossBanner.classList.add("name-phase");
       refs.bossBanner.classList.add("boss-name-only");
-      refs.bossBanner.innerHTML = `<strong>${name}</strong>`;
+      refs.bossBanner.innerHTML = makeUiTextImage(name, "boss-name-text");
     }, bossNameDelay);
   }
   bossBannerTimer = window.setTimeout(() => {
     refs.bossBanner.classList.remove("active");
     refs.bossBanner.classList.remove("boss-alert");
+    refs.bossBanner.classList.remove("boss-clear");
     refs.bossBanner.classList.remove("name-phase");
     refs.bossBanner.classList.remove("boss-name-only");
-  }, boss ? bossNameDelay + bossNameDuration : 2200);
+  }, boss ? bossNameDelay + bossNameDuration : clear ? 2400 : 2200);
 }
 function getMoveVector() {
   let x = input.x;
@@ -3785,7 +3807,7 @@ function killEnemy(enemy) {
   if (enemy.boss) {
     player.bossKills += 1;
     addTmoneyPoints(player.bossKills * 100, enemy.x, enemy.y - 18, "보스 보너스");
-    addPopup("보스퇴치 완료", player.x, player.y - 148, "#ffe066", 2.65, 56);
+    showBossBanner("보스퇴치 완료", { clear: true });
     playSound("bossKill");
     speakSystemVoice("보스 퇴치 완료", 1600);
     dropBossRewardItems(enemy);
