@@ -69,12 +69,13 @@ button {
 
 .tmoney-panel {
   top: max(89px, calc(env(safe-area-inset-top) + 89px));
+  left: 10px;
   right: 10px;
   width: auto;
   min-height: 35px;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 8px;
   padding: 0;
   border: 0;
@@ -168,6 +169,7 @@ button {
 
 .training-button {
   position: relative;
+  order: 2;
   width: 69px;
   height: 43px;
   display: grid;
@@ -243,28 +245,29 @@ button {
 
 .training-hint i {
   position: absolute;
-  top: max(76px, calc(env(safe-area-inset-top) + 76px));
-  right: 66px;
-  width: min(38%, 150px);
+  top: max(90px, calc(env(safe-area-inset-top) + 90px));
+  right: 26px;
+  width: min(31%, 126px);
   aspect-ratio: 1;
   background: url("/assets/ui/training-hint-arrow-cutout.png") center / contain no-repeat;
   filter: drop-shadow(0 0 14px rgba(255, 220, 74, 0.66));
-  transform: rotate(-7deg);
+  transform: rotate(-66deg);
   transform-origin: 78% 18%;
   animation: trainingHintArrow 680ms ease-in-out infinite alternate;
 }
 
 @keyframes trainingHintArrow {
   from {
-    transform: translate(-5px, 5px) rotate(-7deg) scale(0.96);
+    transform: translate(-5px, 5px) rotate(-66deg) scale(0.96);
   }
 
   to {
-    transform: translate(3px, -3px) rotate(-7deg) scale(1.04);
+    transform: translate(3px, -3px) rotate(-66deg) scale(1.04);
   }
 }
 
 .tmoney-balance {
+  order: 1;
   min-width: 0;
   width: 154px;
   min-height: 43px;

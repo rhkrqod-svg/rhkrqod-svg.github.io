@@ -185,6 +185,7 @@ const STIMPACK_DRAIN_TICK = 1;
 const STIMPACK_VISUAL_SCALE_RATIO = 0.5;
 const BASIC_ATTACK_DAMAGE = 37.5;
 const BYEONGU_BASIC_DAMAGE_MULTIPLIER = 1.2;
+const BYEONGU_FIST_DAMAGE_MULTIPLIER = 1.5;
 const FIST_BULLET_RADIUS = 30;
 const FIST_EXPLOSION_RADIUS = 88;
 const FIST_EXPLOSION_DAMAGE = 20;
@@ -1091,9 +1092,14 @@ function getBasicBulletStyle() {
 
 function getPlayerBasicAttackDamage() {
   const baseDamage = player.damage * (player.bulletDamageMultiplier || 1);
+  const heroMultiplier = player.heroId === "gae-hwanam" ? BYEONGU_FIST_DAMAGE_MULTIPLIER : 1;
   const chickenMultiplier = isChickenBuffActive() ? CHICKEN_BASIC_DAMAGE_MULTIPLIER : 1;
   const stimMultiplier = isStimpackActive() ? STIMPACK_BASIC_DAMAGE_MULTIPLIER : 1;
-  return baseDamage * chickenMultiplier * stimMultiplier;
+  return baseDamage * heroMultiplier * chickenMultiplier * stimMultiplier;
+}
+
+function getFistSplashDamage(baseDamage = getPlayerBasicAttackDamage()) {
+  return Math.round(applyPlayerAttack(baseDamage) * 0.8);
 }
 
 function getByeonguBasicAttackDamage() {
@@ -2396,11 +2402,14 @@ function fireBullets() {
   if (!target) return;
   const bulletStyle = getBasicBulletStyle();
   const projectileSizeMultiplier = getBasicProjectileSizeMultiplier();
+  const basicDamage = getPlayerBasicAttackDamage();
   fireBulletVolley(player, target, player.shots, {
-    damage: getPlayerBasicAttackDamage(),
+    damage: basicDamage,
     style: bulletStyle,
     radius: (bulletStyle === "fist" ? FIST_BULLET_RADIUS : bulletStyle === "slap" ? SLAP_BULLET_RADIUS : 10) * projectileSizeMultiplier,
-    splashDamage: FIST_EXPLOSION_DAMAGE * (isChickenBuffActive() ? CHICKEN_BASIC_DAMAGE_MULTIPLIER : 1),
+    splashDamage: bulletStyle === "fist"
+      ? getFistSplashDamage(basicDamage)
+      : FIST_EXPLOSION_DAMAGE * (isChickenBuffActive() ? CHICKEN_BASIC_DAMAGE_MULTIPLIER : 1),
     color: bulletStyle === "fist"
       ? "#ffb703"
       : bulletStyle === "slap"
