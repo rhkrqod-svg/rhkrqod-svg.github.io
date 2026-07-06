@@ -1083,49 +1083,44 @@ button {
   position: absolute;
   left: 50%;
   bottom: max(278px, calc(env(safe-area-inset-bottom) + 34dvh));
-  width: min(310px, 78%);
+  width: min(430px, 92%);
   min-width: 0;
-  min-height: 66px;
-  padding: 10px 28px;
-  border: 2px solid rgba(128, 255, 219, 0.94);
-  border-radius: 10px;
-  background:
-    linear-gradient(180deg, rgba(16, 38, 48, 0.9), rgba(5, 10, 16, 0.82)),
-    rgba(5, 10, 16, 0.82);
+  min-height: 132px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: transparent;
   font-size: 0;
   text-shadow: none;
   transform: translateX(-50%);
-  box-shadow:
-    0 0 18px rgba(128, 255, 219, 0.56),
-    0 0 42px rgba(128, 255, 219, 0.34),
-    inset 0 0 22px rgba(128, 255, 219, 0.2);
-  animation: startButtonBreath 1.28s ease-in-out infinite;
+  box-shadow: none;
+  animation: startButtonBreath 1.14s ease-in-out infinite;
 }
 
 .message.start-screen .title-block #startButton::before {
   content: "";
   position: absolute;
-  inset: 7px 16px;
-  border-radius: 7px;
+  inset: 0;
+  border-radius: 0;
   border: 0;
-  background: url("/assets/ui/text-gpt2-style/touch-start.png") center / contain no-repeat;
-  opacity: 0.95;
+  background: url("/assets/ui/text-gpt2-style/touch-start-gpt2.png") center / contain no-repeat;
+  opacity: 1;
   pointer-events: none;
-  filter: drop-shadow(0 0 12px rgba(128, 255, 219, 0.72));
+  filter:
+    drop-shadow(0 0 12px rgba(80, 235, 255, 0.82))
+    drop-shadow(0 0 32px rgba(80, 235, 255, 0.42));
 }
 
 .message.start-screen .title-block #startButton::after {
   content: "";
   position: absolute;
-  inset: -9px;
-  border-radius: 14px;
-  border: 2px solid rgba(128, 255, 219, 0.44);
-  box-shadow:
-    0 0 22px rgba(128, 255, 219, 0.58),
-    0 0 44px rgba(128, 255, 219, 0.25);
+  inset: 18px 24px;
+  border-radius: 999px;
+  border: 2px solid rgba(128, 255, 219, 0.32);
+  box-shadow: 0 0 34px rgba(80, 235, 255, 0.48);
   pointer-events: none;
-  animation: startPulse 1.28s ease-in-out infinite;
+  animation: startPulse 1.14s ease-in-out infinite;
 }
 
 .message.start-screen .title-block .leaderboard-open-button {
@@ -1158,11 +1153,11 @@ button {
 @keyframes startButtonBreath {
   0%,
   100% {
-    transform: translateX(-50%) scale(0.96);
+    transform: translateX(-50%) scale(0.94);
   }
 
   50% {
-    transform: translateX(-50%) scale(1.05);
+    transform: translateX(-50%) scale(1.08);
   }
 }
 
