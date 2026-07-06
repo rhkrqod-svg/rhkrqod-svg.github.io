@@ -207,23 +207,20 @@ button {
 
 .training-hint {
   position: absolute;
-  z-index: 7;
-  top: max(137px, calc(env(safe-area-inset-top) + 137px));
-  right: 14px;
-  display: grid;
-  justify-items: end;
-  gap: 8px;
+  z-index: 12;
+  inset: 0;
+  display: block;
   pointer-events: none;
   opacity: 0;
-  transform: translateY(-6px);
+  transform: scale(0.98);
   transition:
-    opacity 220ms ease,
-    transform 220ms ease;
+    opacity 260ms ease,
+    transform 260ms ease;
 }
 
 .training-hint.active {
-  opacity: 0.92;
-  transform: translateY(0);
+  opacity: 0.78;
+  transform: scale(1);
 }
 
 .training-hint.hidden {
@@ -231,52 +228,39 @@ button {
 }
 
 .training-hint strong {
-  max-width: min(270px, calc(100vw - 34px));
-  padding: 9px 12px;
-  border: 1px solid rgba(128, 255, 219, 0.45);
-  border-radius: 9px;
-  background: rgba(5, 10, 16, 0.72);
-  color: #e7fff9;
-  box-shadow: 0 0 18px rgba(128, 255, 219, 0.22);
-  font-size: 14px;
-  font-weight: 1000;
-  line-height: 1.15;
-  text-align: center;
-  text-shadow: 0 0 9px rgba(128, 255, 219, 0.38);
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 92%;
+  aspect-ratio: 1900 / 371;
+  background: url("/assets/ui/training-hint-text-exact.png") center / contain no-repeat;
+  filter: drop-shadow(0 0 18px rgba(0, 222, 255, 0.48));
+  text-indent: -9999px;
+  overflow: hidden;
+  transform: translate(-50%, -50%);
   white-space: nowrap;
 }
 
 .training-hint i {
-  width: 54px;
-  height: 34px;
-  margin-right: 58px;
-  border-right: 4px solid rgba(255, 243, 176, 0.94);
-  border-top: 4px solid rgba(255, 243, 176, 0.94);
-  border-radius: 0 10px 0 0;
-  transform: rotate(-21deg);
-  filter: drop-shadow(0 0 8px rgba(255, 243, 176, 0.55));
-  animation: trainingHintArrow 640ms ease-in-out infinite alternate;
-}
-
-.training-hint i::after {
-  content: "";
   position: absolute;
-  right: -8px;
-  top: -9px;
-  width: 13px;
-  height: 13px;
-  border-right: 4px solid rgba(255, 243, 176, 0.94);
-  border-top: 4px solid rgba(255, 243, 176, 0.94);
-  transform: rotate(45deg);
+  top: max(76px, calc(env(safe-area-inset-top) + 76px));
+  right: 66px;
+  width: min(38%, 150px);
+  aspect-ratio: 1;
+  background: url("/assets/ui/training-hint-arrow-cutout.png") center / contain no-repeat;
+  filter: drop-shadow(0 0 14px rgba(255, 220, 74, 0.66));
+  transform: rotate(-7deg);
+  transform-origin: 78% 18%;
+  animation: trainingHintArrow 680ms ease-in-out infinite alternate;
 }
 
 @keyframes trainingHintArrow {
   from {
-    transform: translateY(-2px) rotate(-21deg);
+    transform: translate(-5px, 5px) rotate(-7deg) scale(0.96);
   }
 
   to {
-    transform: translateY(5px) rotate(-21deg);
+    transform: translate(3px, -3px) rotate(-7deg) scale(1.04);
   }
 }
 
