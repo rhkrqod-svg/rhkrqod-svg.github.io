@@ -205,6 +205,81 @@ button {
   transform: translateY(1px);
 }
 
+.training-hint {
+  position: absolute;
+  z-index: 7;
+  top: max(137px, calc(env(safe-area-inset-top) + 137px));
+  right: 14px;
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease;
+}
+
+.training-hint.active {
+  opacity: 0.92;
+  transform: translateY(0);
+}
+
+.training-hint.hidden {
+  display: none;
+}
+
+.training-hint strong {
+  max-width: min(270px, calc(100vw - 34px));
+  padding: 9px 12px;
+  border: 1px solid rgba(128, 255, 219, 0.45);
+  border-radius: 9px;
+  background: rgba(5, 10, 16, 0.72);
+  color: #e7fff9;
+  box-shadow: 0 0 18px rgba(128, 255, 219, 0.22);
+  font-size: 14px;
+  font-weight: 1000;
+  line-height: 1.15;
+  text-align: center;
+  text-shadow: 0 0 9px rgba(128, 255, 219, 0.38);
+  white-space: nowrap;
+}
+
+.training-hint i {
+  width: 54px;
+  height: 34px;
+  margin-right: 58px;
+  border-right: 4px solid rgba(255, 243, 176, 0.94);
+  border-top: 4px solid rgba(255, 243, 176, 0.94);
+  border-radius: 0 10px 0 0;
+  transform: rotate(-21deg);
+  filter: drop-shadow(0 0 8px rgba(255, 243, 176, 0.55));
+  animation: trainingHintArrow 640ms ease-in-out infinite alternate;
+}
+
+.training-hint i::after {
+  content: "";
+  position: absolute;
+  right: -8px;
+  top: -9px;
+  width: 13px;
+  height: 13px;
+  border-right: 4px solid rgba(255, 243, 176, 0.94);
+  border-top: 4px solid rgba(255, 243, 176, 0.94);
+  transform: rotate(45deg);
+}
+
+@keyframes trainingHintArrow {
+  from {
+    transform: translateY(-2px) rotate(-21deg);
+  }
+
+  to {
+    transform: translateY(5px) rotate(-21deg);
+  }
+}
+
 .tmoney-balance {
   min-width: 0;
   width: 154px;

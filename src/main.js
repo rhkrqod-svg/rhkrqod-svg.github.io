@@ -50,6 +50,7 @@ const refs = {
   upgradePauseButton: document.querySelector("#upgradePauseButton"),
   upgradeChoices: document.querySelector("#upgradeChoices"),
   trainingButton: document.querySelector("#trainingButton"),
+  trainingHint: document.querySelector("#trainingHint"),
   trainingPanel: document.querySelector("#trainingPanel"),
   trainingCloseButton: document.querySelector("#trainingCloseButton"),
   trainingWeaponTab: document.querySelector("#trainingWeaponTab"),
@@ -973,6 +974,7 @@ function buyTrainingSkill(skill) {
 
 function openTrainingPanel() {
   if (game.state !== "playing" || game.pendingHeroChoice) return;
+  hideTrainingHint();
   game.trainingTab = game.trainingTab || "weapon";
   game.selectedTrainingSkill = game.selectedTrainingSkill || "multi";
   game.trainingConfirmSkillId = "";
@@ -988,6 +990,27 @@ function openTrainingPanel() {
   renderTrainingPanel();
   updateHud();
   playSound("ui");
+}
+
+function showTrainingHint() {
+  const hint = refs.trainingHint;
+  if (!hint) return;
+  window.clearTimeout(trainingHintTimer);
+  hint.classList.remove("hidden");
+  window.requestAnimationFrame(() => hint.classList.add("active"));
+  trainingHintTimer = window.setTimeout(() => {
+    hideTrainingHint();
+  }, 2000);
+}
+
+function hideTrainingHint() {
+  const hint = refs.trainingHint;
+  window.clearTimeout(trainingHintTimer);
+  if (!hint) return;
+  hint.classList.remove("active");
+  window.setTimeout(() => {
+    if (!hint.classList.contains("active")) hint.classList.add("hidden");
+  }, 220);
 }
 
 function closeTrainingPanel() {
@@ -1113,6 +1136,7 @@ let bestScore = Number(localStorage.getItem(STORAGE_KEY) ?? 0);
 let leaderboardEntries = [];
 let pendingLeaderboardScore = null;
 let skillTooltipTimer = 0;
+let trainingHintTimer = 0;
 let skillAnnouncement = null;
 let leaderboardSubmitting = false;
 let leaderboardServerOnline = false;
@@ -1711,6 +1735,7 @@ function resetGame() {
   refs.heroPanel.classList.remove("hidden");
   refs.upgradePanel.classList.add("hidden");
   refs.trainingPanel?.classList.add("hidden");
+  hideTrainingHint();
   refs.bossBanner.classList.remove("active");
   updateHud();
   renderHeroChoices();
@@ -1770,7 +1795,7 @@ function selectHero(heroId) {
   game.paused = false;
   game.manualPaused = false;
   updateHud();
-  openTrainingPanel();
+  showTrainingHint();
 }
 
 function setupAllyPreview(mode = "pacemaker") {
