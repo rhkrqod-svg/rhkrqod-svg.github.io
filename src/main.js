@@ -1774,7 +1774,7 @@ function renderHeroChoices() {
   }
 }
 
-function selectHero(heroId) {
+function selectHero(heroId, { openTraining = true } = {}) {
   playSound("ui");
   const hero = heroTypes.find((item) => item.id === heroId) ?? heroTypes[0];
   player.heroId = hero.id;
@@ -1801,13 +1801,17 @@ function selectHero(heroId) {
   game.paused = false;
   game.manualPaused = false;
   updateHud();
-  showTrainingHint();
+  if (openTraining) {
+    window.requestAnimationFrame(() => openTrainingPanel());
+  } else {
+    showTrainingHint();
+  }
 }
 
 function setupAllyPreview(mode = "pacemaker") {
   resetGame();
   const heroId = mode === "reserve" ? "changwoo" : mode === "police" ? "gae-hwanam" : "juyeon";
-  selectHero(heroId);
+  selectHero(heroId, { openTraining: false });
   game.paused = false;
   game.manualPaused = false;
   game.pendingStarterChoices = 0;
