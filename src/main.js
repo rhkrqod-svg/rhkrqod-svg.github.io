@@ -339,7 +339,7 @@ const monsterTypes = [
     image: "/assets/monsters/spread-seat-guy.png?v=20260619b",
     color: "#7b2cbf",
     trim: "#c77dff",
-    hp: 192,
+    hp: 230,
     speed: 45,
     damage: 14,
     radius: 62 * 0.364,
@@ -357,7 +357,7 @@ const monsterTypes = [
     image: "/assets/monsters/phone-woman.png?v=20260619b",
     color: "#00a896",
     trim: "#80ffdb",
-    hp: 96,
+    hp: 115,
     speed: 80,
     damage: 8,
     radius: 62 * 0.294,
@@ -375,7 +375,7 @@ const monsterTypes = [
     image: "/assets/monsters/pushy-aunt.png?v=20260619b",
     color: "#f77f00",
     trim: "#ffbe0b",
-    hp: 144,
+    hp: 173,
     speed: 105,
     damage: 10,
     radius: 62 * 0.28,
@@ -393,7 +393,7 @@ const monsterTypes = [
     image: "/assets/monsters/wall-man.png?v=20260619b",
     color: "#1d3557",
     trim: "#48cae4",
-    hp: 264,
+    hp: 317,
     speed: 30,
     damage: 10,
     radius: 62 * 0.42,
@@ -411,7 +411,7 @@ const monsterTypes = [
     image: "/assets/monsters/backpack-spinner.png?v=20260619b",
     color: "#2d6a4f",
     trim: "#95d5b2",
-    hp: 132,
+    hp: 158,
     speed: 90,
     damage: 15,
     radius: 62 * 0.322,
@@ -429,7 +429,7 @@ const monsterTypes = [
     image: "/assets/monsters/speakerphone-man.png?v=20260619b",
     color: "#c9184a",
     trim: "#ff8fab",
-    hp: 168,
+    hp: 202,
     speed: 60,
     damage: 12,
     radius: 62 * 0.294,
@@ -449,7 +449,7 @@ const bossTypes = [
     image: "/assets/bosses/airport-thief-boss.png",
     color: "#704214",
     trim: "#ffca3a",
-    hp: 3276,
+    hp: 3931,
     speed: 58,
     damage: 25,
     radius: 50,
@@ -463,7 +463,7 @@ const bossTypes = [
     image: "/assets/bosses/jarvan-84.png",
     color: "#d4a017",
     trim: "#7b2cbf",
-    hp: 3822,
+    hp: 4586,
     speed: 58,
     damage: 25,
     radius: 60,
@@ -477,7 +477,7 @@ const bossTypes = [
     image: "/assets/bosses/danso-assassin.png",
     color: "#0077b6",
     trim: "#f9c74f",
-    hp: 3367,
+    hp: 4040,
     speed: 58,
     damage: 25,
     radius: 54,
@@ -491,7 +491,7 @@ const bossTypes = [
     image: "/assets/bosses/praise-man.png",
     color: "#6f42c1",
     trim: "#c77dff",
-    hp: 3250,
+    hp: 3900,
     speed: 58,
     damage: 25,
     radius: 54,
@@ -505,7 +505,7 @@ const bossTypes = [
     image: "/assets/bosses/bubblegum-woman.png",
     color: "#b5179e",
     trim: "#ff8fab",
-    hp: 3484,
+    hp: 4181,
     speed: 58,
     damage: 25,
     radius: 58,
@@ -896,7 +896,10 @@ function renderTrainingPanel() {
       <em>${getTrainingStars(level)} / 다음 비용 ${nextCost}</em>
     `;
   }
+  refs.trainingPanel?.querySelector(".training-floating-confirm")?.remove();
   refs.trainingList.innerHTML = "";
+  let confirmingSkill = null;
+  let confirmingCost = 0;
   for (const skill of skills) {
     const display = getUpgradeDisplay(skill);
     const level = getTrainingSkillLevel(skill.id);
@@ -907,20 +910,8 @@ function renderTrainingPanel() {
     const wrapper = document.createElement("div");
     wrapper.className = `training-card-wrap ${isConfirming ? "confirming" : ""}`;
     if (isConfirming) {
-      const confirm = document.createElement("div");
-      confirm.className = "training-confirm training-card-confirm";
-      confirm.innerHTML = `<i aria-hidden="true"></i><p>${formatScore(cost)} TA머니 포인트를<br>사용하여 강화</p><div class="training-confirm-actions"><button class="training-confirm-buy" type="button">강화</button><button class="training-confirm-cancel" type="button">취소</button></div>`;
-      confirm.querySelector(".training-confirm-buy")?.addEventListener("click", (event) => {
-        event.stopPropagation();
-        buyTrainingSkill(skill);
-      });
-      confirm.querySelector(".training-confirm-cancel")?.addEventListener("click", (event) => {
-        event.stopPropagation();
-        game.trainingConfirmSkillId = "";
-        renderTrainingPanel();
-        playSound("ui");
-      });
-      wrapper.append(confirm);
+      confirmingSkill = skill;
+      confirmingCost = cost;
     }
     const button = document.createElement("button");
     const type = getUpgradeType(skill);
@@ -950,6 +941,22 @@ function renderTrainingPanel() {
     });
     wrapper.append(button);
     refs.trainingList.append(wrapper);
+  }
+  if (confirmingSkill && refs.trainingPanel) {
+    const confirm = document.createElement("div");
+    confirm.className = "training-confirm training-floating-confirm";
+    confirm.innerHTML = `<i aria-hidden="true"></i><p>${formatScore(confirmingCost)} T money 포인트를 사용하여 강화</p><div class="training-confirm-actions"><button class="training-confirm-buy" type="button">강화</button><button class="training-confirm-cancel" type="button">취소</button></div>`;
+    confirm.querySelector(".training-confirm-buy")?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      buyTrainingSkill(confirmingSkill);
+    });
+    confirm.querySelector(".training-confirm-cancel")?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      game.trainingConfirmSkillId = "";
+      renderTrainingPanel();
+      playSound("ui");
+    });
+    refs.trainingPanel.append(confirm);
   }
 }
 
@@ -1039,7 +1046,7 @@ function closeTrainingPanel() {
       game.paused = false;
     }
     updateHud();
-  }, 930);
+  }, 620);
   playSound("ui");
 }
 
@@ -2079,8 +2086,7 @@ function getEncircleOffscreenPoint(angle, extraDistance = 120) {
 }
 
 function spawnCommuteProtestStage() {
-  showBossBanner("출근길 시위 시작");
-  addPopup("출근길 시위 시작", player.x, player.y - 96, "#fff3b0", 2.0, 24);
+  showBossBanner("출근길 시위대");
   playSound("boss");
 
   const count = 100;
@@ -2089,7 +2095,7 @@ function spawnCommuteProtestStage() {
   for (let i = 0; i < count; i += 1) {
     const angle = (TAU * i) / count + rand(-0.06, 0.06);
     const point = getEncircleOffscreenPoint(angle, 130 + (i % 5) * 18);
-    const hp = 416 * hpScale;
+    const hp = 499 * hpScale;
     enemies.push({
       id: "commute-protest",
       name: "출근길 시위대",
@@ -2205,14 +2211,14 @@ function spawnBoss() {
   boss.radius = (base.radius + Math.min(14, bossIndex * 2)) * BOSS_SIZE_SCALE;
   bossIndex += 1;
   showBossBanner(base.name, { boss: true });
-  addPopup("보스 등장", player.x, player.y - 90, "#ffe066", 1.8, 28);
   playSound("boss");
   updateBgm();
 }
 
 const uiTextAssets = {
   "보스출현": "/assets/ui/text-gpt2-style/boss-appear-gpt2.png",
-  "보스퇴치 완료": "/assets/ui/text-gpt2-style/boss-clear.png",
+  "보스퇴치": "/assets/ui/text-gpt2-style/boss-clear.png",
+  "출근길 시위대": "/assets/ui/text-gpt2-style/commute-protest.png",
   "칭찬남": "/assets/ui/text-gpt2-style/boss-praise.png",
   "공항도둑": "/assets/ui/text-gpt2-style/boss-airport.png",
   "자르반 84세": "/assets/ui/text-gpt2-style/boss-jarvan.png",
@@ -2255,8 +2261,8 @@ function updateBossSchedule() {
 function showBossBanner(name, { boss = false, clear = false } = {}) {
   window.clearTimeout(bossBannerTimer);
   window.clearTimeout(bossBannerNameTimer);
-  const bossNameDelay = 825;
-  const bossNameDuration = 2700;
+  const bossNameDelay = 1650;
+  const bossNameDuration = 1890;
   refs.bossBanner.classList.toggle("boss-alert", boss);
   refs.bossBanner.classList.toggle("boss-clear", clear);
   refs.bossBanner.classList.remove("name-phase");
@@ -3820,7 +3826,7 @@ function killEnemy(enemy) {
   if (enemy.boss) {
     player.bossKills += 1;
     addTmoneyPoints(player.bossKills * 100, enemy.x, enemy.y - 18, "보스 보너스");
-    showBossBanner("보스퇴치 완료", { clear: true });
+    showBossBanner("보스퇴치", { clear: true });
     playSound("bossKill");
     speakSystemVoice("보스 퇴치 완료", 1600);
     dropBossRewardItems(enemy);
