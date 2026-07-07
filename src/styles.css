@@ -205,24 +205,23 @@ button {
 
 .training-hint i {
   position: absolute;
-  top: max(78px, calc(env(safe-area-inset-top) + 78px));
-  right: 8px;
-  width: min(34%, 138px);
+  top: max(118px, calc(env(safe-area-inset-top) + 118px));
+  right: 86px;
+  width: min(43%, 168px);
   aspect-ratio: 1;
-  background: url("/assets/ui/training-hint-arrow-cutout.png") center / contain no-repeat;
-  filter: drop-shadow(0 0 14px rgba(255, 220, 74, 0.66));
-  transform: rotate(-52deg);
-  transform-origin: 82% 16%;
+  background: url("/assets/ui/training-hint-arrow-cutout.png?v=20260707b") center / contain no-repeat;
+  filter: drop-shadow(0 0 16px rgba(162, 109, 255, 0.7));
+  transform-origin: 82% 18%;
   animation: trainingHintArrow 680ms ease-in-out infinite alternate;
 }
 
 @keyframes trainingHintArrow {
   from {
-    transform: translate(-5px, 5px) rotate(-52deg) scale(0.96);
+    transform: translate(-6px, 6px) scale(0.96);
   }
 
   to {
-    transform: translate(3px, -3px) rotate(-52deg) scale(1.04);
+    transform: translate(3px, -4px) scale(1.04);
   }
 }
 

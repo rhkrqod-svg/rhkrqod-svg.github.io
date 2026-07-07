@@ -987,7 +987,7 @@ function openTrainingPanel() {
   game.selectedTrainingSkill = game.selectedTrainingSkill || "multi";
   game.trainingConfirmSkillId = "";
   if (refs.trainingPanel?.classList.contains("hidden")) {
-    game.trainingWasPaused = game.paused;
+    game.trainingWasPaused = game.trainingIntroActive ? false : game.paused;
   }
   game.paused = true;
   game.manualPaused = true;
@@ -1000,15 +1000,17 @@ function openTrainingPanel() {
   playSound("ui");
 }
 
-function showTrainingHint() {
+function showTrainingHint({ sticky = false } = {}) {
   const hint = refs.trainingHint;
   if (!hint) return;
   window.clearTimeout(trainingHintTimer);
   hint.classList.remove("hidden");
   window.requestAnimationFrame(() => hint.classList.add("active"));
-  trainingHintTimer = window.setTimeout(() => {
-    hideTrainingHint();
-  }, 2000);
+  if (!sticky) {
+    trainingHintTimer = window.setTimeout(() => {
+      hideTrainingHint();
+    }, 2000);
+  }
 }
 
 function hideTrainingHint() {
@@ -1043,12 +1045,14 @@ function closeTrainingPanel() {
     panel.style.removeProperty("--training-suck-y");
     refs.trainingButton?.classList.remove("absorbing");
     game.trainingConfirmSkillId = "";
+    const wasIntro = game.trainingIntroActive;
+    game.trainingIntroActive = false;
     if (!game.trainingWasPaused && game.state === "playing" && !game.pendingHeroChoice) {
       game.manualPaused = false;
       game.paused = false;
     }
     updateHud();
-    showTrainingHint();
+    if (!wasIntro) hideTrainingHint();
   }, 940);
   playSound("ui");
 }
@@ -1269,6 +1273,7 @@ const game = {
   selectedTrainingSkill: "multi",
   trainingConfirmSkillId: "",
   trainingWasPaused: false,
+  trainingIntroActive: false,
 };
 
 function resize() {
@@ -1743,6 +1748,7 @@ function resetGame() {
   game.selectedTrainingSkill = "multi";
   game.trainingConfirmSkillId = "";
   game.trainingWasPaused = false;
+  game.trainingIntroActive = false;
   pendingDansoBoomerangs.length = 0;
   input.pointers.clear();
   refs.message.classList.remove("start-screen");
@@ -1784,7 +1790,7 @@ function renderHeroChoices() {
   }
 }
 
-function selectHero(heroId, { openTraining = true } = {}) {
+function selectHero(heroId, { showTrainingIntro = true } = {}) {
   playSound("ui");
   const hero = heroTypes.find((item) => item.id === heroId) ?? heroTypes[0];
   player.heroId = hero.id;
@@ -1808,20 +1814,21 @@ function selectHero(heroId, { openTraining = true } = {}) {
   refs.heroPanel.classList.add("hidden");
   game.pendingHeroChoice = false;
   game.pendingStarterChoices = 0;
-  game.paused = false;
+  game.paused = showTrainingIntro;
   game.manualPaused = false;
+  game.trainingIntroActive = showTrainingIntro;
   updateHud();
-  if (openTraining) {
-    window.requestAnimationFrame(() => openTrainingPanel());
+  if (showTrainingIntro) {
+    showTrainingHint({ sticky: true });
   } else {
-    showTrainingHint();
+    hideTrainingHint();
   }
 }
 
 function setupAllyPreview(mode = "pacemaker") {
   resetGame();
   const heroId = mode === "reserve" ? "changwoo" : mode === "police" ? "gae-hwanam" : "juyeon";
-  selectHero(heroId, { openTraining: false });
+  selectHero(heroId, { showTrainingIntro: false });
   game.paused = false;
   game.manualPaused = false;
   game.pendingStarterChoices = 0;
