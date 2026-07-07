@@ -195,7 +195,7 @@ button {
   top: 50%;
   width: 92%;
   aspect-ratio: 1900 / 371;
-  background: url("/assets/ui/training-hint-text-exact.png") center / contain no-repeat;
+  background: url("/assets/ui/training-hint-tmoney-buy.png") center / contain no-repeat;
   filter: drop-shadow(0 0 18px rgba(0, 222, 255, 0.48));
   text-indent: -9999px;
   overflow: hidden;
@@ -206,23 +206,23 @@ button {
 .training-hint i {
   position: absolute;
   top: max(90px, calc(env(safe-area-inset-top) + 90px));
-  right: 34px;
+  right: 22px;
   width: min(31%, 126px);
   aspect-ratio: 1;
   background: url("/assets/ui/training-hint-arrow-cutout.png") center / contain no-repeat;
   filter: drop-shadow(0 0 14px rgba(255, 220, 74, 0.66));
-  transform: rotate(-66deg);
+  transform: rotate(-58deg);
   transform-origin: 78% 18%;
   animation: trainingHintArrow 680ms ease-in-out infinite alternate;
 }
 
 @keyframes trainingHintArrow {
   from {
-    transform: translate(-5px, 5px) rotate(-66deg) scale(0.96);
+    transform: translate(-5px, 5px) rotate(-58deg) scale(0.96);
   }
 
   to {
-    transform: translate(3px, -3px) rotate(-66deg) scale(1.04);
+    transform: translate(3px, -3px) rotate(-58deg) scale(1.04);
   }
 }
 
