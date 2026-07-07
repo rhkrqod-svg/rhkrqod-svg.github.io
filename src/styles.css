@@ -195,7 +195,7 @@ button {
   top: 50%;
   width: 92%;
   aspect-ratio: 1600 / 340;
-  background: url("/assets/ui/text-gpt2-style/training-hint-tmoney-buy.png?v=20260707c") center / contain no-repeat;
+  background: url("/assets/ui/text-gpt2-style/training-hint-tmoney-buy-cutout.png?v=20260707e") center / contain no-repeat;
   filter: drop-shadow(0 0 18px rgba(0, 222, 255, 0.48));
   text-indent: -9999px;
   overflow: hidden;
@@ -205,23 +205,23 @@ button {
 
 .training-hint i {
   position: absolute;
-  top: max(118px, calc(env(safe-area-inset-top) + 118px));
-  right: 86px;
-  width: min(43%, 168px);
+  top: max(94px, calc(env(safe-area-inset-top) + 94px));
+  right: 84px;
+  width: min(45%, 176px);
   aspect-ratio: 1;
-  background: url("/assets/ui/training-hint-arrow-cutout.png?v=20260707b") center / contain no-repeat;
+  background: url("/assets/ui/training-hint-arrow-cutout.png?v=20260707d") center / contain no-repeat;
   filter: drop-shadow(0 0 16px rgba(162, 109, 255, 0.7));
-  transform-origin: 82% 18%;
-  animation: trainingHintArrow 680ms ease-in-out infinite alternate;
+  transform-origin: 92% 8%;
+  animation: trainingHintArrow 760ms ease-in-out infinite alternate;
 }
 
 @keyframes trainingHintArrow {
   from {
-    transform: translate(-6px, 6px) scale(0.96);
+    transform: translate(-5px, 5px) scale(0.97);
   }
 
   to {
-    transform: translate(3px, -4px) scale(1.04);
+    transform: translate(2px, -2px) scale(1.03);
   }
 }
 
