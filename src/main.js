@@ -1942,19 +1942,19 @@ function getEnemyLevelBonus() {
 }
 
 function getBossHpLevelScale() {
-  return 1 + getEnemyLevelBonus() * 0.22;
+  return 1 + getEnemyLevelBonus() * 0.2;
 }
 
 function getBossAttackLevelScale() {
-  return 1 + getEnemyLevelBonus() * 0.08;
+  return 1 + getEnemyLevelBonus() * 0.12;
 }
 
 function getNormalEnemyLevelScale() {
-  return 1 + getEnemyLevelBonus() * 0.07;
+  return 1 + getEnemyLevelBonus() * 0.12;
 }
 
 function getNormalEnemyHpLevelScale() {
-  return 1 + getEnemyLevelBonus() * 0.14;
+  return 1 + getEnemyLevelBonus() * 0.2;
 }
 
 function scaleBossDamage(enemy, damage) {
@@ -2209,8 +2209,8 @@ function spawnBoss() {
   const base = drawBossType();
   const boss = spawnEnemy({ ...base, weight: () => 0 }, true);
   const cycle = Math.floor(bossIndex / bossTypes.length);
-  const multiplier = 0.68 + bossIndex * 0.27 + cycle * 0.4;
-  const hpBoost = 1.15;
+  const multiplier = 0.9 + bossIndex * 0.14 + cycle * 0.22;
+  const hpBoost = 1.1;
   const damageMultiplier = 0.82 + bossIndex * 0.06;
   boss.hp *= multiplier * hpBoost;
   boss.maxHp = boss.hp;
