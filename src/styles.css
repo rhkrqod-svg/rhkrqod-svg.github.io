@@ -194,8 +194,8 @@ button {
   left: 50%;
   top: 50%;
   width: 92%;
-  aspect-ratio: 1900 / 371;
-  background: url("/assets/ui/training-hint-tmoney-buy.png") center / contain no-repeat;
+  aspect-ratio: 1600 / 340;
+  background: url("/assets/ui/text-gpt2-style/training-hint-tmoney-buy.png?v=20260707b") center / contain no-repeat;
   filter: drop-shadow(0 0 18px rgba(0, 222, 255, 0.48));
   text-indent: -9999px;
   overflow: hidden;
@@ -205,24 +205,24 @@ button {
 
 .training-hint i {
   position: absolute;
-  top: max(90px, calc(env(safe-area-inset-top) + 90px));
-  right: 22px;
-  width: min(31%, 126px);
+  top: max(78px, calc(env(safe-area-inset-top) + 78px));
+  right: 8px;
+  width: min(34%, 138px);
   aspect-ratio: 1;
   background: url("/assets/ui/training-hint-arrow-cutout.png") center / contain no-repeat;
   filter: drop-shadow(0 0 14px rgba(255, 220, 74, 0.66));
-  transform: rotate(-58deg);
-  transform-origin: 78% 18%;
+  transform: rotate(-52deg);
+  transform-origin: 82% 16%;
   animation: trainingHintArrow 680ms ease-in-out infinite alternate;
 }
 
 @keyframes trainingHintArrow {
   from {
-    transform: translate(-5px, 5px) rotate(-58deg) scale(0.96);
+    transform: translate(-5px, 5px) rotate(-52deg) scale(0.96);
   }
 
   to {
-    transform: translate(3px, -3px) rotate(-58deg) scale(1.04);
+    transform: translate(3px, -3px) rotate(-52deg) scale(1.04);
   }
 }
 
@@ -1860,10 +1860,10 @@ button {
   transform: translate(-50%, -50%);
   border-color: rgba(255, 225, 130, 0.72);
   background:
-    linear-gradient(180deg, rgba(6, 18, 31, 0.88), rgba(5, 8, 14, 0.92)),
+    linear-gradient(180deg, rgba(6, 18, 31, 0.62), rgba(5, 8, 14, 0.72)),
     url("/assets/ui/training-confirm-gpt2.png") center / 122% auto no-repeat;
-  backdrop-filter: blur(5px);
-  box-shadow: 0 22px 58px rgba(0, 0, 0, 0.66), 0 0 34px rgba(255, 209, 102, 0.32), inset 0 0 24px rgba(0, 217, 255, 0.12);
+  backdrop-filter: blur(2px);
+  box-shadow: 0 22px 58px rgba(0, 0, 0, 0.48), 0 0 34px rgba(255, 209, 102, 0.28), inset 0 0 24px rgba(0, 217, 255, 0.1);
   animation: training-floating-confirm-pop 180ms ease-out both;
   pointer-events: auto;
 }

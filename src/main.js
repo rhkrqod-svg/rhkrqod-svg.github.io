@@ -859,7 +859,7 @@ function getLevelRewardRatio(level = player.level) {
   return Math.max(0.1, 1 - Math.max(0, level - 1) * 0.1);
 }
 
-function addTmoneyPoints(amount, x = player.x, y = player.y, label = "T머니", showPopup = true) {
+function addTmoneyPoints(amount, x = player.x, y = player.y, label = "T-money", showPopup = true) {
   const points = Math.max(0, Math.round(amount || 0));
   if (points <= 0) return;
   player.tmoney += points;
@@ -945,7 +945,7 @@ function renderTrainingPanel() {
   if (confirmingSkill && refs.trainingPanel) {
     const confirm = document.createElement("div");
     confirm.className = "training-confirm training-floating-confirm";
-    confirm.innerHTML = `<i aria-hidden="true"></i><p>${formatScore(confirmingCost)} T money 포인트를 사용하여 강화</p><div class="training-confirm-actions"><button class="training-confirm-buy" type="button">강화</button><button class="training-confirm-cancel" type="button">취소</button></div>`;
+    confirm.innerHTML = `<i aria-hidden="true"></i><p>${formatScore(confirmingCost)} T-money 포인트를 사용하여 강화</p><div class="training-confirm-actions"><button class="training-confirm-buy" type="button">강화</button><button class="training-confirm-cancel" type="button">취소</button></div>`;
     confirm.querySelector(".training-confirm-buy")?.addEventListener("click", (event) => {
       event.stopPropagation();
       buyTrainingSkill(confirmingSkill);
@@ -1046,6 +1046,7 @@ function closeTrainingPanel() {
       game.paused = false;
     }
     updateHud();
+    showTrainingHint();
   }, 620);
   playSound("ui");
 }
@@ -3821,7 +3822,7 @@ function killEnemy(enemy) {
   player.kills += 1;
   const earnedScore = Math.max(1, Math.round(((enemy.score ?? 0) / 10) * getLevelRewardRatio()));
   player.score += earnedScore;
-  addTmoneyPoints(earnedScore, enemy.x, enemy.y, "T머니", false);
+  addTmoneyPoints(earnedScore, enemy.x, enemy.y, "T-money", false);
   dropXp(enemy.x, enemy.y, enemy.xp);
   if (enemy.boss) {
     player.bossKills += 1;
