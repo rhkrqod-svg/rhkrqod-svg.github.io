@@ -13,5 +13,5 @@
   <rect x="28" y="22" width="42" height="40" rx="8" fill="#f8f9f6" stroke="#ccd1cc" stroke-width="3"/>
   <path d="M43 31H60C64 31 66 33 66 37C66 40 64 42 60 42H55V58C55 61 52 63 49 63C46 63 44 61 44 58V42H38C35 42 33 40 33 37C33 33 36 31 39 31H43Z" fill="#d74866"/>
   <path d="M54 31H62C65 31 66 33 66 36C66 39 64 41 61 41H55V58C55 61 52 63 49 63C52 60 53 57 53 53V38C53 35 53 33 54 31Z" fill="#e7949d" opacity="0.95"/>
-  <text x="84" y="55" font-family="Arial, Helvetica, sans-serif" font-size="35" font-weight="700" fill="#3b4247" letter-spacing="-1.2">Tmoney</text>
+  <text x="84" y="55" font-family="Arial, Helvetica, sans-serif" font-size="35" font-weight="700" fill="#3b4247" letter-spacing="-1.2">T-money</text>
 </svg>
