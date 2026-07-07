@@ -195,7 +195,7 @@ button {
   top: 50%;
   width: 92%;
   aspect-ratio: 1600 / 340;
-  background: url("/assets/ui/text-gpt2-style/training-hint-tmoney-buy.png?v=20260707b") center / contain no-repeat;
+  background: url("/assets/ui/text-gpt2-style/training-hint-tmoney-buy.png?v=20260707c") center / contain no-repeat;
   filter: drop-shadow(0 0 18px rgba(0, 222, 255, 0.48));
   text-indent: -9999px;
   overflow: hidden;

@@ -2217,14 +2217,14 @@ function spawnBoss() {
 }
 
 const uiTextAssets = {
-  "보스출현": "/assets/ui/text-gpt2-style/boss-appear-gpt2.png",
-  "보스퇴치": "/assets/ui/text-gpt2-style/boss-clear.png",
-  "출근길 시위대": "/assets/ui/text-gpt2-style/commute-protest.png",
-  "칭찬남": "/assets/ui/text-gpt2-style/boss-praise.png",
-  "공항도둑": "/assets/ui/text-gpt2-style/boss-airport.png",
-  "자르반 84세": "/assets/ui/text-gpt2-style/boss-jarvan.png",
-  "풍선껌녀": "/assets/ui/text-gpt2-style/boss-bubblegum.png",
-  "단소살인마": "/assets/ui/text-gpt2-style/boss-danso.png",
+  "보스출현": "/assets/ui/text-gpt2-style/boss-appear-gpt2.png?v=20260707a",
+  "보스퇴치": "/assets/ui/text-gpt2-style/boss-clear.png?v=20260707a",
+  "출근길 시위대": "/assets/ui/text-gpt2-style/commute-protest.png?v=20260707c",
+  "칭찬남": "/assets/ui/text-gpt2-style/boss-praise.png?v=20260707c",
+  "공항도둑": "/assets/ui/text-gpt2-style/boss-airport.png?v=20260707c",
+  "자르반 84세": "/assets/ui/text-gpt2-style/boss-jarvan.png?v=20260707c",
+  "풍선껌녀": "/assets/ui/text-gpt2-style/boss-bubblegum.png?v=20260707c",
+  "단소살인마": "/assets/ui/text-gpt2-style/boss-danso.png?v=20260707c",
 };
 
 function getUiTextImage(label) {
