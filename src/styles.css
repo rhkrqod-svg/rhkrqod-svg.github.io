@@ -285,6 +285,28 @@ button {
   transform: translateY(1px);
 }
 
+.tmoney-balance.absorbing {
+  animation: tmoney-absorb-pulse 940ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes tmoney-absorb-pulse {
+  0%,
+  54% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 7px 16px rgba(0, 0, 0, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.9);
+  }
+
+  78% {
+    transform: translateY(0) scale(1.08);
+    box-shadow: 0 0 24px rgba(74, 222, 255, 0.42), 0 7px 16px rgba(0, 0, 0, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.95);
+  }
+
+  100% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 7px 16px rgba(0, 0, 0, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.9);
+  }
+}
+
 .dodge-stat {
   display: block;
   margin-top: 2px;
@@ -1569,12 +1591,12 @@ button {
   padding: max(62px, env(safe-area-inset-top)) 14px max(58px, env(safe-area-inset-bottom));
   background: rgba(5, 7, 8, 0.22);
   pointer-events: auto;
+  opacity: 1;
 }
 
 .training-panel.closing {
   pointer-events: none;
-  animation: training-panel-fade 620ms ease both;
-  background: rgba(5, 7, 8, 0);
+  animation: training-panel-fade 940ms linear both;
 }
 
 .training-panel.closing::after {
@@ -1597,8 +1619,9 @@ button {
 
 .training-panel.closing .training-shell {
   transform-origin: center center;
-  animation: training-suck-to-button 620ms cubic-bezier(0.22, 0.86, 0.18, 1) both;
+  animation: training-suck-to-button 940ms cubic-bezier(0.16, 0.84, 0.16, 1) both;
   box-shadow: none;
+  backface-visibility: hidden;
   will-change: transform, opacity;
 }
 
@@ -1607,22 +1630,34 @@ button {
     opacity: 1;
     transform: translate(0, 0) scale(1);
   }
-  46% {
-    opacity: 0.96;
-    transform: translate(calc(var(--training-suck-x, 0px) * 0.28), calc(var(--training-suck-y, 0px) * 0.28)) scale(0.78);
+
+  38% {
+    opacity: 0.98;
+    transform: translate(calc(var(--training-suck-x, 0px) * 0.12), calc(var(--training-suck-y, 0px) * 0.12)) scale(0.9);
   }
+
+  72% {
+    opacity: 0.82;
+    transform: translate(calc(var(--training-suck-x, 0px) * 0.62), calc(var(--training-suck-y, 0px) * 0.62)) scale(0.42);
+  }
+
   100% {
     opacity: 0;
-    transform: translate(var(--training-suck-x, 0px), var(--training-suck-y, 0px)) scale(0.08);
+    transform: translate(var(--training-suck-x, 0px), var(--training-suck-y, 0px)) scale(0.06);
   }
 }
 
 @keyframes training-panel-fade {
   0% {
-    background: rgba(5, 7, 8, 0.22);
+    opacity: 1;
   }
+
+  58% {
+    opacity: 1;
+  }
+
   100% {
-    background: rgba(5, 7, 8, 0);
+    opacity: 0;
   }
 }
 

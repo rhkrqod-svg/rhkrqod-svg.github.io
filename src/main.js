@@ -1035,11 +1035,13 @@ function closeTrainingPanel() {
     panel.style.setProperty("--training-suck-y", `${Math.round(dy)}px`);
   }
   panel.classList.add("closing");
+  refs.trainingButton?.classList.add("absorbing");
   window.setTimeout(() => {
     panel.classList.add("hidden");
     panel.classList.remove("closing");
     panel.style.removeProperty("--training-suck-x");
     panel.style.removeProperty("--training-suck-y");
+    refs.trainingButton?.classList.remove("absorbing");
     game.trainingConfirmSkillId = "";
     if (!game.trainingWasPaused && game.state === "playing" && !game.pendingHeroChoice) {
       game.manualPaused = false;
@@ -1047,7 +1049,7 @@ function closeTrainingPanel() {
     }
     updateHud();
     showTrainingHint();
-  }, 620);
+  }, 940);
   playSound("ui");
 }
 
