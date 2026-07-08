@@ -1031,29 +1031,32 @@ function closeTrainingPanel() {
   if (shell && target) {
     const shellRect = shell.getBoundingClientRect();
     const targetRect = target.getBoundingClientRect();
-    const dx = targetRect.left + targetRect.width / 2 - (shellRect.left + shellRect.width / 2);
-    const dy = targetRect.top + targetRect.height / 2 - (shellRect.top + shellRect.height / 2);
-    panel.style.setProperty("--training-suck-x", `${Math.round(dx)}px`);
-    panel.style.setProperty("--training-suck-y", `${Math.round(dy)}px`);
+    const ghost = document.createElement("div");
+    ghost.className = "training-suck-ghost";
+    ghost.style.setProperty("--ghost-left", `${Math.round(shellRect.left)}px`);
+    ghost.style.setProperty("--ghost-top", `${Math.round(shellRect.top)}px`);
+    ghost.style.setProperty("--ghost-width", `${Math.round(shellRect.width)}px`);
+    ghost.style.setProperty("--ghost-height", `${Math.round(shellRect.height)}px`);
+    ghost.style.setProperty("--ghost-dx", `${Math.round(targetRect.left + targetRect.width / 2 - (shellRect.left + shellRect.width / 2))}px`);
+    ghost.style.setProperty("--ghost-dy", `${Math.round(targetRect.top + targetRect.height / 2 - (shellRect.top + shellRect.height / 2))}px`);
+    document.body.append(ghost);
+    window.setTimeout(() => ghost.remove(), 560);
   }
-  panel.classList.add("closing");
+  panel.classList.add("hidden");
+  panel.classList.remove("closing");
+  panel.style.removeProperty("--training-suck-x");
+  panel.style.removeProperty("--training-suck-y");
   refs.trainingButton?.classList.add("absorbing");
-  window.setTimeout(() => {
-    panel.classList.add("hidden");
-    panel.classList.remove("closing");
-    panel.style.removeProperty("--training-suck-x");
-    panel.style.removeProperty("--training-suck-y");
-    refs.trainingButton?.classList.remove("absorbing");
-    game.trainingConfirmSkillId = "";
-    const wasIntro = game.trainingIntroActive;
-    game.trainingIntroActive = false;
-    if (!game.trainingWasPaused && game.state === "playing" && !game.pendingHeroChoice) {
-      game.manualPaused = false;
-      game.paused = false;
-    }
-    updateHud();
-    if (!wasIntro) hideTrainingHint();
-  }, 940);
+  window.setTimeout(() => refs.trainingButton?.classList.remove("absorbing"), 620);
+  game.trainingConfirmSkillId = "";
+  const wasIntro = game.trainingIntroActive;
+  game.trainingIntroActive = false;
+  if (!game.trainingWasPaused && game.state === "playing" && !game.pendingHeroChoice) {
+    game.manualPaused = false;
+    game.paused = false;
+  }
+  updateHud();
+  if (!wasIntro) hideTrainingHint();
   playSound("ui");
 }
 
