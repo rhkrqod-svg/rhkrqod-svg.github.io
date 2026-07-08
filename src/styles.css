@@ -181,7 +181,7 @@ button {
 }
 
 .training-hint.active {
-  opacity: 0.78;
+  opacity: 0.86;
   transform: scale(1);
 }
 
@@ -192,20 +192,24 @@ button {
 .training-hint strong {
   position: absolute;
   left: 50%;
-  top: 50%;
-  width: min(112%, 520px);
+  top: 33.33%;
+  width: min(126%, 600px);
   aspect-ratio: 1600 / 340;
   background: url("/assets/ui/text-gpt2-style/training-hint-tmoney-buy-cutout.png?v=20260707e") center / contain no-repeat;
-  filter: drop-shadow(0 0 18px rgba(0, 222, 255, 0.48));
+  filter:
+    drop-shadow(0 0 20px rgba(0, 222, 255, 0.62))
+    drop-shadow(0 0 36px rgba(80, 235, 255, 0.32));
   text-indent: -9999px;
   overflow: hidden;
   transform: translate(-50%, -50%);
+  transform-origin: center;
+  animation: trainingHintBreath 1.18s ease-in-out infinite;
   white-space: nowrap;
 }
 
 .training-hint i {
   position: absolute;
-  top: max(62px, calc(env(safe-area-inset-top) + 62px));
+  top: max(78px, calc(env(safe-area-inset-top) + 78px));
   right: 70px;
   width: min(42%, 164px);
   aspect-ratio: 1;
@@ -215,6 +219,17 @@ button {
     drop-shadow(0 0 10px rgba(255, 52, 32, 0.22));
   transform-origin: 92% 12%;
   animation: trainingHintArrow 760ms ease-in-out infinite alternate;
+}
+
+@keyframes trainingHintBreath {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+
+  50% {
+    transform: translate(-50%, -50%) scale(1.08);
+  }
 }
 
 @keyframes trainingHintArrow {
