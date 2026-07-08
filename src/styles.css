@@ -1135,7 +1135,7 @@ button {
   content: "";
   position: absolute;
   inset: 0;
-  background: url("/assets/ui/text-gpt2-style/ranking-view.png?v=20260707b") center / contain no-repeat;
+  background: url("/assets/ui/text-gpt2-style/ranking-view.png?v=20260708a") center / contain no-repeat;
   filter: drop-shadow(0 0 7px rgba(255, 243, 176, 0.44));
 }
 
