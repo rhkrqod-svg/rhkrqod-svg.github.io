@@ -1117,22 +1117,22 @@ button {
   min-width: 0;
   min-height: 56px;
   width: min(220px, 58%);
-  padding: 8px 22px;
-  border: 1px solid rgba(255, 243, 176, 0.72);
-  border-radius: 8px;
-  background: rgba(5, 10, 16, 0.72);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: transparent;
   cursor: pointer;
   font-size: 0;
   white-space: nowrap;
   transform: translateX(-50%);
-  box-shadow: 0 0 16px rgba(255, 243, 176, 0.22);
+  box-shadow: none;
 }
 
 .message.start-screen .title-block .leaderboard-open-button::before {
   content: "";
   position: absolute;
-  inset: 3px 6px;
+  inset: 0;
   background: url("/assets/ui/text-gpt2-style/ranking-view.png?v=20260707b") center / contain no-repeat;
   filter: drop-shadow(0 0 7px rgba(255, 243, 176, 0.44));
 }
