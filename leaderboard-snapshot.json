@@ -1,3 +1,11 @@
 {
-  "entries": []
+  "entries": [
+    {
+      "name": "가지맨",
+      "score": 1221,
+      "hero": "병우",
+      "survivedSeconds": 412,
+      "createdAt": "2026-07-08T03:33:52.397Z"
+    }
+  ]
 }
