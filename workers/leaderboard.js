@@ -1,6 +1,9 @@
 const MAX_ENTRIES = 10;
 const MAX_NAME_LENGTH = 12;
 const LEADERBOARD_KEY = "global-top-10";
+const LEADERBOARD_BACKUP_KEY = "global-top-10-backup";
+const LEADERBOARD_LOG_KEY = "global-score-log";
+const MAX_LOG_ENTRIES = 200;
 
 function corsHeaders(request) {
   const origin = request.headers.get("origin") || "*";
@@ -46,27 +49,62 @@ function normalizeEntry(entry) {
   };
 }
 
+function dedupeEntries(entries) {
+  const seen = new Set();
+  const deduped = [];
+  for (const entry of entries.map(normalizeEntry)) {
+    const key = `${entry.name}|${entry.score}|${entry.hero}|${entry.survivedSeconds}|${entry.createdAt}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(entry);
+  }
+  return deduped;
+}
+
 function sortEntries(entries) {
-  return entries
-    .map(normalizeEntry)
-    .sort((a, b) => b.score - a.score || b.survivedSeconds - a.survivedSeconds || a.createdAt.localeCompare(b.createdAt))
+  return dedupeEntries(entries)
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        b.survivedSeconds - a.survivedSeconds ||
+        a.createdAt.localeCompare(b.createdAt),
+    )
     .slice(0, MAX_ENTRIES);
 }
 
-async function readEntries(env) {
-  const raw = await env.LEADERBOARD.get(LEADERBOARD_KEY);
+async function readJsonArray(env, key) {
+  const raw = await env.LEADERBOARD.get(key);
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
-    return sortEntries(Array.isArray(parsed) ? parsed : []);
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
 }
 
-async function writeEntries(env, entries) {
+async function readEntries(env) {
+  const [primary, backup, log] = await Promise.all([
+    readJsonArray(env, LEADERBOARD_KEY),
+    readJsonArray(env, LEADERBOARD_BACKUP_KEY),
+    readJsonArray(env, LEADERBOARD_LOG_KEY),
+  ]);
+  return sortEntries([...primary, ...backup, ...log]);
+}
+
+async function writeEntries(env, entries, newEntry = null) {
   const next = sortEntries(entries);
-  await env.LEADERBOARD.put(LEADERBOARD_KEY, JSON.stringify(next));
+  const currentLog = await readJsonArray(env, LEADERBOARD_LOG_KEY);
+  const log = newEntry
+    ? [newEntry, ...currentLog].slice(0, MAX_LOG_ENTRIES)
+    : currentLog.slice(0, MAX_LOG_ENTRIES);
+
+  await Promise.all([
+    env.LEADERBOARD.put(LEADERBOARD_KEY, JSON.stringify(next)),
+    env.LEADERBOARD.put(LEADERBOARD_BACKUP_KEY, JSON.stringify(next)),
+    env.LEADERBOARD.put(LEADERBOARD_LOG_KEY, JSON.stringify(log)),
+  ]);
+
   return next;
 }
 
@@ -96,8 +134,10 @@ export default {
       } catch {
         return json(request, 400, { error: "invalid_json" });
       }
+
       const current = await readEntries(env);
-      const next = await writeEntries(env, [...current, normalizeEntry({ ...body, createdAt: new Date().toISOString() })]);
+      const newEntry = normalizeEntry({ ...body, createdAt: new Date().toISOString() });
+      const next = await writeEntries(env, [...current, newEntry], newEntry);
       return json(request, 200, { entries: next });
     }
 

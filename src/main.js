@@ -5302,7 +5302,7 @@ function renderLeaderboardMessage(message, detail = "서버 연결을 다시 시
   `;
 }
 
-async function loadLeaderboardSnapshot() {
+async function loadLeaderboardSnapshot({ allowEmpty = false } = {}) {
   try {
     const url = new URL(LEADERBOARD_SNAPSHOT_URL, window.location.href);
     url.searchParams.set("t", String(Date.now()));
@@ -5313,7 +5313,9 @@ async function loadLeaderboardSnapshot() {
     if (!response.ok) throw new Error("leaderboard_snapshot_load_failed");
     const data = await response.json();
     if (!Array.isArray(data.entries)) throw new Error("leaderboard_snapshot_invalid_payload");
-    applyLeaderboard(data.entries);
+    const snapshotEntries = normalizeLeaderboard(data.entries);
+    if (snapshotEntries.length <= 0 && !allowEmpty) return false;
+    applyLeaderboard(snapshotEntries);
     return true;
   } catch {
     return false;
@@ -5323,7 +5325,7 @@ async function loadLeaderboardSnapshot() {
 async function loadLeaderboard() {
   if (!LEADERBOARD_API) {
     leaderboardServerOnline = false;
-    const snapshotReady = await loadLeaderboardSnapshot();
+    const snapshotReady = await loadLeaderboardSnapshot({ allowEmpty: false });
     if (!snapshotReady) renderLeaderboardMessage("서버 랭킹 주소가 없습니다");
     return snapshotReady;
   }
@@ -5343,7 +5345,7 @@ async function loadLeaderboard() {
     return true;
   } catch {
     leaderboardServerOnline = false;
-    const snapshotReady = await loadLeaderboardSnapshot();
+    const snapshotReady = await loadLeaderboardSnapshot({ allowEmpty: false });
     if (!snapshotReady) renderLeaderboardMessage("서버 랭킹을 불러오지 못했습니다", "네트워크 또는 캐시를 확인 중입니다");
     return snapshotReady;
   }
@@ -5391,10 +5393,10 @@ async function showStartLeaderboard() {
   if (refs.leaderboardOpenButton) refs.leaderboardOpenButton.disabled = true;
   if (refs.rankHint) refs.rankHint.textContent = "랭킹 확인 중";
   renderLeaderboardMessage("서버 랭킹을 불러오는 중", "잠시만 기다려 주세요");
-  await loadLeaderboardSnapshot();
+  await loadLeaderboardSnapshot({ allowEmpty: false });
   const loaded = await loadLeaderboard();
   if (!loaded || leaderboardEntries.length <= 0) {
-    await loadLeaderboardSnapshot();
+    await loadLeaderboardSnapshot({ allowEmpty: false });
   }
   if (leaderboardEntries.length <= 0) {
     const localEntries = readLocalLeaderboard();
@@ -5430,7 +5432,8 @@ async function submitLeaderboardEntry(event) {
     });
     if (!response.ok) throw new Error("leaderboard_submit_failed");
     const data = await response.json();
-    leaderboardEntries = normalizeLeaderboard(data.entries);
+    applyLeaderboard(data.entries);
+    saveLocalLeaderboard(leaderboardEntries);
     pendingLeaderboardScore = null;
     refs.rankForm?.classList.add("hidden");
     if (refs.rankHint) refs.rankHint.textContent = "서버 랭킹 등록 완료";
