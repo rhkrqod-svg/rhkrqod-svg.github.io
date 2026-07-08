@@ -193,7 +193,7 @@ button {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 92%;
+  width: min(112%, 520px);
   aspect-ratio: 1600 / 340;
   background: url("/assets/ui/text-gpt2-style/training-hint-tmoney-buy-cutout.png?v=20260707e") center / contain no-repeat;
   filter: drop-shadow(0 0 18px rgba(0, 222, 255, 0.48));
