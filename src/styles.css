@@ -1114,11 +1114,11 @@ button {
 
 .message.start-screen .title-block .leaderboard-open-button {
   position: absolute;
-  left: 50%;
-  bottom: max(216px, calc(env(safe-area-inset-bottom) + 25dvh));
+  top: max(18px, calc(env(safe-area-inset-top) + 14px));
+  right: max(12px, calc(env(safe-area-inset-right) + 12px));
   min-width: 0;
-  min-height: 56px;
-  width: min(220px, 58%);
+  min-height: 64px;
+  width: min(244px, 42%);
   padding: 0;
   border: 0;
   border-radius: 0;
@@ -1127,8 +1127,10 @@ button {
   cursor: pointer;
   font-size: 0;
   white-space: nowrap;
-  transform: translateX(-50%);
+  transform-origin: center;
   box-shadow: none;
+  animation: rankButtonBreath 1.28s ease-in-out infinite;
+  z-index: 4;
 }
 
 .message.start-screen .title-block .leaderboard-open-button::before {
@@ -1136,7 +1138,22 @@ button {
   position: absolute;
   inset: 0;
   background: url("/assets/ui/text-gpt2-style/ranking-view.png?v=20260708a") center / contain no-repeat;
-  filter: drop-shadow(0 0 7px rgba(255, 243, 176, 0.44));
+  filter:
+    drop-shadow(0 0 10px rgba(255, 215, 90, 0.78))
+    drop-shadow(0 0 24px rgba(255, 176, 36, 0.36));
+  pointer-events: none;
+}
+
+.message.start-screen .title-block .leaderboard-open-button::after {
+  content: "";
+  position: absolute;
+  inset: 8px 12px;
+  border: 1px solid rgba(255, 221, 120, 0.38);
+  border-radius: 999px;
+  box-shadow: 0 0 20px rgba(255, 196, 59, 0.36);
+  opacity: 0.78;
+  pointer-events: none;
+  animation: rankButtonGlow 1.28s ease-in-out infinite;
 }
 
 @keyframes startButtonBreath {
@@ -1159,6 +1176,30 @@ button {
 
   50% {
     opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes rankButtonBreath {
+  0%,
+  100% {
+    transform: scale(0.94);
+  }
+
+  50% {
+    transform: scale(1.07);
+  }
+}
+
+@keyframes rankButtonGlow {
+  0%,
+  100% {
+    opacity: 0.32;
+    transform: scale(0.92);
+  }
+
+  50% {
+    opacity: 0.92;
     transform: scale(1.08);
   }
 }
