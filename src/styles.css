@@ -1129,11 +1129,11 @@ button {
 
 .message.start-screen .title-block .leaderboard-open-button {
   position: absolute;
-  top: max(18px, calc(env(safe-area-inset-top) + 14px));
-  right: max(12px, calc(env(safe-area-inset-right) + 12px));
+  left: 50%;
+  bottom: max(220px, calc(env(safe-area-inset-bottom) + 26dvh));
   min-width: 0;
-  min-height: 64px;
-  width: min(244px, 42%);
+  min-height: 45px;
+  width: min(171px, 41%);
   padding: 0;
   border: 0;
   border-radius: 0;
@@ -1198,11 +1198,11 @@ button {
 @keyframes rankButtonBreath {
   0%,
   100% {
-    transform: scale(0.94);
+    transform: translateX(-50%) scale(0.97);
   }
 
   50% {
-    transform: scale(1.07);
+    transform: translateX(-50%) scale(1.03);
   }
 }
 
@@ -1210,12 +1210,12 @@ button {
   0%,
   100% {
     opacity: 0.32;
-    transform: scale(0.92);
+    transform: scale(0.96);
   }
 
   50% {
-    opacity: 0.92;
-    transform: scale(1.08);
+    opacity: 0.74;
+    transform: scale(1.03);
   }
 }
 
