@@ -209,7 +209,7 @@ button {
 
 .training-hint i {
   position: absolute;
-  top: max(78px, calc(env(safe-area-inset-top) + 78px));
+  top: max(68px, calc(env(safe-area-inset-top) + 68px));
   left: 25%;
   width: min(42%, 164px);
   aspect-ratio: 1;
