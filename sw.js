@@ -1,4 +1,4 @@
-const CACHE_NAME = "subway-villain-hunter-v4";
+const CACHE_NAME = "subway-villain-hunter-v5-20260710";
 const CORE_ASSETS = [
   "/",
   "/leaderboard-snapshot.json",
@@ -11,7 +11,9 @@ const CORE_ASSETS = [
 
 function shouldBypassCache(request) {
   const url = new URL(request.url);
+  const isLocalPreview = ["localhost", "127.0.0.1", "::1"].includes(self.location.hostname);
   return (
+    isLocalPreview ||
     url.origin !== self.location.origin ||
     url.pathname.startsWith("/api/") ||
     url.pathname.endsWith("/sw.js")
@@ -31,6 +33,10 @@ self.addEventListener("activate", (event) => {
       .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
       .then(() => self.clients.claim())
   );
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("fetch", (event) => {
