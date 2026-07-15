@@ -1,11 +1,60 @@
 {
   "entries": [
     {
+      "id": "",
+      "name": "가지맨",
+      "score": 4400,
+      "hero": "병우",
+      "survivedSeconds": 1111,
+      "createdAt": "2026-07-10T11:09:17.047Z"
+    },
+    {
+      "id": "",
+      "name": "가지맨",
+      "score": 2799,
+      "hero": "희빈",
+      "survivedSeconds": 868,
+      "createdAt": "2026-07-09T15:36:58.258Z"
+    },
+    {
+      "id": "",
+      "name": "가지맨",
+      "score": 2472,
+      "hero": "병우",
+      "survivedSeconds": 757,
+      "createdAt": "2026-07-12T03:57:37.989Z"
+    },
+    {
+      "id": "",
+      "name": "가지맨",
+      "score": 1921,
+      "hero": "병우",
+      "survivedSeconds": 530,
+      "createdAt": "2026-07-15T07:44:19.604Z"
+    },
+    {
+      "id": "",
       "name": "가지맨",
       "score": 1221,
       "hero": "병우",
       "survivedSeconds": 412,
       "createdAt": "2026-07-08T03:33:52.397Z"
+    },
+    {
+      "id": "",
+      "name": "가지맨",
+      "score": 901,
+      "hero": "주연",
+      "survivedSeconds": 295,
+      "createdAt": "2026-07-14T22:16:07.448Z"
+    },
+    {
+      "id": "",
+      "name": "최현",
+      "score": 41,
+      "hero": "병우",
+      "survivedSeconds": 20,
+      "createdAt": "2026-07-15T07:28:53.005Z"
     }
   ]
 }
