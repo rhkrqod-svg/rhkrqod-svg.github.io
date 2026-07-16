@@ -1,4 +1,4 @@
-const CACHE_NAME = "subway-villain-hunter-v16-20260716";
+const CACHE_NAME = "subway-villain-hunter-v17-20260716";
 const CORE_ASSETS = [
   "/",
   "/leaderboard-snapshot.json",
