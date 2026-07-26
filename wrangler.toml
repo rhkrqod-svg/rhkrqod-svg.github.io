@@ -7,3 +7,11 @@ workers_dev = true
 [[kv_namespaces]]
 binding = "LEADERBOARD"
 id = "64bcf467f399443f901db08cd4874092"
+
+[[durable_objects.bindings]]
+name = "LEADERBOARD_STORE"
+class_name = "LeaderboardStore"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["LeaderboardStore"]

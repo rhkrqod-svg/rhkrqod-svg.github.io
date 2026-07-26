@@ -78,6 +78,7 @@ const refs = {
   stimButton: document.querySelector("#stimButton"),
   stimCount: document.querySelector("#stimCount"),
   pauseButton: document.querySelector("#pauseButton"),
+  speedButton: document.querySelector("#speedButton"),
   moveStick: document.querySelector("#moveStick"),
   moveStickThumb: document.querySelector("#moveStickThumb"),
 };
@@ -97,11 +98,11 @@ const sound = {
 };
 
 const STORAGE_KEY = "villain-commando-best";
-const LOCAL_LEADERBOARD_KEY = "villain-commando-local-leaderboard-v3";
+const PENDING_LEADERBOARD_KEY = "villain-commando-pending-leaderboard-v1";
 const GLOBAL_LEADERBOARD_API = "https://subway-villain-leaderboard.rhkrqod.workers.dev/api/leaderboard";
 const LEADERBOARD_API = (import.meta.env.VITE_LEADERBOARD_API || GLOBAL_LEADERBOARD_API).trim();
-const LEADERBOARD_SNAPSHOT_URL = "/leaderboard-snapshot.json";
 const LEADERBOARD_LIMIT = 10;
+const LEADERBOARD_RETRY_DELAYS = [0, 600, 1500];
 const TAU = Math.PI * 2;
 const WORLD_SIZE = 2800;
 const MAX_RUN_TIME = 3600;
@@ -110,34 +111,61 @@ const START_HP = 100;
 const MAX_PLAYER_HP = 200;
 const MAX_PLAYER_HP_LIMIT = 500;
 const START_MAGNET_RANGE = 313;
-const START_TMONEY_POINTS = 1000;
+const START_TMONEY_POINTS = 3000;
+const BASE_START_XP_REQUIREMENT = 165;
+const XP_REQUIREMENT_GLOBAL_MULTIPLIER = 1.1;
+const EARLY_LEVEL_XP_REQUIREMENT_MULTIPLIER = 1.32;
 const TRAINING_MAX_LEVEL = 5;
 const WEAPON_STAR_MAX_LEVEL = 5;
-const WEAPON_OVERLEVEL_DAMAGE_MULTIPLIER = 1.25;
-const WEAPON_TRAINING_START_COST = 500;
+const WEAPON_STAR_LEVEL_DAMAGE_MULTIPLIER = 1.2;
+const WEAPON_FIVE_STAR_DAMAGE_MULTIPLIER = 1.25;
+const WEAPON_OVERLEVEL_DAMAGE_MULTIPLIER = 1.4;
+const WEAPON_TRAINING_START_COST = 1000;
 const PASSIVE_TRAINING_START_COST = 1000;
-const TRAINING_COST_MULTIPLIERS = [2.5, 2, 1.5];
+const TRAINING_COST_MULTIPLIERS = [3, 2.5, 2, 1.5];
 const UPGRADE_SCALING_BONUS = 1.3;
 const CHARACTER_SIZE_SCALE = 0.75;
 const MONSTER_SIZE_SCALE = 0.42;
 const BOSS_SIZE_SCALE = 0.45;
+const REGULAR_BOSS_SIZE_SCALE = BOSS_SIZE_SCALE * 1.3;
+const MID_BOSS_SIZE_SCALE = BOSS_SIZE_SCALE * 1.2;
+const SPIDERMAN_MID_BOSS_SIZE_MULTIPLIER = 0.8;
+const JARVAN_BOSS_SIZE_MULTIPLIER = 1.2;
+const BOSS_RESPAWN_GAP_SECONDS = 40;
+const FIRST_MID_BOSS_AT_SECONDS = 20;
+const MID_BOSS_SCHEDULE_RATIO = 0.5;
 const FIXED_VIEW_SCALE = 0.5984;
 const NORMAL_SPAWN_SAFE_RADIUS = 560;
 const BOSS_SPAWN_SAFE_RADIUS = 760;
 const PLAYER_RADIUS = 19 * CHARACTER_SIZE_SCALE;
 const FIRST_AID_HEAL_RATIO = 1;
-const BASE_REGEN_RATIO = 0;
+const BOSS_ENERGY_HEAL_RATIO = 0.25;
+const MID_BOSS_ENERGY_HEAL_RATIO = 0.1;
+const BOSS_STARTING_HP_MULTIPLIER = 1.26;
+const BOSS_LEVEL_HP_GROWTH_RATE = 0.2;
+const NORMAL_ENEMY_LEVEL_HP_GROWTH_RATE = 0.12;
+const REGULAR_BOSS_DAMAGE_MULTIPLIER = 0.82;
+const MID_BOSS_DAMAGE_MULTIPLIER = 0.74;
+const BASE_REGEN_RATIO = 0.01;
 const REGEN_UPGRADE_RATIO = 0.015;
 const MAGNET_PASSIVE_RATIO = 0.5;
 const MAX_HP_PASSIVE_RATIO = 0.15;
 const DAMAGE_REDUCTION_PASSIVE_RATIO = 0.1;
-const ENEMY_HP_GLOBAL_MULTIPLIER = 0.672;
+const ENEMY_HP_GLOBAL_MULTIPLIER = 1.13568;
+const ENEMY_STARTING_HP_MULTIPLIER = 0.68;
 const ENEMY_SPEED_GLOBAL_MULTIPLIER = 1.38;
-const ENEMY_DAMAGE_GLOBAL_MULTIPLIER = 1.893;
-const BOSS_SPEED_GLOBAL_MULTIPLIER = 1.15;
+const ENEMY_DAMAGE_GLOBAL_MULTIPLIER = 1.029792;
+const BOSS_SPEED_GLOBAL_MULTIPLIER = 1.15 * 1.3;
+const BOSS_MOVEMENT_SPEED_MULTIPLIER = 0.85;
+const MONSTER_SPAWN_GAP = 1.35;
+const MONSTER_BASE_PACK_SIZE = 1.35;
+const MONSTER_LEVEL_SPAWN_GROWTH_RATE = 0.06;
+const NORMAL_MONSTER_TMONEY_REWARD = 5;
+const TMONEY_GAIN_MULTIPLIER = 0.5;
 const COMMUTE_PROTEST_SPEED_MULTIPLIER = 2.275;
 const COMMUTE_PROTEST_HP_MULTIPLIER = 1.1;
-const ENEMY_XP_REWARD_MULTIPLIER = 1.35;
+const NORMAL_ENEMY_XP_HP_RATIO = 0.1;
+const BOSS_XP_HP_MULTIPLIER = 1.5;
 const XP_ORB_LIFETIME = 18;
 const XP_ORB_FADE_TIME = 5;
 const ITEM_PICKUP_POPUP_LIFE = 1.35;
@@ -151,6 +179,19 @@ const BOSS_BASIC_ATTACK_MIN_COOLDOWN = 2.2;
 const BOSS_BASIC_ATTACK_MAX_COOLDOWN = 3.2;
 const BOSS_BASIC_ATTACK_COOLDOWN_MULTIPLIER = 0.8;
 const BOSS_BASIC_ATTACK_SPEED_MULTIPLIER = 1.2;
+const PRAISE_THUMB_PROJECTILE_RADIUS = 87.36;
+const MID_BOSS_PROJECTILE_SIZE_RATIO = 0.3;
+const MID_BOSS_PROJECTILE_VISUAL_SCALE = 1.63;
+const MID_BOSS_RANGED_ATTACK_FREQUENCY_MULTIPLIER = 1.5;
+const FEATURED_MID_BOSS_ATTACK_FREQUENCY_MULTIPLIER = 1.5;
+const DANCE_JUMP_WARNING_SECONDS = 1.5;
+const SPIDER_JUMP_WARNING_SECONDS = 1.5;
+const JUMP_LANDING_ACTIVE_SECONDS = 0.24;
+const JUMP_LANDING_RADIUS_MULTIPLIER = 1.3;
+const TANK_MAN_CHARGE_WARNING_SECONDS = 1.5;
+const TANK_MAN_CHARGE_DURATION_SECONDS = 0.28;
+const TANK_MAN_CHARGE_PATH_WIDTH = 74;
+const TANK_MAN_CHARGE_MAX_DISTANCE = 820;
 const BOSS_STAB_ATTACK_DURATION_MULTIPLIER = 1 / BOSS_BASIC_ATTACK_SPEED_MULTIPLIER;
 const BOSS_SPECIAL_ATTACK_MIN_COOLDOWN = 6.4;
 const BOSS_SPECIAL_ATTACK_MAX_COOLDOWN = 8.2;
@@ -183,9 +224,11 @@ const STIMPACK_BASIC_DAMAGE_MULTIPLIER = 3;
 const STIMPACK_DRAIN_RATIO = 0.03;
 const STIMPACK_DRAIN_TICK = 1;
 const STIMPACK_VISUAL_SCALE_RATIO = 0.5;
+const NON_BASIC_WEAPON_DAMAGE_MULTIPLIER = 0.8;
+const STRAP_DAMAGE_MULTIPLIER = 2;
 const BASIC_ATTACK_DAMAGE = 37.5;
 const BYEONGU_BASIC_DAMAGE_MULTIPLIER = 1.2;
-const BYEONGU_FIST_DAMAGE_MULTIPLIER = 1.5;
+const BYEONGU_FIST_DAMAGE_MULTIPLIER = 2.25;
 const FIST_BULLET_RADIUS = 30;
 const FIST_EXPLOSION_RADIUS = 132;
 const FIST_EXPLOSION_DAMAGE = 20;
@@ -302,7 +345,7 @@ function isRunnerCompanionHero() {
 function getStationPoliceDamage() {
   const level = Math.max(1, weapons.subwayPolice.level || 1);
   const utilityLevel = getWeaponUtilityLevel(level);
-  return Math.round((29 + Math.max(0, utilityLevel - 1) * 3 * UPGRADE_SCALING_BONUS) * SUBWAY_POLICE_DAMAGE_MULTIPLIER * getWeaponOverlevelDamageMultiplier(level));
+  return scaleNonBasicWeaponDamage((29 + Math.max(0, utilityLevel - 1) * 3 * UPGRADE_SCALING_BONUS) * SUBWAY_POLICE_DAMAGE_MULTIPLIER * getWeaponLevelDamageMultiplier(level));
 }
 
 function getBuffedCompanionDamage() {
@@ -344,7 +387,6 @@ const monsterTypes = [
     damage: 14,
     radius: 62 * 0.364,
     bodySize: 0.65,
-    xp: 15,
     score: 42,
     weight: (minute) => 5 + minute * 0.6,
     note: "좌석을 통째로 점령한 느린 탱커",
@@ -362,7 +404,6 @@ const monsterTypes = [
     damage: 8,
     radius: 62 * 0.294,
     bodySize: 0.42,
-    xp: 9,
     score: 26,
     weight: (minute) => 8 + minute * 0.9,
     note: "통화에 정신 팔린 중속 몬스터",
@@ -380,7 +421,6 @@ const monsterTypes = [
     damage: 10,
     radius: 62 * 0.28,
     bodySize: 0.5,
-    xp: 13,
     score: 38,
     weight: (minute) => 7 + minute * 1.2,
     note: "빠르게 파고드는 돌진형 몬스터",
@@ -390,7 +430,7 @@ const monsterTypes = [
     id: "wall-man",
     name: "철벽남",
     shortName: "철벽남",
-    image: "/assets/monsters/wall-man.png?v=20260619b",
+    image: "/assets/monsters/wall-man-v2.png?v=20260715",
     color: "#1d3557",
     trim: "#48cae4",
     hp: 317,
@@ -398,7 +438,6 @@ const monsterTypes = [
     damage: 10,
     radius: 62 * 0.42,
     bodySize: 0.75,
-    xp: 19,
     score: 55,
     weight: (minute) => 3.5 + minute * 0.55,
     note: "느리지만 단단한 벽 같은 탱커",
@@ -416,17 +455,16 @@ const monsterTypes = [
     damage: 15,
     radius: 62 * 0.322,
     bodySize: 0.58,
-    xp: 14,
     score: 46,
     weight: (minute) => 5.5 + minute * 0.9,
     note: "회전하며 접근하는 고위험 몬스터",
     special: "spiral",
   },
   {
-    id: "speakerphone-man",
-    name: "스피커폰맨",
-    shortName: "스피커",
-    image: "/assets/monsters/speakerphone-man.png?v=20260619b",
+    id: "no-earphone-man",
+    name: "노이어폰맨",
+    shortName: "노이어폰",
+    image: "/assets/monsters/no-earphone-man.png?v=20260715",
     color: "#c9184a",
     trim: "#ff8fab",
     hp: 202,
@@ -434,10 +472,9 @@ const monsterTypes = [
     damage: 12,
     radius: 62 * 0.294,
     bodySize: 0.52,
-    xp: 15,
     score: 44,
     weight: (minute) => 5.5 + minute * 0.75,
-    note: "스피커 파동으로 압박하는 소음형 몬스터",
+    note: "이어폰 없이 영상을 크게 틀어 소음으로 압박하는 몬스터",
     special: "shout",
   },
 ];
@@ -453,7 +490,6 @@ const bossTypes = [
     speed: 58,
     damage: 25,
     radius: 50,
-    xp: 150,
     score: 660,
     special: "boss-airport",
   },
@@ -467,7 +503,6 @@ const bossTypes = [
     speed: 58,
     damage: 25,
     radius: 60,
-    xp: 150,
     score: 660,
     special: "boss-jarvan",
   },
@@ -481,7 +516,6 @@ const bossTypes = [
     speed: 58,
     damage: 25,
     radius: 54,
-    xp: 150,
     score: 660,
     special: "boss-danso",
   },
@@ -495,7 +529,6 @@ const bossTypes = [
     speed: 58,
     damage: 25,
     radius: 54,
-    xp: 150,
     score: 660,
     special: "boss-praise",
   },
@@ -509,14 +542,99 @@ const bossTypes = [
     speed: 58,
     damage: 25,
     radius: 58,
-    xp: 150,
     score: 660,
     special: "boss-gum",
   },
 ];
 
+const REGULAR_BOSS_BASE_HP = bossTypes.reduce((sum, boss) => sum + boss.hp, 0) / bossTypes.length;
+const REGULAR_BOSS_BASE_SPEED = bossTypes.reduce((sum, boss) => sum + boss.speed, 0) / bossTypes.length;
+const MID_BOSS_HP_RATIO = 2 / 3;
+const MID_BOSS_SPEED_RATIO = 1;
+
+const midBossTypes = [
+  {
+    id: "dance-woman-midboss",
+    name: "댄싱녀",
+    image: "/assets/bosses/dance-woman-clean.png?v=20260709",
+    color: "#7b2cbf",
+    trim: "#c77dff",
+    hp: 2450,
+    speed: 74,
+    damage: 21,
+    radius: 48,
+    score: 390,
+    special: "boss-dance",
+  },
+  {
+    id: "spiderman-man-midboss",
+    name: "스파이더맨",
+    image: "/assets/bosses/spiderman-man-clean.png?v=20260709",
+    color: "#457b9d",
+    trim: "#f1faee",
+    hp: 2680,
+    speed: 78,
+    damage: 22,
+    radius: 36.4,
+    score: 410,
+    special: "boss-spider",
+  },
+  {
+    id: "slipper-man-midboss",
+    name: "슬리퍼남",
+    image: "/assets/bosses/slipper-man-midboss-clean.png?v=20260710a",
+    color: "#8a4d62",
+    trim: "#f7b7c8",
+    hp: 2580,
+    speed: 76,
+    damage: 22,
+    radius: 48,
+    score: 400,
+    special: "boss-slipper",
+  },
+  {
+    id: "taegeuk-rider-midboss",
+    name: "전차남",
+    image: "/assets/bosses/taegeuk-rider-midboss-clean.png?v=20260710a",
+    color: "#a6292b",
+    trim: "#fff0d1",
+    hp: 2800,
+    speed: 60,
+    damage: 24,
+    radius: 55,
+    score: 430,
+    special: "boss-rider",
+  },
+  {
+    id: "red-coat-midboss",
+    name: "레드 코트",
+    image: "/assets/bosses/red-coat-midboss-clean.png?v=20260710a",
+    color: "#9b2226",
+    trim: "#ffb4a2",
+    hp: 2600,
+    speed: 76,
+    damage: 22,
+    radius: 48,
+    score: 410,
+    special: "boss-red-coat",
+  },
+  {
+    id: "floral-fashion-midboss",
+    name: "플라워 패션",
+    image: "/assets/bosses/floral-fashion-midboss-clean.png?v=20260710a",
+    color: "#b56576",
+    trim: "#ffcad4",
+    hp: 2520,
+    speed: 78,
+    damage: 22,
+    radius: 46,
+    score: 400,
+    special: "boss-floral-fashion",
+  },
+];
+
 const bossImages = new Map();
-for (const boss of bossTypes) {
+for (const boss of [...bossTypes, ...midBossTypes]) {
   bossImages.set(boss.id, createGameImage(boss.image));
 }
 
@@ -526,6 +644,13 @@ const subwayPoliceImage = createGameImage("/assets/heroes/subway-police-officer-
 const fistProjectileImage = createGameImage("/assets/projectiles/byeongu-fist.png?v=20260702");
 const slapProjectileImage = createGameImage("/assets/projectiles/heebin-slap.png?v=20260702");
 const praiseThumbProjectileImage = createGameImage(praiseThumbProjectileUrl);
+const midBossSlipperProjectileImage = createGameImage("/assets/previews/game-midboss-slipper-v2.webp");
+const midBossRedFedoraProjectileImage = createGameImage("/assets/previews/game-midboss-red-fedora-v2.webp");
+const midBossFloralBagProjectileImage = createGameImage("/assets/previews/game-midboss-floral-bag-v2.webp");
+const danceJumpWarningImage = createGameImage("/assets/effects/dance-jump-warning-gpt-v1.png");
+const spiderJumpWarningImage = createGameImage("/assets/effects/spider-jump-warning-gpt-v1.png");
+const danceJumpImpactImage = createGameImage("/assets/effects/dance-jump-impact-gpt-v1.png");
+const spiderJumpImpactImage = createGameImage("/assets/effects/spider-jump-impact-gpt-v1.png");
 
 const monsterImages = new Map();
 for (const monster of monsterTypes) {
@@ -538,13 +663,17 @@ const upgradePool = [
   {
     id: "multi",
     name: "기본 무기 강화",
-    desc: "5레벨까지 발사 수 +1, 6레벨부터 피해 +25%",
+    desc: "4성까지 발사 수 +1, 5성부터 피해 +25%",
     category: "weapon",
     basic: true,
     apply: () => {
-      player.basicWeaponLevel = (player.basicWeaponLevel || 1) + 1;
-      if (player.basicWeaponLevel <= WEAPON_STAR_MAX_LEVEL && player.shots < 5) {
+      const nextLevel = getBasicWeaponLevel() + 1;
+      player.basicWeaponLevel = nextLevel;
+      if (nextLevel <= 4 && player.shots < 5) {
         player.shots += 1;
+        if (nextLevel >= 2) player.bulletDamageMultiplier *= WEAPON_STAR_LEVEL_DAMAGE_MULTIPLIER;
+      } else if (nextLevel === WEAPON_STAR_MAX_LEVEL) {
+        player.bulletDamageMultiplier *= WEAPON_STAR_LEVEL_DAMAGE_MULTIPLIER * WEAPON_FIVE_STAR_DAMAGE_MULTIPLIER;
       } else {
         player.bulletDamageMultiplier *= WEAPON_OVERLEVEL_DAMAGE_MULTIPLIER;
       }
@@ -731,14 +860,32 @@ function getWeaponUtilityLevel(level = 1) {
   return Math.min(WEAPON_STAR_MAX_LEVEL, Math.max(1, Number(level) || 1));
 }
 
-function getWeaponOverlevelDamageMultiplier(level = 1) {
-  return WEAPON_OVERLEVEL_DAMAGE_MULTIPLIER ** Math.max(0, Math.max(1, Number(level) || 1) - WEAPON_STAR_MAX_LEVEL);
+function getWeaponLevelDamageMultiplier(level = 1) {
+  const safeLevel = Math.max(1, Number(level) || 1);
+  const starLevel = getWeaponUtilityLevel(safeLevel);
+  const starMultiplier = WEAPON_STAR_LEVEL_DAMAGE_MULTIPLIER ** Math.max(0, starLevel - 1);
+  const overlevelMultiplier = WEAPON_OVERLEVEL_DAMAGE_MULTIPLIER ** Math.max(0, safeLevel - WEAPON_STAR_MAX_LEVEL);
+  return starMultiplier * overlevelMultiplier;
+}
+
+function getBasicWeaponLevelDamageMultiplier(level = getBasicWeaponLevel()) {
+  const safeLevel = Math.max(1, Number(level) || 1);
+  const fiveStarMultiplier = safeLevel >= WEAPON_STAR_MAX_LEVEL ? WEAPON_FIVE_STAR_DAMAGE_MULTIPLIER : 1;
+  return getWeaponLevelDamageMultiplier(safeLevel) * fiveStarMultiplier;
+}
+
+function getBasicWeaponLevel() {
+  return Math.max(0, Number(player.basicWeaponLevel) || 0);
+}
+
+function scaleNonBasicWeaponDamage(amount) {
+  return Math.round(amount * NON_BASIC_WEAPON_DAMAGE_MULTIPLIER);
 }
 
 function getTrainingSkillLevel(id) {
   switch (id) {
     case "multi":
-      return Math.max(1, player.basicWeaponLevel || 1);
+      return getBasicWeaponLevel();
     case "lightning":
       return weapons.lightning.level;
     case "boomerang":
@@ -859,8 +1006,14 @@ function getLevelRewardRatio(level = player.level) {
   return Math.max(0.1, 1 - Math.max(0, level - 1) * 0.1);
 }
 
+function getNormalMonsterTmoneyRewardRatio(level = player.level) {
+  return Math.max(0.5, 1 - Math.max(0, level - 1) * 0.05);
+}
+
 function addTmoneyPoints(amount, x = player.x, y = player.y, label = "T-money", showPopup = true) {
-  const points = Math.max(0, Math.round(amount || 0));
+  const scaledPoints = Math.max(0, Number(amount) || 0) * TMONEY_GAIN_MULTIPLIER + (player.tmoneyGainRemainder ?? 0);
+  const points = Math.floor(scaledPoints + 1e-9);
+  player.tmoneyGainRemainder = scaledPoints - points;
   if (points <= 0) return;
   player.tmoney += points;
   if (showPopup) addPopup(`${label} +${formatScore(points)}`, x, y - 38, "#ffd166", 0.8, 15);
@@ -1076,7 +1229,7 @@ function getTearGasRadius() {
 function getTearGasDamage() {
   const level = Math.max(1, weapons.tearGas.level);
   const utilityLevel = getWeaponUtilityLevel(level);
-  return Math.round(scaledLevelValue(9, 6, utilityLevel) * 1.8 * 3 * (player.meleeDamageMultiplier || 1) * getWeaponOverlevelDamageMultiplier(level));
+  return scaleNonBasicWeaponDamage(scaledLevelValue(9, 6, utilityLevel) * 1.8 * 3 * (player.meleeDamageMultiplier || 1) * getWeaponLevelDamageMultiplier(level));
 }
 
 function getStrapOrbitRadius() {
@@ -1121,7 +1274,7 @@ function getFistSplashDamage(baseDamage = getPlayerBasicAttackDamage()) {
 
 function getByeonguBasicAttackDamage() {
   const byeongu = heroTypes.find((hero) => hero.id === "gae-hwanam");
-  const overlevelMultiplier = getWeaponOverlevelDamageMultiplier(player.basicWeaponLevel || 1);
+  const overlevelMultiplier = getBasicWeaponLevelDamageMultiplier(getBasicWeaponLevel());
   const chickenMultiplier = isChickenBuffActive() ? CHICKEN_BASIC_DAMAGE_MULTIPLIER : 1;
   return (byeongu?.atk ?? 90) * (byeongu?.bulletDamageMultiplier ?? 1) * BYEONGU_BASIC_DAMAGE_MULTIPLIER * overlevelMultiplier * chickenMultiplier;
 }
@@ -1151,10 +1304,15 @@ let lastFrame = 0;
 let spawnTimer = 0;
 let bossIndex = 0;
 let bossBag = [];
-let nextBossAt = 30;
+let midBossIndex = 0;
+let midBossBag = [];
+let nextBossAt = BOSS_RESPAWN_GAP_SECONDS;
+let nextMidBossAt = FIRST_MID_BOSS_AT_SECONDS;
+let midBossSpawnMarks = new Set();
 let bossWarningFor = 0;
 let specialStageBossMarks = new Set();
 let specialStageUntil = 0;
+let nextSpecialStageAt = 0;
 let bestScore = Number(localStorage.getItem(STORAGE_KEY) ?? 0);
 let leaderboardEntries = [];
 let pendingLeaderboardScore = null;
@@ -1208,10 +1366,11 @@ const player = {
   speed: 205,
   level: 1,
   xp: 0,
-  nextXp: 90,
+  nextXp: Math.round(BASE_START_XP_REQUIREMENT * XP_REQUIREMENT_GLOBAL_MULTIPLIER * EARLY_LEVEL_XP_REQUIREMENT_MULTIPLIER),
   kills: 0,
   score: 0,
   tmoney: START_TMONEY_POINTS,
+  tmoneyGainRemainder: 0,
   bossKills: 0,
   elapsed: 0,
   damage: BASIC_ATTACK_DAMAGE,
@@ -1220,7 +1379,7 @@ const player = {
   fireRate: 0.35,
   fireCooldown: 0,
   shots: 1,
-  basicWeaponLevel: 1,
+  basicWeaponLevel: 0,
   bulletSpeed: 452,
   magnet: START_MAGNET_RANGE * 1.3,
   damageReduction: 0,
@@ -1277,6 +1436,7 @@ const game = {
   trainingConfirmSkillId: "",
   trainingWasPaused: false,
   trainingIntroActive: false,
+  speedMultiplier: 1,
 };
 
 function resize() {
@@ -1319,8 +1479,16 @@ function bossBasicAttackCooldown() {
   return bossAttackCooldown(BOSS_BASIC_ATTACK_MIN_COOLDOWN, BOSS_BASIC_ATTACK_MAX_COOLDOWN) * BOSS_BASIC_ATTACK_COOLDOWN_MULTIPLIER;
 }
 
+function midBossRangedAttackCooldown() {
+  return bossBasicAttackCooldown() / MID_BOSS_RANGED_ATTACK_FREQUENCY_MULTIPLIER;
+}
+
 function bossSpecialAttackCooldown() {
   return bossAttackCooldown(BOSS_SPECIAL_ATTACK_MIN_COOLDOWN, BOSS_SPECIAL_ATTACK_MAX_COOLDOWN);
+}
+
+function featuredMidBossAttackCooldown(seconds) {
+  return seconds / FEATURED_MID_BOSS_ATTACK_FREQUENCY_MULTIPLIER;
 }
 
 function distance(a, b) {
@@ -1401,7 +1569,7 @@ function fadeMusicTrack(kind, targetVolume, { reset = false } = {}) {
 function updateBgm() {
   const upgradePicking = refs.upgradePanel && !refs.upgradePanel.classList.contains("hidden");
   const canPlay = game.state === "playing" && player.alive && (!game.paused || upgradePicking);
-  const hasBoss = enemies.some((enemy) => enemy.boss);
+  const hasBoss = enemies.some((enemy) => enemy.boss && !enemy.midBoss);
   const shouldPlayBoss = canPlay && hasBoss;
   const shouldPlayNormal = canPlay && !hasBoss;
 
@@ -1664,10 +1832,15 @@ function resetGame() {
   stationPolicePets.length = 0;
   bossIndex = 0;
   bossBag = [];
-  nextBossAt = 30;
+  midBossIndex = 0;
+  midBossBag = [];
+  nextBossAt = BOSS_RESPAWN_GAP_SECONDS;
+  nextMidBossAt = FIRST_MID_BOSS_AT_SECONDS;
+  midBossSpawnMarks = new Set();
   bossWarningFor = 0;
   specialStageBossMarks = new Set();
   specialStageUntil = 0;
+  nextSpecialStageAt = 0;
   spawnTimer = 0;
   pendingLeaderboardScore = null;
   leaderboardSubmitting = false;
@@ -1687,10 +1860,11 @@ function resetGame() {
     speed: 205,
     level: 1,
     xp: 0,
-    nextXp: 90,
+    nextXp: Math.round(BASE_START_XP_REQUIREMENT * XP_REQUIREMENT_GLOBAL_MULTIPLIER * EARLY_LEVEL_XP_REQUIREMENT_MULTIPLIER),
     kills: 0,
     score: 0,
     tmoney: START_TMONEY_POINTS,
+    tmoneyGainRemainder: 0,
     bossKills: 0,
     elapsed: 0,
     damage: BASIC_ATTACK_DAMAGE,
@@ -1699,7 +1873,7 @@ function resetGame() {
     fireRate: 0.35,
     fireCooldown: 0.18,
     shots: 1,
-    basicWeaponLevel: 1,
+    basicWeaponLevel: 0,
     bulletSpeed: 452,
     magnet: START_MAGNET_RANGE * 1.3,
     damageReduction: 0,
@@ -1752,6 +1926,7 @@ function resetGame() {
   game.trainingConfirmSkillId = "";
   game.trainingWasPaused = false;
   game.trainingIntroActive = false;
+  game.speedMultiplier = 1;
   pendingDansoBoomerangs.length = 0;
   input.pointers.clear();
   refs.message.classList.remove("start-screen");
@@ -1877,6 +2052,49 @@ function togglePause() {
   updateHud();
 }
 
+function setupEnergyPreview(healPercent = 25) {
+  resetGame();
+  selectHero("juyeon", { showTrainingIntro: false });
+  game.paused = false;
+  game.manualPaused = false;
+  game.pendingStarterChoices = 0;
+  game.pendingLevelChoices = 0;
+  refs.heroPanel.classList.add("hidden");
+  refs.upgradePanel.classList.add("hidden");
+  refs.message.classList.add("hidden");
+  player.x = WORLD_SIZE / 2;
+  player.y = WORLD_SIZE / 2;
+  player.hp = player.maxHp;
+  player.elapsed = 0;
+  nextBossAt = Number.POSITIVE_INFINITY;
+  nextMidBossAt = Number.POSITIVE_INFINITY;
+  spawnTimer = Number.POSITIVE_INFINITY;
+  snapCameraToPlayer();
+
+  const healRatio = healPercent / 100;
+  dropEnergy({ boss: true, x: player.x + 82, y: player.y }, healRatio);
+  const collectingPickup = energyPickups.at(-1);
+  collectingPickup.attractDelay = 0;
+  collectingPickup.age = 1;
+  collectingPickup.vx = -120;
+  collectingPickup.vy = 0;
+
+  dropEnergy({ boss: true, x: player.x - 245, y: player.y + 92 }, healRatio);
+  const visiblePickup = energyPickups.at(-1);
+  visiblePickup.attractDelay = 30;
+  visiblePickup.vx = 0;
+  visiblePickup.vy = 0;
+
+  updateHud();
+}
+
+function toggleGameSpeed() {
+  if (game.state !== "playing" || game.pendingHeroChoice || game.pendingStarterChoices > 0 || game.paused) return;
+  game.speedMultiplier = game.speedMultiplier === 2 ? 1 : 2;
+  playSound("ui");
+  updateHud();
+}
+
 function toggleUpgradePause() {
   if (game.state !== "playing" || refs.upgradePanel.classList.contains("hidden") || game.pendingStarterChoices > 0) return;
   game.manualPaused = !game.manualPaused;
@@ -1935,9 +2153,9 @@ function pickUpgradeChoices(pool, count = 3, boostBulletCount = false) {
   return choices;
 }
 
-function calculateEnemyXp(type, hpScale) {
-  const baseXp = type.xp ?? Math.max(1, Math.round((type.hp ?? 10) / 12));
-  return Math.max(1, Math.round(baseXp * hpScale * ENEMY_XP_REWARD_MULTIPLIER));
+function calculateEnemyXp(maxHp, boss = false) {
+  const bossMultiplier = boss ? BOSS_XP_HP_MULTIPLIER : 1;
+  return Math.max(1, Math.round(maxHp * NORMAL_ENEMY_XP_HP_RATIO * bossMultiplier));
 }
 
 function getEnemyLevelBonus() {
@@ -1945,19 +2163,19 @@ function getEnemyLevelBonus() {
 }
 
 function getBossHpLevelScale() {
-  return 1 + getEnemyLevelBonus() * 0.2;
+  return BOSS_STARTING_HP_MULTIPLIER * (1 + BOSS_LEVEL_HP_GROWTH_RATE) ** getEnemyLevelBonus();
 }
 
 function getBossAttackLevelScale() {
-  return 1 + getEnemyLevelBonus() * 0.12;
+  return 1 + getEnemyLevelBonus() * 0.2;
 }
 
 function getNormalEnemyLevelScale() {
-  return 1 + getEnemyLevelBonus() * 0.12;
+  return 1 + getEnemyLevelBonus() * 0.2;
 }
 
 function getNormalEnemyHpLevelScale() {
-  return 1 + getEnemyLevelBonus() * 0.2;
+  return 1.3 * (1 + NORMAL_ENEMY_LEVEL_HP_GROWTH_RATE) ** getEnemyLevelBonus();
 }
 
 function scaleBossDamage(enemy, damage) {
@@ -2103,7 +2321,7 @@ function spawnCommuteProtestStage() {
   playSound("boss");
 
   const count = 100;
-  const hpScale = getNormalEnemyHpLevelScale() * ENEMY_HP_GLOBAL_MULTIPLIER * 1.15 * COMMUTE_PROTEST_HP_MULTIPLIER;
+  const hpScale = getNormalEnemyHpLevelScale() * ENEMY_HP_GLOBAL_MULTIPLIER * ENEMY_STARTING_HP_MULTIPLIER * 1.15 * COMMUTE_PROTEST_HP_MULTIPLIER;
   const attackScale = getNormalEnemyLevelScale();
   for (let i = 0; i < count; i += 1) {
     const angle = (TAU * i) / count + rand(-0.06, 0.06);
@@ -2122,7 +2340,7 @@ function spawnCommuteProtestStage() {
       attackScale,
       radius: 62 * 0.68 * 0.8 * MONSTER_SIZE_SCALE,
       bodySize: 0.9,
-      xp: Math.round(26 * hpScale),
+      xp: calculateEnemyXp(hp),
       score: 34,
       x: point.x,
       y: point.y,
@@ -2152,10 +2370,9 @@ function spawnEnemy(type = null, boss = false) {
   const spawnPoint = getOffscreenSpawnPoint(boss);
   const x = spawnPoint.x;
   const y = spawnPoint.y;
-  const normalScale = boss ? 1 + minute * 0.11 : 1 + Math.min(1.35, minute * 0.08);
   const normalLevelScale = getNormalEnemyLevelScale();
   const levelHpScale = boss ? getBossHpLevelScale() : getNormalEnemyHpLevelScale();
-  const hpScale = normalScale * levelHpScale * ENEMY_HP_GLOBAL_MULTIPLIER * (boss ? 1 : 1.265);
+  const hpScale = levelHpScale * ENEMY_HP_GLOBAL_MULTIPLIER * ENEMY_STARTING_HP_MULTIPLIER * (boss ? 1 : 1.265);
   const attackScale = boss ? getBossAttackLevelScale() : normalLevelScale;
   const enemy = {
     ...chosen,
@@ -2163,11 +2380,11 @@ function spawnEnemy(type = null, boss = false) {
     y,
     hp: chosen.hp * hpScale,
     maxHp: chosen.hp * hpScale,
-    speed: chosen.speed * (boss ? 1.42 * BOSS_SPEED_GLOBAL_MULTIPLIER : 1) * ENEMY_SPEED_GLOBAL_MULTIPLIER,
+    speed: chosen.speed * (boss ? 1.42 * BOSS_SPEED_GLOBAL_MULTIPLIER * BOSS_MOVEMENT_SPEED_MULTIPLIER : 1) * ENEMY_SPEED_GLOBAL_MULTIPLIER,
     damage: chosen.damage * attackScale * ENEMY_DAMAGE_GLOBAL_MULTIPLIER,
     attackScale,
     radius: chosen.radius * (boss ? BOSS_SIZE_SCALE : MONSTER_SIZE_SCALE),
-    xp: calculateEnemyXp(chosen, hpScale),
+    xp: calculateEnemyXp(chosen.hp * hpScale, boss),
     boss,
     angleOffset: Math.random() * TAU,
     cooldown: rand(0.3, 1.1),
@@ -2181,12 +2398,17 @@ function spawnEnemy(type = null, boss = false) {
     flagCooldown: bossSpecialAttackCooldown(),
     spearCooldown: bossBasicAttackCooldown(),
     praiseCooldown: bossBasicAttackCooldown(),
+    midBossProjectileCooldown: midBossRangedAttackCooldown(),
     praiseStunCooldown: bossSpecialAttackCooldown(),
     bubbleCooldown: bossBasicAttackCooldown(),
     giantGumCooldown: bossSpecialAttackCooldown(),
-    danceKickCooldown: bossAttackCooldown(0.7, 1.3),
-    danceStampCooldown: bossSpecialAttackCooldown(),
+    danceKickCooldown: featuredMidBossAttackCooldown(bossAttackCooldown(0.7, 1.3)),
+    danceStampCooldown: featuredMidBossAttackCooldown(bossSpecialAttackCooldown()),
+    tankChargeCooldown: featuredMidBossAttackCooldown(bossAttackCooldown(2.4, 3.5)),
     retreatTimer: 0,
+    jumpState: null,
+    jumpVisualHeight: 0,
+    chargeState: null,
     attackSpeechCooldown: 0,
     boostTimer: 0,
     speedBoostMultiplier: 1,
@@ -2208,24 +2430,53 @@ function drawBossType() {
   return bossBag.pop();
 }
 
+function drawMidBossType() {
+  if (midBossBag.length === 0) {
+    midBossBag = shuffle(midBossTypes);
+  }
+  const boss = midBossBag.pop();
+  midBossIndex += 1;
+  return boss;
+}
+
 function spawnBoss() {
   const base = drawBossType();
   const boss = spawnEnemy({ ...base, weight: () => 0 }, true);
-  const cycle = Math.floor(bossIndex / bossTypes.length);
-  const multiplier = 0.9 + bossIndex * 0.14 + cycle * 0.22;
   const hpBoost = 1.1;
-  const damageMultiplier = 0.82 + bossIndex * 0.06;
-  boss.hp *= multiplier * hpBoost;
+  boss.hp *= hpBoost;
   boss.maxHp = boss.hp;
-  boss.damage *= damageMultiplier;
-  boss.attackScale *= damageMultiplier;
+  boss.damage *= REGULAR_BOSS_DAMAGE_MULTIPLIER;
+  boss.attackScale *= REGULAR_BOSS_DAMAGE_MULTIPLIER;
   boss.score = Math.round(base.score * (1 + bossIndex * 0.25));
-  boss.xp = Math.round(boss.xp * multiplier * hpBoost);
-  boss.radius = (base.radius + Math.min(14, bossIndex * 2)) * BOSS_SIZE_SCALE;
+  boss.xp = calculateEnemyXp(boss.maxHp, true);
+  const typeSizeMultiplier = base.id === "jarvan-84" ? JARVAN_BOSS_SIZE_MULTIPLIER : 1;
+  boss.radius = (base.radius + Math.min(14, bossIndex * 2)) * REGULAR_BOSS_SIZE_SCALE * typeSizeMultiplier;
   bossIndex += 1;
   showBossBanner(base.name, { boss: true });
   playSound("boss");
   updateBgm();
+}
+
+function spawnMidBoss() {
+  const base = drawMidBossType();
+  const boss = spawnEnemy({ ...base, weight: () => 0 }, true);
+  const regularBossHpBoost = 1.1;
+  const spawnHpScale = boss.hp / base.hp;
+  const spawnSpeedScale = boss.speed / base.speed;
+  boss.midBoss = true;
+  boss.hp = REGULAR_BOSS_BASE_HP * spawnHpScale * regularBossHpBoost * MID_BOSS_HP_RATIO;
+  boss.maxHp = boss.hp;
+  boss.speed = REGULAR_BOSS_BASE_SPEED * spawnSpeedScale * MID_BOSS_SPEED_RATIO;
+  boss.damage *= MID_BOSS_DAMAGE_MULTIPLIER;
+  boss.attackScale *= MID_BOSS_DAMAGE_MULTIPLIER;
+  boss.score = Math.round(base.score * (1 + bossIndex * 0.14));
+  boss.xp = calculateEnemyXp(boss.maxHp, true);
+  const typeSizeMultiplier = base.id === "spiderman-man-midboss" ? SPIDERMAN_MID_BOSS_SIZE_MULTIPLIER : 1;
+  boss.radius = (base.radius + Math.min(8, bossIndex)) * MID_BOSS_SIZE_SCALE * typeSizeMultiplier;
+}
+
+function scheduleMidBossBeforeNextBoss(gapSeconds) {
+  nextMidBossAt = player.elapsed + Math.max(12, gapSeconds * MID_BOSS_SCHEDULE_RATIO);
 }
 
 const uiTextAssets = {
@@ -2250,23 +2501,38 @@ function makeUiTextImage(label, className = "") {
 }
 
 function updateBossSchedule() {
-  if (enemies.some((enemy) => enemy.boss)) return;
+  const hasRegularBoss = enemies.some((enemy) => enemy.boss && !enemy.midBoss);
+
+  if (nextSpecialStageAt > 0 && player.elapsed >= nextSpecialStageAt && !hasRegularBoss) {
+    spawnCommuteProtestStage();
+    specialStageUntil = player.elapsed + 24;
+    nextSpecialStageAt = 0;
+    bossWarningFor = 0;
+    return;
+  }
 
   if (specialStageUntil > 0 && player.elapsed < specialStageUntil) return;
 
+  const upcomingBossKey = bossIndex;
+  const timeUntilBoss = nextBossAt - player.elapsed;
+  if (nextMidBossAt <= 0 && timeUntilBoss > 16 && !midBossSpawnMarks.has(upcomingBossKey)) {
+    nextMidBossAt = player.elapsed + Math.max(8, timeUntilBoss * MID_BOSS_SCHEDULE_RATIO);
+  }
+
+  if (nextMidBossAt > 0 && player.elapsed >= nextMidBossAt && player.elapsed + 8 < nextBossAt && !midBossSpawnMarks.has(upcomingBossKey)) {
+    midBossSpawnMarks.add(upcomingBossKey);
+    spawnMidBoss();
+    nextMidBossAt = 0;
+    bossWarningFor = 0;
+    return;
+  }
+
   if (player.elapsed >= nextBossAt) {
-    const shouldSpawnSpecialStage = bossIndex >= 2 && bossIndex <= 8 && bossIndex % 2 === 0;
-    if (shouldSpawnSpecialStage && !specialStageBossMarks.has(bossIndex)) {
-      specialStageBossMarks.add(bossIndex);
-      spawnCommuteProtestStage();
-      specialStageUntil = player.elapsed + 24;
-      nextBossAt = specialStageUntil;
-      bossWarningFor = 0;
-      return;
-    }
+    if (hasRegularBoss) return;
     specialStageUntil = 0;
     spawnBoss();
-    nextBossAt = player.elapsed + 55;
+    nextBossAt = player.elapsed + BOSS_RESPAWN_GAP_SECONDS;
+    nextMidBossAt = 0;
     bossWarningFor = 0;
   }
 }
@@ -2461,7 +2727,7 @@ function spawnCard() {
       y: player.y,
       vx: Math.cos(cardAngle) * speed,
       vy: Math.sin(cardAngle) * speed,
-      damage: Math.round(64 * getWeaponOverlevelDamageMultiplier(level)),
+      damage: scaleNonBasicWeaponDamage(64 * getWeaponLevelDamageMultiplier(level)),
       life: 7.85,
       maxLife: 7.85,
       radius: 27,
@@ -2523,7 +2789,7 @@ function strikeLightning() {
 function getLightningDamageForLevel(level = 1) {
   const safeLevel = Math.max(1, level || 1);
   const utilityLevel = getWeaponUtilityLevel(safeLevel);
-  return Math.round(scaledLevelValue(121, 32, utilityLevel) * 1.105 * 1.3 * 0.8 * getWeaponOverlevelDamageMultiplier(safeLevel));
+  return scaleNonBasicWeaponDamage(scaledLevelValue(121, 32, utilityLevel) * 1.105 * 1.3 * 0.8 * getWeaponLevelDamageMultiplier(safeLevel));
 }
 
 function pickClusterTarget(maxDistance = 900) {
@@ -2616,7 +2882,7 @@ function spawnExpressTrain() {
     vertical,
     width: scaledLevelValue(105, 13, utilityLevel) * trainWidthScale,
     trainLength: scaledLevelValue(554, 34, utilityLevel) * trainLengthScale,
-    damage: scaledLevelValue(147, 42, utilityLevel) * 3 * getWeaponOverlevelDamageMultiplier(level),
+    damage: scaleNonBasicWeaponDamage(scaledLevelValue(147, 42, utilityLevel) * 3 * getWeaponLevelDamageMultiplier(level)),
     push: scaledLevelValue(532, 62, utilityLevel),
     stun: 3,
     bossStun: 0.5,
@@ -2709,7 +2975,7 @@ function explodeCustomerMissile(missile) {
   const level = weapons.customerMissile.level;
   const utilityLevel = getWeaponUtilityLevel(level);
   const radius = scaledLevelValue(66, 12, utilityLevel);
-  const damage = Math.round(scaledLevelValue(56, 24, utilityLevel) * 1.04 * 0.6 * 0.85 * getWeaponOverlevelDamageMultiplier(level));
+  const damage = scaleNonBasicWeaponDamage(scaledLevelValue(56, 24, utilityLevel) * 1.04 * 0.6 * 0.85 * getWeaponLevelDamageMultiplier(level));
   damageZones.push({
     x: missile.x,
     y: missile.y,
@@ -2743,7 +3009,7 @@ function spawnCustomerMissiles() {
       vy: Math.sin(angle) * speed,
       speed,
       turnRate: scaledLevelValue(7.7, 0.5, utilityLevel),
-      damage: Math.round(scaledLevelValue(37, 15, utilityLevel) * 1.04 * 0.85 * getWeaponOverlevelDamageMultiplier(level)),
+      damage: scaleNonBasicWeaponDamage(scaledLevelValue(37, 15, utilityLevel) * 1.04 * 0.85 * getWeaponLevelDamageMultiplier(level)),
       radius: 8,
       life: 3.2,
       target,
@@ -2819,7 +3085,7 @@ function updatePlayer(delta) {
     player.defenseBreakTimer = Math.max(0, player.defenseBreakTimer - delta);
     if (player.defenseBreakTimer <= 0) player.defenseBreakPower = 0;
   }
-  if (player.regenLevel > 0 && player.hp < player.maxHp) {
+  if ((BASE_REGEN_RATIO > 0 || player.regenLevel > 0) && player.hp < player.maxHp) {
     player.regenTimer -= delta;
     if (player.regenTimer <= 0) {
       healPlayer(getRegenHealAmount(), false);
@@ -2894,18 +3160,13 @@ function updatePendingDansoBoomerangs(delta) {
 }
 
 function updateEnemies(delta) {
-  const minute = player.elapsed / 60;
   spawnTimer -= delta;
-  const earlyTimeSpawnBoost = minute < 1 ? 0.72 : minute < 2 ? 0.86 : 1;
-  const earlyLevelSpawnBoost = player.level <= 5 ? 0.92 : 1;
-  const spawnGap = Math.max(0.74, (0.82 - minute * 0.01) * 1.95 * earlyTimeSpawnBoost * earlyLevelSpawnBoost);
   if (spawnTimer <= 0) {
-    const basePack = 1 + Math.floor(minute * 0.21) + (Math.random() < 0.14 + minute * 0.009 ? 1 : 0);
-    const levelSpawnMultiplier = 1 + Math.max(0, player.level - 1) * 0.03;
-    const scaledPack = basePack * levelSpawnMultiplier;
+    const levelSpawnMultiplier = (1 + MONSTER_LEVEL_SPAWN_GROWTH_RATE) ** Math.max(0, player.level - 1);
+    const scaledPack = MONSTER_BASE_PACK_SIZE * levelSpawnMultiplier;
     const pack = Math.floor(scaledPack) + (Math.random() < scaledPack % 1 ? 1 : 0);
     for (let i = 0; i < pack; i += 1) spawnEnemy();
-    spawnTimer = spawnGap;
+    spawnTimer = MONSTER_SPAWN_GAP;
   }
 
   updateBossSchedule();
@@ -2926,6 +3187,14 @@ function updateEnemies(delta) {
     }
     enemy.hitFlash = Math.max(0, enemy.hitFlash - delta);
     enemy.spawnFlash = Math.max(0, (enemy.spawnFlash ?? 0) - delta);
+    if (enemy.chargeState) {
+      updateTankManCharge(enemy, delta);
+      continue;
+    }
+    if (enemy.jumpState) {
+      updateMidBossJump(enemy, delta);
+      continue;
+    }
     if (enemy.stunTimer > 0) {
       enemy.wobble += delta * 0.35;
       continue;
@@ -2951,9 +3220,9 @@ function updateEnemies(delta) {
     if (enemy.special === "commute-protest") {
       speed *= 0.82 + Math.sin(enemy.wobble * 2.2) * 0.08;
     }
-    if (enemy.special === "boss-dance" && enemy.retreatTimer > 0) {
+    if ((enemy.special === "boss-dance" || enemy.special === "boss-spider") && enemy.retreatTimer > 0) {
       angle = angleTo(player, enemy);
-      speed *= 1.9;
+      speed *= enemy.special === "boss-spider" ? 2.05 : 1.9;
       enemy.retreatTimer = Math.max(0, enemy.retreatTimer - delta);
     }
     if (enemy.special === "boss-danso") {
@@ -3004,6 +3273,20 @@ function updateEnemies(delta) {
         enemy.praiseStunCooldown = bossSpecialAttackCooldown();
       }
     }
+    if (["boss-slipper", "boss-red-coat", "boss-floral-fashion"].includes(enemy.special)) {
+      enemy.midBossProjectileCooldown -= delta;
+      if (enemy.midBossProjectileCooldown <= 0) {
+        createMidBossRangedProjectile(enemy);
+        enemy.midBossProjectileCooldown = midBossRangedAttackCooldown();
+      }
+    }
+    if (enemy.special === "boss-rider") {
+      enemy.tankChargeCooldown -= delta;
+      if (enemy.tankChargeCooldown <= 0 && playerDistance < TANK_MAN_CHARGE_MAX_DISTANCE * 1.25) {
+        startTankManCharge(enemy);
+        enemy.tankChargeCooldown = featuredMidBossAttackCooldown(bossAttackCooldown(4.6, 6.2));
+      }
+    }
     if (enemy.special === "boss-gum") {
       enemy.bubbleCooldown -= delta;
       enemy.giantGumCooldown -= delta;
@@ -3022,11 +3305,24 @@ function updateEnemies(delta) {
       enemy.danceStampCooldown -= delta;
       if (enemy.danceKickCooldown <= 0 && playerDistance < 180) {
         createDanceKick(enemy);
-        enemy.danceKickCooldown = bossAttackCooldown(2.0, 3.1);
+        enemy.danceKickCooldown = featuredMidBossAttackCooldown(bossAttackCooldown(2.0, 3.1));
       }
       if (enemy.danceStampCooldown <= 0) {
         createDanceStamp(enemy);
-        enemy.danceStampCooldown = bossSpecialAttackCooldown();
+        enemy.danceStampCooldown = featuredMidBossAttackCooldown(bossSpecialAttackCooldown());
+      }
+    }
+    if (enemy.special === "boss-spider") {
+      speed *= 1.24;
+      enemy.danceKickCooldown -= delta;
+      enemy.danceStampCooldown -= delta;
+      if (enemy.danceKickCooldown <= 0 && playerDistance < 215) {
+        createSpiderSwing(enemy);
+        enemy.danceKickCooldown = featuredMidBossAttackCooldown(bossAttackCooldown(2.1, 3.15));
+      }
+      if (enemy.danceStampCooldown <= 0) {
+        createSpiderDive(enemy);
+        enemy.danceStampCooldown = featuredMidBossAttackCooldown(bossSpecialAttackCooldown());
       }
     }
     if (enemy.special === "luggage" || enemy.special === "boss-luggage") {
@@ -3093,6 +3389,8 @@ function updateEnemies(delta) {
                     ? "버블팝!"
                     : enemy.special === "boss-dance"
                       ? "워킹 워킹"
+                      : enemy.special === "boss-spider"
+                        ? "샤-악!"
                       : "비켜!";
         addSpeechBubble(enemy, line, 1.05);
         enemy.attackSpeechCooldown = 2.2;
@@ -3326,7 +3624,7 @@ function createPraiseThumb(enemy) {
       y: enemy.y + Math.sin(shotAngle) * 42,
       vx: Math.cos(shotAngle) * 304 * BOSS_BASIC_ATTACK_SPEED_MULTIPLIER,
       vy: Math.sin(shotAngle) * 304 * BOSS_BASIC_ATTACK_SPEED_MULTIPLIER,
-      radius: 87.36,
+      radius: PRAISE_THUMB_PROJECTILE_RADIUS,
       damage: scaleBossDamage(enemy, 20),
       life: 2.3,
       maxLife: 2.3,
@@ -3412,7 +3710,7 @@ function createGiantGumBubble(enemy) {
 
 function createDanceKick(enemy) {
   const angle = angleTo(enemy, player);
-  addSpeechBubble(enemy, "츄잉 츄잉", 1.0);
+  addSpeechBubble(enemy, "워킹 워킹", 1.0);
   damageZones.push({
     x: enemy.x,
     y: enemy.y,
@@ -3433,20 +3731,166 @@ function createDanceKick(enemy) {
 
 function createDanceStamp(enemy) {
   addSpeechBubble(enemy, "하이힐 스탬프!", 1.15);
-  damageZones.push({
-    x: player.x,
-    y: player.y,
-    radius: 118,
+  startMidBossJump(enemy, {
+    warningSeconds: DANCE_JUMP_WARNING_SECONDS,
+    radius: 118 * JUMP_LANDING_RADIUS_MULTIPLIER,
     damage: scaleBossDamage(enemy, 26),
     push: 54,
-    life: 0.86,
-    maxLife: 0.86,
     color: "#c77dff",
-    hostile: true,
-    armedAt: 0.34,
-    applied: false,
-    kind: "danceStamp",
+    kind: "danceJumpLanding",
+    jumpHeight: 154,
   });
+}
+
+function createSpiderSwing(enemy) {
+  const angle = angleTo(enemy, player);
+  addSpeechBubble(enemy, "거미보다 빠르다구!", 1.0);
+  damageZones.push({
+    x: enemy.x,
+    y: enemy.y,
+    angle,
+    arc: 1.38,
+    radius: 145,
+    damage: scaleBossDamage(enemy, 22),
+    push: 70,
+    life: 0.38,
+    maxLife: 0.38,
+    color: "#9bf6ff",
+    hostile: true,
+    applied: false,
+    kind: "danceKick",
+  });
+  enemy.retreatTimer = 0.65;
+}
+
+function createSpiderDive(enemy) {
+  addSpeechBubble(enemy, "스윙 어택!", 1.1);
+  startMidBossJump(enemy, {
+    warningSeconds: SPIDER_JUMP_WARNING_SECONDS,
+    radius: 110 * JUMP_LANDING_RADIUS_MULTIPLIER,
+    damage: scaleBossDamage(enemy, 25),
+    push: 58,
+    color: "#9bf6ff",
+    kind: "spiderJumpLanding",
+    jumpHeight: 178,
+  });
+}
+
+function startMidBossJump(enemy, { warningSeconds, radius, damage, push, color, kind, jumpHeight }) {
+  if (enemy.jumpState) return;
+  const targetX = clamp(player.x, radius + 20, WORLD_SIZE - radius - 20);
+  const targetY = clamp(player.y, radius + 20, WORLD_SIZE - radius - 20);
+  const totalLife = warningSeconds + JUMP_LANDING_ACTIVE_SECONDS;
+  enemy.jumpState = {
+    startX: enemy.x,
+    startY: enemy.y,
+    targetX,
+    targetY,
+    elapsed: 0,
+    duration: warningSeconds,
+    height: jumpHeight,
+    color,
+  };
+  damageZones.push({
+    x: targetX,
+    y: targetY,
+    radius,
+    damage,
+    push,
+    life: totalLife,
+    maxLife: totalLife,
+    color,
+    hostile: true,
+    armedAt: warningSeconds / totalLife,
+    applied: false,
+    kind,
+  });
+}
+
+function updateMidBossJump(enemy, delta) {
+  const jump = enemy.jumpState;
+  if (!jump) return;
+  jump.elapsed = Math.min(jump.duration, jump.elapsed + delta);
+  const progress = clamp(jump.elapsed / Math.max(0.001, jump.duration), 0, 1);
+  const eased = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+  enemy.x = jump.startX + (jump.targetX - jump.startX) * eased;
+  enemy.y = jump.startY + (jump.targetY - jump.startY) * eased;
+  enemy.jumpVisualHeight = Math.sin(progress * Math.PI) * jump.height;
+  enemy.wobble += delta * 2.4;
+  if (progress >= 1) {
+    enemy.x = jump.targetX;
+    enemy.y = jump.targetY;
+    enemy.jumpVisualHeight = 0;
+    enemy.jumpState = null;
+    addParticles(enemy.x, enemy.y, jump.color, 28);
+  }
+}
+
+function startTankManCharge(enemy) {
+  if (enemy.chargeState) return;
+  const startX = enemy.x;
+  const startY = enemy.y;
+  const angle = angleTo(enemy, player);
+  const playerDistance = Math.hypot(player.x - startX, player.y - startY);
+  const chargeDistance = clamp(playerDistance + 190, 360, TANK_MAN_CHARGE_MAX_DISTANCE);
+  const targetX = clamp(startX + Math.cos(angle) * chargeDistance, 70, WORLD_SIZE - 70);
+  const targetY = clamp(startY + Math.sin(angle) * chargeDistance, 70, WORLD_SIZE - 70);
+  const totalLife = TANK_MAN_CHARGE_WARNING_SECONDS + TANK_MAN_CHARGE_DURATION_SECONDS;
+  enemy.chargeState = {
+    startX,
+    startY,
+    targetX,
+    targetY,
+    angle,
+    elapsed: 0,
+    warningDuration: TANK_MAN_CHARGE_WARNING_SECONDS,
+    dashDuration: TANK_MAN_CHARGE_DURATION_SECONDS,
+  };
+  addSpeechBubble(enemy, "전차 돌격!", 1.05);
+  damageZones.push({
+    x: startX,
+    y: startY,
+    startX,
+    startY,
+    targetX,
+    targetY,
+    angle,
+    radius: TANK_MAN_CHARGE_PATH_WIDTH / 2,
+    pathWidth: TANK_MAN_CHARGE_PATH_WIDTH,
+    damage: scaleBossDamage(enemy, 28),
+    push: 92,
+    life: totalLife,
+    maxLife: totalLife,
+    color: "#fff3b0",
+    hostile: true,
+    armedAt: TANK_MAN_CHARGE_WARNING_SECONDS / totalLife,
+    applied: false,
+    kind: "tankChargePath",
+  });
+}
+
+function updateTankManCharge(enemy, delta) {
+  const charge = enemy.chargeState;
+  if (!charge) return;
+  charge.elapsed += delta;
+  if (charge.elapsed < charge.warningDuration) {
+    enemy.wobble += delta * 8;
+    return;
+  }
+  const dashProgress = clamp((charge.elapsed - charge.warningDuration) / Math.max(0.001, charge.dashDuration), 0, 1);
+  const eased = 1 - Math.pow(1 - dashProgress, 3);
+  enemy.x = charge.startX + (charge.targetX - charge.startX) * eased;
+  enemy.y = charge.startY + (charge.targetY - charge.startY) * eased;
+  enemy.angleOffset = charge.angle;
+  enemy.wobble += delta * 22;
+  if (Math.random() < 0.7) addParticles(enemy.x, enemy.y, dashProgress < 0.65 ? "#fff3b0" : "#ff6b35", 2);
+  if (dashProgress >= 1) {
+    enemy.x = charge.targetX;
+    enemy.y = charge.targetY;
+    enemy.chargeState = null;
+    addParticles(enemy.x, enemy.y, "#fff3b0", 24);
+    addParticles(enemy.x, enemy.y, "#ff6b35", 16);
+  }
 }
 
 function dropFakeLuggage(enemy) {
@@ -3481,8 +3925,9 @@ function calculateIncomingDamage(amount) {
 }
 
 function getRegenHealAmount() {
-  const regenRatio = BASE_REGEN_RATIO + player.regenLevel * REGEN_UPGRADE_RATIO;
-  return Math.max(1, Math.round(player.maxHp * regenRatio * (player.healMultiplier || 1)));
+  const bonusRegenRatio = player.regenLevel * REGEN_UPGRADE_RATIO * (player.healMultiplier || 1);
+  const regenRatio = BASE_REGEN_RATIO + bonusRegenRatio;
+  return Math.max(1, Math.round(player.maxHp * regenRatio));
 }
 
 function increaseLevelStats() {
@@ -3766,7 +4211,7 @@ function updateBlade(delta = 0) {
     const strapHandleRadius = getStrapHandleRadius();
     const strapLevel = weapons.strapOrbit.level;
     const strapUtilityLevel = getWeaponUtilityLevel(strapLevel);
-    const strapDamage = Math.round(scaledLevelValue(14, 8, strapUtilityLevel) * 1.5 * 2 * (player.meleeDamageMultiplier || 1) * getWeaponOverlevelDamageMultiplier(strapLevel));
+    const strapDamage = Math.round(scaledLevelValue(14, 8, strapUtilityLevel) * 1.5 * 2 * STRAP_DAMAGE_MULTIPLIER * (player.meleeDamageMultiplier || 1) * getWeaponLevelDamageMultiplier(strapLevel));
     for (let i = 0; i < strapCount; i += 1) {
       const strapAngle = weapons.strapOrbit.angle + (TAU * i) / strapCount;
       const strap = {
@@ -3791,6 +4236,34 @@ function updateBlade(delta = 0) {
   }
 }
 
+function createMidBossRangedProjectile(enemy) {
+  const config = {
+    "boss-slipper": { kind: "midBossSlipperShot", line: "슬리퍼 맛 좀 봐!", color: "#7f8aa6" },
+    "boss-red-coat": { kind: "midBossRedFedoraShot", line: "모자는 패션의 완성!", color: "#d62828" },
+    "boss-floral-fashion": { kind: "midBossFloralBagShot", line: "가방 조심해!", color: "#d4778d" },
+  }[enemy.special];
+  if (!config) return;
+
+  const angle = angleTo(enemy, player);
+  const speed = 304 * BOSS_BASIC_ATTACK_SPEED_MULTIPLIER;
+  addSpeechBubble(enemy, config.line, 1.0);
+  damageZones.push({
+    x: enemy.x + Math.cos(angle) * 42,
+    y: enemy.y + Math.sin(angle) * 42,
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    radius: PRAISE_THUMB_PROJECTILE_RADIUS * MID_BOSS_PROJECTILE_SIZE_RATIO,
+    damage: scaleBossDamage(enemy, 20),
+    life: 2.3,
+    maxLife: 2.3,
+    color: config.color,
+    hostile: true,
+    consumeOnHit: true,
+    applied: false,
+    kind: config.kind,
+  });
+}
+
 function damageEnemy(enemy, amount, color = "#fff2a8", { applyAttack = true } = {}) {
   const guarded = enemy.defenseBoostTimer > 0 ? enemy.defenseBoostPower ?? 0 : 0;
   const baseAmount = applyAttack ? applyPlayerAttack(amount) : amount;
@@ -3807,7 +4280,7 @@ function damageEnemy(enemy, amount, color = "#fff2a8", { applyAttack = true } = 
 function getChickenChargeDamage() {
   const expressLevel = Math.max(1, weapons.expressTrain.level || 1);
   const expressUtilityLevel = getWeaponUtilityLevel(expressLevel);
-  const expressDamage = scaledLevelValue(147, 42, expressUtilityLevel) * 3 * getWeaponOverlevelDamageMultiplier(expressLevel);
+  const expressDamage = scaledLevelValue(147, 42, expressUtilityLevel) * 3 * getWeaponLevelDamageMultiplier(expressLevel);
   return Math.max(1, Math.round(expressDamage * 0.5 * 3));
 }
 
@@ -3834,16 +4307,38 @@ function killEnemy(enemy) {
   player.kills += 1;
   const earnedScore = Math.max(1, Math.round(((enemy.score ?? 0) / 10) * getLevelRewardRatio()));
   player.score += earnedScore;
-  addTmoneyPoints(earnedScore, enemy.x, enemy.y, "T-money", false);
+  const tmoneyReward = enemy.boss
+    ? earnedScore
+    : Math.max(1, Math.round(NORMAL_MONSTER_TMONEY_REWARD * getNormalMonsterTmoneyRewardRatio() + 1e-9));
+  addTmoneyPoints(tmoneyReward, enemy.x, enemy.y, "T-money", false);
   dropXp(enemy.x, enemy.y, enemy.xp);
   if (enemy.boss) {
+    if (enemy.midBoss) {
+      addTmoneyPoints(75 + midBossIndex * 25, enemy.x, enemy.y - 18, "중간 보스");
+      dropEnergy(enemy, MID_BOSS_ENERGY_HEAL_RATIO);
+      playSound("bossKill");
+      nextMidBossAt = 0;
+      updateBgm();
+      updateHud();
+      return;
+    }
     player.bossKills += 1;
     addTmoneyPoints(player.bossKills * 100, enemy.x, enemy.y - 18, "보스 보너스");
+    dropEnergy(enemy);
     showBossBanner("보스퇴치", { clear: true });
     playSound("bossKill");
     speakSystemVoice("보스 퇴치 완료", 1600);
     dropBossRewardItems(enemy);
-    nextBossAt = player.elapsed + Math.max(34, 46 - Math.min(12, bossIndex * 2));
+    const nextBossGap = BOSS_RESPAWN_GAP_SECONDS;
+    nextBossAt = player.elapsed + nextBossGap;
+    const shouldScheduleSpecialStage = bossIndex >= 2 && bossIndex <= 8 && bossIndex % 2 === 0 && !specialStageBossMarks.has(bossIndex);
+    if (shouldScheduleSpecialStage) {
+      specialStageBossMarks.add(bossIndex);
+      nextSpecialStageAt = player.elapsed + 3;
+      nextMidBossAt = 0;
+    } else {
+      scheduleMidBossBeforeNextBoss(nextBossGap);
+    }
     bossWarningFor = 0;
     updateBgm();
   } else {
@@ -4511,7 +5006,7 @@ function updateComradeDropSquad(squad, delta) {
 }
 
 function getCompanionBasicSplashDamage() {
-  return Math.max(1, Math.round(player.damage * (player.bulletDamageMultiplier || 1) * COMPANION_BASIC_SPLASH_DAMAGE_RATIO));
+  return Math.max(1, scaleNonBasicWeaponDamage(player.damage * (player.bulletDamageMultiplier || 1) * COMPANION_BASIC_SPLASH_DAMAGE_RATIO));
 }
 
 function addCompanionSplashVisual(x, y, radius, color = "#8ecae6") {
@@ -4646,21 +5141,29 @@ function updateRunnerCompanionPets(delta) {
   }
 }
 
-function dropEnergy(enemy) {
+function dropEnergy(enemy, healRatio = BOSS_ENERGY_HEAL_RATIO) {
   if (!enemy.boss) return;
 
   const count = 1;
-  const heal = Math.round(player.maxHp * 0.2);
+  const heal = Math.round(player.maxHp * healRatio);
+  const healPercent = Math.round(healRatio * 100);
   for (let i = 0; i < count; i += 1) {
     const angle = Math.random() * TAU;
     const distance = rand(12, 54);
     energyPickups.push({
+      kind: "energy",
       x: enemy.x + Math.cos(angle) * distance,
       y: enemy.y + Math.sin(angle) * distance,
       heal: count > 1 ? Math.round(heal / count) : heal,
-      radius: 13,
+      healPercent,
+      radius: 20,
       boss: enemy.boss,
+      autoAttract: true,
       pulse: Math.random() * TAU,
+      age: 0,
+      attractDelay: 0.38,
+      burstTimer: 0.72,
+      trail: [],
       vx: Math.cos(angle) * rand(22, 68),
       vy: Math.sin(angle) * rand(22, 68),
     });
@@ -4730,17 +5233,34 @@ function updateOrbs(delta) {
 function updateEnergyPickups(delta) {
   for (const pickup of [...energyPickups]) {
     pickup.pulse += delta * 7;
+    pickup.age = (pickup.age ?? 0) + delta;
+    pickup.attractDelay = Math.max(0, (pickup.attractDelay ?? 0) - delta);
     pickup.burstTimer = Math.max(0, (pickup.burstTimer ?? 0) - delta);
     const d = Math.hypot(player.x - pickup.x, player.y - pickup.y);
-    const attractRange = pickup.boss ? player.magnet * 2.65 : player.magnet * 1.12;
-    if (d < attractRange) {
+    const attractRange = pickup.autoAttract ? WORLD_SIZE * 2 : pickup.boss ? player.magnet * 2.65 : player.magnet * 1.12;
+    if (d < attractRange && pickup.attractDelay <= 0) {
       const angle = angleTo(pickup, player);
-      const pull = pickup.boss ? 1180 + (1 - d / attractRange) * 3520 : 360 + (1 - d / attractRange) * 1180;
+      const attractProgress = clamp(((pickup.age ?? 0) - 0.38) / 0.9, 0, 1);
+      const pull = pickup.autoAttract
+        ? 900 + attractProgress * 2600 + clamp(1 - d / attractRange, 0, 1) * 1800
+        : pickup.boss
+          ? 1180 + (1 - d / attractRange) * 3520
+          : 360 + (1 - d / attractRange) * 1180;
       pickup.vx += Math.cos(angle) * pull * delta;
       pickup.vy += Math.sin(angle) * pull * delta;
     }
     pickup.x += pickup.vx * delta;
     pickup.y += pickup.vy * delta;
+    if (pickup.kind === "energy") {
+      pickup.trail ??= [];
+      pickup.trail.push({ x: pickup.x, y: pickup.y });
+      if (pickup.trail.length > 20) pickup.trail.shift();
+      const speed = Math.hypot(pickup.vx, pickup.vy);
+      if (speed > 1050) {
+        pickup.vx = (pickup.vx / speed) * 1050;
+        pickup.vy = (pickup.vy / speed) * 1050;
+      }
+    }
     const drag = pickup.boss && pickup.burstTimer > 0 ? 0.965 : 0.92;
     pickup.vx *= drag;
     pickup.vy *= drag;
@@ -4761,9 +5281,19 @@ function updateEnergyPickups(delta) {
         grantFirstAidKit(1, pickup.x, pickup.y);
         addParticles(pickup.x, pickup.y, "#36d399", 18);
       } else {
-        healPlayer(Math.round(pickup.heal));
+        healPlayer(Math.round(pickup.heal), false);
+        const healLabel = `${pickup.healPercent ?? 25}% 체력 회복`;
+        addPopup(
+          healLabel,
+          player.x,
+          player.y - 62,
+          "#b8ffe4",
+          1.25,
+          23,
+        );
         playSound("heal");
-        addParticles(pickup.x, pickup.y, "#36d399", pickup.boss ? 18 : 10);
+        addParticles(player.x, player.y, "#36d399", 36);
+        addParticles(player.x, player.y, "#fff3b0", 18);
       }
       energyPickups.splice(energyPickups.indexOf(pickup), 1);
     }
@@ -4776,6 +5306,7 @@ function healPlayer(amount, showPopup = true) {
   const restored = Math.round(player.hp - before);
   if (showPopup) addPopup(restored > 0 ? `+${restored}` : "MAX", player.x, player.y - 34, "#36d399", 0.7, 16);
   updateHud();
+  return restored;
 }
 
 function useFirstAidKit() {
@@ -4819,10 +5350,19 @@ function useStimPack() {
 }
 
 function getNextXpRequirement(previousRequirement, level) {
-  const growth = 1.22 + Math.min(0.24, level * 0.014);
+  const previousLevelMultiplier = level - 1 <= 10 ? EARLY_LEVEL_XP_REQUIREMENT_MULTIPLIER : 1;
+  const currentLevelMultiplier = level <= 10 ? EARLY_LEVEL_XP_REQUIREMENT_MULTIPLIER : 1;
+  const normalizedPreviousRequirement = Math.round(previousRequirement / previousLevelMultiplier / XP_REQUIREMENT_GLOBAL_MULTIPLIER);
   const levelBonus = 34 + level * 5;
-  const earlyLevelMultiplier = level <= 10 ? 1.2 : 1;
-  return Math.max(12, Math.round((previousRequirement * growth + levelBonus) * player.xpNeedMultiplier * earlyLevelMultiplier));
+  let baseRequirement;
+  if (level <= 10) {
+    const earlyGrowth = 1.22 + level * 0.014;
+    baseRequirement = Math.round((normalizedPreviousRequirement * earlyGrowth + levelBonus) * player.xpNeedMultiplier * 1.2);
+  } else {
+    const lateGrowth = level <= 15 ? 1.24 : level <= 20 ? 1.2 : 1.16;
+    baseRequirement = Math.round((normalizedPreviousRequirement * lateGrowth + levelBonus) * player.xpNeedMultiplier);
+  }
+  return Math.max(12, Math.round(baseRequirement * XP_REQUIREMENT_GLOBAL_MULTIPLIER * currentLevelMultiplier));
 }
 
 function gainXp(amount) {
@@ -5019,7 +5559,15 @@ function updateDamageZones(delta) {
       const active = zone.vx || zone.vy ? true : zone.armedAt ? progress >= zone.armedAt : zone.trap ? zone.life < zone.maxLife - 0.25 : zone.life < zone.maxLife * 0.72;
       const distanceToPlayer = Math.hypot(player.x - zone.x, player.y - zone.y);
       let hitPlayer = distanceToPlayer < zone.radius + player.radius;
-      if (zone.kind === "dansoSwing") {
+      if (zone.kind === "tankChargePath") {
+        const pathX = zone.targetX - zone.startX;
+        const pathY = zone.targetY - zone.startY;
+        const pathLengthSquared = pathX * pathX + pathY * pathY || 1;
+        const projection = clamp(((player.x - zone.startX) * pathX + (player.y - zone.startY) * pathY) / pathLengthSquared, 0, 1);
+        const nearestX = zone.startX + pathX * projection;
+        const nearestY = zone.startY + pathY * projection;
+        hitPlayer = Math.hypot(player.x - nearestX, player.y - nearestY) < (zone.pathWidth ?? zone.radius * 2) / 2 + player.radius;
+      } else if (zone.kind === "dansoSwing") {
         const swingAngle = angleTo(zone, player);
         hitPlayer = hitPlayer && Math.abs(angleDelta(swingAngle, zone.angle)) < zone.arc / 2;
       } else if (zone.kind === "danceKick") {
@@ -5042,7 +5590,7 @@ function updateDamageZones(delta) {
         hurtPlayer(zone.damage);
         zone.applied = true;
         if (zone.push) {
-          const push = zone.kind === "jarvanSpear" || zone.kind === "dansoStab" ? zone.angle : angleTo(zone, player);
+          const push = zone.kind === "jarvanSpear" || zone.kind === "dansoStab" || zone.kind === "tankChargePath" ? zone.angle : angleTo(zone, player);
           player.x += Math.cos(push) * zone.push;
           player.y += Math.sin(push) * zone.push;
         }
@@ -5233,27 +5781,51 @@ function escapeHtml(value) {
 function normalizeLeaderboard(entries) {
   return (Array.isArray(entries) ? entries : [])
     .map((entry) => ({
+      id: String(entry.id || "").slice(0, 80),
       name: String(entry.name || "이름없음").slice(0, 12),
       score: Math.max(0, Math.round(Number(entry.score) || 0)),
       hero: String(entry.hero || "").slice(0, 12),
       survivedSeconds: Math.max(0, Math.round(Number(entry.survivedSeconds) || 0)),
+      createdAt: String(entry.createdAt || ""),
     }))
     .sort((a, b) => b.score - a.score || b.survivedSeconds - a.survivedSeconds)
     .slice(0, LEADERBOARD_LIMIT);
 }
 
-function readLocalLeaderboard() {
+function readPendingLeaderboardSubmissions() {
   try {
-    return normalizeLeaderboard(JSON.parse(localStorage.getItem(LOCAL_LEADERBOARD_KEY) || "[]"));
+    const parsed = JSON.parse(localStorage.getItem(PENDING_LEADERBOARD_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed.filter((entry) => entry && Number(entry.score) > 0) : [];
   } catch {
     return [];
   }
 }
 
-function saveLocalLeaderboard(entries) {
-  const normalized = normalizeLeaderboard(entries);
-  localStorage.setItem(LOCAL_LEADERBOARD_KEY, JSON.stringify(normalized));
-  return normalized;
+function savePendingLeaderboardSubmissions(entries) {
+  localStorage.setItem(PENDING_LEADERBOARD_KEY, JSON.stringify(entries.slice(-20)));
+}
+
+function queuePendingLeaderboardSubmission(entry) {
+  const pending = readPendingLeaderboardSubmissions().filter(
+    (saved) => saved.submissionId !== entry.submissionId,
+  );
+  pending.push(entry);
+  savePendingLeaderboardSubmissions(pending);
+}
+
+function removePendingLeaderboardSubmission(submissionId) {
+  savePendingLeaderboardSubmissions(
+    readPendingLeaderboardSubmissions().filter((entry) => entry.submissionId !== submissionId),
+  );
+}
+
+function createLeaderboardSubmissionId() {
+  if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+  return `score-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+}
+
+function waitMilliseconds(milliseconds) {
+  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 }
 
 function applyLeaderboard(entries) {
@@ -5302,52 +5874,83 @@ function renderLeaderboardMessage(message, detail = "서버 연결을 다시 시
   `;
 }
 
-async function loadLeaderboardSnapshot({ allowEmpty = false } = {}) {
-  try {
-    const url = new URL(LEADERBOARD_SNAPSHOT_URL, window.location.href);
-    url.searchParams.set("t", String(Date.now()));
-    const response = await fetch(url.toString(), {
-      cache: "no-store",
-      headers: { accept: "application/json" },
-    });
-    if (!response.ok) throw new Error("leaderboard_snapshot_load_failed");
-    const data = await response.json();
-    if (!Array.isArray(data.entries)) throw new Error("leaderboard_snapshot_invalid_payload");
-    const snapshotEntries = normalizeLeaderboard(data.entries);
-    if (snapshotEntries.length <= 0 && !allowEmpty) return false;
-    applyLeaderboard(snapshotEntries);
-    return true;
-  } catch {
-    return false;
-  }
+async function requestLeaderboard({ entryId = "" } = {}) {
+  const url = new URL(LEADERBOARD_API, window.location.href);
+  url.searchParams.set("t", String(Date.now()));
+  if (entryId) url.searchParams.set("entryId", entryId);
+  const response = await fetch(url.toString(), {
+    cache: "no-store",
+    headers: { accept: "application/json" },
+  });
+  if (!response.ok) throw new Error("leaderboard_load_failed");
+  const data = await response.json();
+  if (!Array.isArray(data.entries)) throw new Error("leaderboard_invalid_payload");
+  return data;
 }
 
-async function loadLeaderboard() {
+async function loadLeaderboard({ showError = true } = {}) {
   if (!LEADERBOARD_API) {
     leaderboardServerOnline = false;
-    const snapshotReady = await loadLeaderboardSnapshot({ allowEmpty: false });
-    if (!snapshotReady) renderLeaderboardMessage("서버 랭킹 주소가 없습니다");
-    return snapshotReady;
+    if (showError) renderLeaderboardMessage("서버 랭킹 주소가 없습니다");
+    return false;
   }
 
   try {
-    const url = new URL(LEADERBOARD_API, window.location.href);
-    url.searchParams.set("t", String(Date.now()));
-    const response = await fetch(url.toString(), {
-      cache: "no-store",
-      headers: { accept: "application/json" },
-    });
-    if (!response.ok) throw new Error("leaderboard_load_failed");
-    const data = await response.json();
-    if (!Array.isArray(data.entries)) throw new Error("leaderboard_invalid_payload");
+    const data = await requestLeaderboard();
     leaderboardServerOnline = true;
     applyLeaderboard(data.entries);
     return true;
   } catch {
     leaderboardServerOnline = false;
-    const snapshotReady = await loadLeaderboardSnapshot({ allowEmpty: false });
-    if (!snapshotReady) renderLeaderboardMessage("서버 랭킹을 불러오지 못했습니다", "네트워크 또는 캐시를 확인 중입니다");
-    return snapshotReady;
+    if (showError) {
+      leaderboardEntries = [];
+      renderLeaderboardMessage("공유 랭킹 서버에 연결하지 못했습니다", "기기 저장 기록은 공유 랭킹에 표시하지 않습니다");
+    }
+    return false;
+  }
+}
+
+async function submitLeaderboardPayload(payload, { retryDelays = LEADERBOARD_RETRY_DELAYS } = {}) {
+  let lastError = null;
+  for (const delay of retryDelays) {
+    if (delay > 0) await waitMilliseconds(delay);
+    try {
+      const response = await fetch(LEADERBOARD_API, {
+        method: "POST",
+        headers: { "content-type": "application/json", accept: "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error("leaderboard_submit_failed");
+      const submitted = await response.json();
+      const entryId = String(submitted?.entry?.id || "");
+      if (!submitted?.stored || !entryId) throw new Error("leaderboard_store_unconfirmed");
+
+      const verified = await requestLeaderboard({ entryId });
+      if (!verified.found || verified.entry?.id !== entryId) {
+        throw new Error("leaderboard_verify_failed");
+      }
+
+      leaderboardServerOnline = true;
+      applyLeaderboard(verified.entries);
+      return verified.entry;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  leaderboardServerOnline = false;
+  throw lastError || new Error("leaderboard_submit_failed");
+}
+
+async function flushPendingLeaderboardSubmissions() {
+  if (!LEADERBOARD_API || leaderboardSubmitting) return;
+  const pending = readPendingLeaderboardSubmissions();
+  for (const payload of pending) {
+    try {
+      await submitLeaderboardPayload(payload, { retryDelays: [0] });
+      removePendingLeaderboardSubmission(payload.submissionId);
+    } catch {
+      break;
+    }
   }
 }
 
@@ -5357,27 +5960,30 @@ async function prepareLeaderboardEntry() {
   refs.rankForm?.classList.add("hidden");
   if (refs.rankHint) refs.rankHint.textContent = "랭킹 확인 중";
 
-  const serverReady = await loadLeaderboard();
+  const serverReady = await loadLeaderboard({ showError: false });
 
-  if (!serverReady) {
+  if (player.score <= 0) {
     pendingLeaderboardScore = null;
     refs.rankForm?.classList.add("hidden");
-    if (refs.rankHint) refs.rankHint.textContent = "서버 랭킹 미연결: 통합 랭킹 서버 설정이 필요합니다";
+    if (refs.rankHint) refs.rankHint.textContent = "등록할 점수가 없습니다";
     return;
   }
 
-  if (isTopTenScore(player.score)) {
-    pendingLeaderboardScore = {
-      score: player.score,
-      hero: player.heroName,
-      survivedSeconds: Math.floor(player.elapsed),
-    };
-    refs.rankForm?.classList.remove("hidden");
-    if (refs.rankHint) refs.rankHint.textContent = "TOP 10 진입! 이름을 등록하세요";
-    window.setTimeout(() => refs.playerNameInput?.focus(), 120);
-  } else if (refs.rankHint) {
-    refs.rankHint.textContent = "TOP 10 밖입니다";
+  pendingLeaderboardScore = {
+    submissionId: createLeaderboardSubmissionId(),
+    score: player.score,
+    hero: player.heroName,
+    survivedSeconds: Math.floor(player.elapsed),
+  };
+  refs.rankForm?.classList.remove("hidden");
+  if (refs.rankHint) {
+    refs.rankHint.textContent = serverReady
+      ? isTopTenScore(player.score)
+        ? "TOP 10 진입! 이름을 등록하세요"
+        : "점수를 공유 서버에 저장하려면 이름을 등록하세요"
+      : "서버 연결이 불안정합니다. 등록하면 자동으로 재시도합니다";
   }
+  window.setTimeout(() => refs.playerNameInput?.focus(), 120);
 }
 
 async function showStartLeaderboard() {
@@ -5393,21 +5999,12 @@ async function showStartLeaderboard() {
   if (refs.leaderboardOpenButton) refs.leaderboardOpenButton.disabled = true;
   if (refs.rankHint) refs.rankHint.textContent = "랭킹 확인 중";
   renderLeaderboardMessage("서버 랭킹을 불러오는 중", "잠시만 기다려 주세요");
-  await loadLeaderboardSnapshot({ allowEmpty: false });
   const loaded = await loadLeaderboard();
-  if (!loaded || leaderboardEntries.length <= 0) {
-    await loadLeaderboardSnapshot({ allowEmpty: false });
-  }
-  if (leaderboardEntries.length <= 0) {
-    const localEntries = readLocalLeaderboard();
-    if (localEntries.length > 0) applyLeaderboard(localEntries);
-  }
-  if (leaderboardEntries.length <= 0) {
-    renderLeaderboardMessage("랭킹 데이터가 비어 있습니다", "서버 응답을 다시 확인해 주세요");
+  if (loaded && leaderboardEntries.length <= 0) {
+    renderLeaderboardMessage("랭킹 데이터가 비어 있습니다", "첫 번째 기록을 등록해 주세요");
   }
   if (refs.rankHint) {
-    refs.rankHint.textContent =
-      leaderboardServerOnline && leaderboardEntries.length > 0 ? "전체 유저 공유 랭킹" : "공유 랭킹 백업 표시 중";
+    refs.rankHint.textContent = leaderboardServerOnline ? "전체 유저 공유 랭킹" : "공유 랭킹 서버 연결 실패";
   }
   if (refs.leaderboardOpenButton) refs.leaderboardOpenButton.disabled = false;
   playSound("ui");
@@ -5416,32 +6013,29 @@ async function showStartLeaderboard() {
 async function submitLeaderboardEntry(event) {
   event.preventDefault();
   if (!pendingLeaderboardScore || leaderboardSubmitting) return;
-  if (!LEADERBOARD_API || !leaderboardServerOnline) {
-    if (refs.rankHint) refs.rankHint.textContent = "서버 랭킹 미연결: 점수를 공유 저장할 수 없습니다";
+  if (!LEADERBOARD_API) {
+    if (refs.rankHint) refs.rankHint.textContent = "서버 랭킹 주소가 없어 점수를 저장할 수 없습니다";
     return;
   }
   leaderboardSubmitting = true;
   if (refs.submitScoreButton) refs.submitScoreButton.disabled = true;
   const name = refs.playerNameInput?.value.trim() || "이름없음";
+  const payload = { ...pendingLeaderboardScore, name };
+  if (refs.rankHint) refs.rankHint.textContent = "공유 서버에 점수를 저장하고 있습니다";
 
   try {
-    const response = await fetch(LEADERBOARD_API, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ ...pendingLeaderboardScore, name }),
-    });
-    if (!response.ok) throw new Error("leaderboard_submit_failed");
-    const data = await response.json();
-    applyLeaderboard(data.entries);
-    saveLocalLeaderboard(leaderboardEntries);
+    await submitLeaderboardPayload(payload);
+    removePendingLeaderboardSubmission(payload.submissionId);
     pendingLeaderboardScore = null;
     refs.rankForm?.classList.add("hidden");
-    if (refs.rankHint) refs.rankHint.textContent = "서버 랭킹 등록 완료";
+    if (refs.rankHint) refs.rankHint.textContent = "서버 저장 확인 완료 · 모든 기기에 공유됩니다";
     renderLeaderboard();
   } catch {
-    leaderboardServerOnline = false;
-    if (refs.rankHint) refs.rankHint.textContent = "서버 연결 실패: 잠시 후 다시 등록하세요";
-    renderLeaderboard();
+    queuePendingLeaderboardSubmission(payload);
+    pendingLeaderboardScore = null;
+    refs.rankForm?.classList.add("hidden");
+    if (refs.rankHint) refs.rankHint.textContent = "서버 연결 실패 · 네트워크 복구 시 자동으로 다시 저장합니다";
+    renderLeaderboardMessage("점수를 임시 보관했습니다", "연결이 복구되면 공유 서버 저장을 자동 재시도합니다");
     updateHud();
   } finally {
     leaderboardSubmitting = false;
@@ -5579,8 +6173,17 @@ function updateHud() {
   }
   if (refs.pauseButton) {
     refs.pauseButton.disabled = game.state !== "playing" || game.pendingHeroChoice || game.pendingStarterChoices > 0 || (game.paused && !game.manualPaused);
-    refs.pauseButton.textContent = game.manualPaused ? "▶" : "||";
+    const manuallyPaused = game.manualPaused;
+    refs.pauseButton.innerHTML = `<span class="control-icon" aria-hidden="true">${manuallyPaused ? "▶" : "❚❚"}</span><span>${manuallyPaused ? "재생" : "일시정지"}</span>`;
+    refs.pauseButton.setAttribute("aria-label", manuallyPaused ? "재생" : "일시정지");
     refs.pauseButton.classList.toggle("active", game.manualPaused);
+  }
+  if (refs.speedButton) {
+    refs.speedButton.disabled = game.state !== "playing" || game.pendingHeroChoice || game.pendingStarterChoices > 0 || game.paused;
+    const doubleSpeed = game.speedMultiplier === 2;
+    refs.speedButton.innerHTML = `<span class="control-icon" aria-hidden="true">${doubleSpeed ? "2x" : "1x"}</span><span>${doubleSpeed ? "2배속" : "1배속"}</span>`;
+    refs.speedButton.setAttribute("aria-label", doubleSpeed ? "2배속, 누르면 1배속" : "1배속, 누르면 2배속");
+    refs.speedButton.classList.toggle("active", doubleSpeed);
   }
   const chipPower = (level) => clamp((Number(level) || 1) / 7, 0.16, 1);
   const basicAttackName = getBasicAttackName();
@@ -6072,8 +6675,19 @@ function drawEnemy(enemy) {
   const cullTop = -visualTop - cullPadding;
   const cullBottom = viewHeight + visualBottom + cullPadding;
   if (p.x < cullLeft || p.x > cullRight || p.y < cullTop || p.y > cullBottom) return;
+  const jumpHeight = enemy.jumpVisualHeight ?? 0;
+  if (jumpHeight > 0) {
+    ctx.save();
+    const shadowScale = 1 - clamp(jumpHeight / 220, 0, 0.58);
+    ctx.globalAlpha = 0.34 * shadowScale;
+    ctx.fillStyle = "#020609";
+    ctx.beginPath();
+    ctx.ellipse(p.x, p.y + enemy.radius * 0.72, imageWidth * 0.34 * shadowScale, enemy.radius * 0.52 * shadowScale, 0, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+  }
   ctx.save();
-  ctx.translate(p.x, p.y);
+  ctx.translate(p.x, p.y - jumpHeight);
   ctx.save();
   ctx.rotate(enemy.wobble * 0.25);
   if (enemy.spawnFlash > 0) {
@@ -7676,6 +8290,27 @@ function drawEnergyPickups() {
     const pulse = 1 + Math.sin(pickup.pulse) * 0.12;
     const size = pickup.radius * pulse;
 
+    if (pickup.kind === "energy" && pickup.trail?.length > 1) {
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.lineCap = "round";
+      for (let i = 1; i < pickup.trail.length; i += 1) {
+        const from = worldToScreen(pickup.trail[i - 1].x, pickup.trail[i - 1].y);
+        const to = worldToScreen(pickup.trail[i].x, pickup.trail[i].y);
+        const alpha = i / pickup.trail.length;
+        ctx.strokeStyle = `rgba(54, 211, 153, ${alpha * 0.72})`;
+        ctx.lineWidth = 2 + alpha * 8;
+        ctx.beginPath();
+        ctx.moveTo(from.x, from.y);
+        ctx.lineTo(to.x, to.y);
+        ctx.stroke();
+        ctx.strokeStyle = `rgba(255, 243, 176, ${alpha * 0.48})`;
+        ctx.lineWidth = 1 + alpha * 3;
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
     ctx.save();
     ctx.translate(p.x, p.y);
     if (pickup.boss) {
@@ -7694,6 +8329,50 @@ function drawEnergyPickups() {
       ctx.arc(0, 0, size * (1.55 + burstRatio * 0.55), 0, TAU);
       ctx.fill();
       ctx.restore();
+    }
+    if (pickup.kind === "energy") {
+      const flight = clamp(((pickup.age ?? 0) - 0.38) / 0.9, 0, 1);
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.rotate(pickup.pulse * 0.12);
+      ctx.strokeStyle = "rgba(255, 243, 176, 0.92)";
+      ctx.lineWidth = 3.5;
+      ctx.setLineDash([8, 6]);
+      ctx.beginPath();
+      ctx.arc(0, 0, size * (1.36 + flight * 0.18), 0, TAU);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.strokeStyle = "rgba(184, 255, 228, 0.78)";
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.arc(0, 0, size * 1.08, -1.05, 1.05);
+      ctx.arc(0, 0, size * 1.08, Math.PI - 1.05, Math.PI + 1.05);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.shadowColor = "#36d399";
+      ctx.shadowBlur = 34;
+      const energyGlow = ctx.createRadialGradient(0, 0, size * 0.08, 0, 0, size * 1.05);
+      energyGlow.addColorStop(0, "#ffffff");
+      energyGlow.addColorStop(0.28, "#b8ffe4");
+      energyGlow.addColorStop(0.68, "#36d399");
+      energyGlow.addColorStop(1, "rgba(11, 107, 94, 0.2)");
+      ctx.fillStyle = energyGlow;
+      ctx.strokeStyle = "#fff3b0";
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.arc(0, 0, size, 0, TAU);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.shadowBlur = 12;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(-size * 0.18, -size * 0.58, size * 0.36, size * 1.16);
+      ctx.fillRect(-size * 0.58, -size * 0.18, size * 1.16, size * 0.36);
+      ctx.shadowBlur = 0;
+
+      ctx.restore();
+      continue;
     }
     if (pickup.kind === "firstAid") {
       ctx.shadowColor = "#b8ffe4";
@@ -7878,6 +8557,148 @@ function drawDamageZones() {
     const p = worldToScreen(zone.x, zone.y);
     const progress = 1 - zone.life / zone.maxLife;
     ctx.save();
+    if (zone.kind === "tankChargePath") {
+      const target = worldToScreen(zone.targetX, zone.targetY);
+      const dx = target.x - p.x;
+      const dy = target.y - p.y;
+      const length = Math.hypot(dx, dy) || 1;
+      const angle = Math.atan2(dy, dx);
+      const warningEnd = zone.armedAt ?? 0.78;
+      const warningProgress = clamp(progress / Math.max(0.001, warningEnd), 0, 1);
+      const charging = progress >= warningEnd;
+      const pulse = 0.5 + Math.sin(player.elapsed * 28) * 0.5;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(angle);
+      ctx.globalCompositeOperation = "lighter";
+      ctx.lineCap = "round";
+      ctx.shadowColor = charging ? "#ff6b35" : "#fff3b0";
+      ctx.shadowBlur = charging ? 34 : 18 + pulse * 18;
+
+      ctx.strokeStyle = charging ? "rgba(255, 107, 53, 0.62)" : "rgba(255, 209, 102, 0.18)";
+      ctx.lineWidth = (zone.pathWidth ?? 74) * (charging ? 0.72 : 0.48 + pulse * 0.12);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(length, 0);
+      ctx.stroke();
+
+      ctx.strokeStyle = charging ? "rgba(255,255,255,0.98)" : `rgba(255, 247, 214, ${0.62 + pulse * 0.3})`;
+      ctx.lineWidth = charging ? 10 : 4 + pulse * 3;
+      ctx.setLineDash(charging ? [] : [30, 18]);
+      ctx.lineDashOffset = -player.elapsed * 190;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(length, 0);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      if (!charging) {
+        const sweepX = length * warningProgress;
+        const gradient = ctx.createLinearGradient(sweepX - 90, 0, sweepX + 40, 0);
+        gradient.addColorStop(0, "rgba(255,255,255,0)");
+        gradient.addColorStop(0.72, "rgba(255,255,255,0.96)");
+        gradient.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = (zone.pathWidth ?? 74) * 0.82;
+        ctx.beginPath();
+        ctx.moveTo(Math.max(0, sweepX - 110), 0);
+        ctx.lineTo(Math.min(length, sweepX + 50), 0);
+        ctx.stroke();
+        ctx.fillStyle = "rgba(255,255,255,0.88)";
+        for (let x = 95; x < length - 30; x += 110) {
+          ctx.beginPath();
+          ctx.moveTo(x + 24, 0);
+          ctx.lineTo(x - 10, -17);
+          ctx.lineTo(x - 10, 17);
+          ctx.closePath();
+          ctx.fill();
+        }
+      } else {
+        ctx.strokeStyle = "rgba(255, 209, 102, 0.78)";
+        ctx.lineWidth = 3;
+        for (const offset of [-28, 28]) {
+          ctx.beginPath();
+          ctx.moveTo(0, offset);
+          ctx.lineTo(length, offset * 0.34);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+      continue;
+    }
+    if (zone.kind === "danceJumpLanding" || zone.kind === "spiderJumpLanding") {
+      const warningEnd = zone.armedAt ?? 0.78;
+      const warningProgress = clamp(progress / Math.max(0.001, warningEnd), 0, 1);
+      const landed = progress >= warningEnd;
+      const pulse = 0.5 + Math.sin(player.elapsed * 14) * 0.5;
+      const warningImage = zone.kind === "spiderJumpLanding" ? spiderJumpWarningImage : danceJumpWarningImage;
+      const impactImage = zone.kind === "spiderJumpLanding" ? spiderJumpImpactImage : danceJumpImpactImage;
+      ctx.translate(p.x, p.y);
+      ctx.globalCompositeOperation = "lighter";
+      ctx.fillStyle = zone.kind === "spiderJumpLanding" ? "rgba(155, 246, 255, 0.12)" : "rgba(199, 125, 255, 0.14)";
+      ctx.strokeStyle = zone.color;
+      ctx.lineWidth = landed ? 8 : 4 + pulse * 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, zone.radius, 0, TAU);
+      ctx.fill();
+      ctx.stroke();
+
+      if (!landed && canDrawGameImage(warningImage)) {
+        const warningSize = zone.radius * (2.08 + pulse * 0.08);
+        ctx.save();
+        ctx.rotate(player.elapsed * (zone.kind === "spiderJumpLanding" ? -0.24 : 0.3));
+        ctx.globalAlpha = 0.68 + pulse * 0.22;
+        ctx.drawImage(warningImage, -warningSize / 2, -warningSize / 2, warningSize, warningSize);
+        ctx.restore();
+      }
+
+      ctx.globalAlpha = 0.88;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 4;
+      ctx.setLineDash([12, 9]);
+      ctx.beginPath();
+      ctx.arc(0, 0, zone.radius * Math.max(0.12, 1 - warningProgress * 0.88), 0, TAU);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.globalAlpha = 0.74;
+      ctx.lineWidth = 3;
+      if (zone.kind === "spiderJumpLanding") {
+        for (let i = 0; i < 8; i += 1) {
+          const angle = (TAU * i) / 8;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(Math.cos(angle) * zone.radius * 0.72, Math.sin(angle) * zone.radius * 0.72);
+          ctx.stroke();
+        }
+        for (const ratio of [0.28, 0.5, 0.72]) {
+          ctx.beginPath();
+          ctx.arc(0, 0, zone.radius * ratio, 0, TAU);
+          ctx.stroke();
+        }
+      } else {
+        ctx.save();
+        ctx.rotate(-0.35);
+        ctx.strokeRect(-zone.radius * 0.13, -zone.radius * 0.48, zone.radius * 0.26, zone.radius * 0.66);
+        ctx.strokeRect(-zone.radius * 0.1, zone.radius * 0.18, zone.radius * 0.2, zone.radius * 0.24);
+        ctx.restore();
+      }
+      if (landed) {
+        const landingProgress = clamp((progress - warningEnd) / Math.max(0.001, 1 - warningEnd), 0, 1);
+        const landingAlpha = clamp(zone.life / JUMP_LANDING_ACTIVE_SECONDS, 0, 1);
+        if (canDrawGameImage(impactImage)) {
+          const impactEase = 1 - Math.pow(1 - landingProgress, 3);
+          const impactSize = zone.radius * (1.35 + impactEase * 1.55);
+          ctx.save();
+          ctx.globalCompositeOperation = "source-over";
+          ctx.rotate((zone.kind === "spiderJumpLanding" ? -1 : 1) * landingProgress * 0.18);
+          ctx.globalAlpha = landingAlpha * 0.78;
+          ctx.drawImage(impactImage, -impactSize / 2, -impactSize / 2, impactSize, impactSize);
+          ctx.restore();
+        }
+      }
+      ctx.restore();
+      continue;
+    }
     if (zone.kind === "fistExplosion") {
       const alpha = clamp(zone.life / zone.maxLife, 0, 1);
       const burstRadius = zone.radius * (0.34 + progress * 0.9);
@@ -8492,10 +9313,19 @@ function drawDamageZones() {
       ctx.arc(0, 0, zone.radius * 1.08, 0, TAU);
       ctx.fill();
       ctx.globalAlpha = 0.96;
-      ctx.strokeStyle = "#8d5524";
-      ctx.lineWidth = Math.max(7, zone.radius * 0.17);
+      ctx.shadowColor = "#f9c74f";
+      ctx.shadowBlur = 18;
       ctx.lineCap = "round";
       const stickLength = Math.max(82, zone.radius * 1.92);
+      ctx.strokeStyle = "#fff3b0";
+      ctx.lineWidth = Math.max(12, zone.radius * 0.24);
+      ctx.beginPath();
+      ctx.moveTo(-stickLength / 2, 0);
+      ctx.lineTo(stickLength / 2, 0);
+      ctx.stroke();
+      ctx.shadowBlur = 8;
+      ctx.strokeStyle = "#8d5524";
+      ctx.lineWidth = Math.max(7, zone.radius * 0.17);
       ctx.beginPath();
       ctx.moveTo(-stickLength / 2, 0);
       ctx.lineTo(stickLength / 2, 0);
@@ -8545,13 +9375,18 @@ function drawDamageZones() {
       const billWidth = zone.radius * 2.8;
       const billHeight = zone.radius * 1.55;
       ctx.globalAlpha = 0.95;
-      ctx.shadowColor = "#fff3b0";
-      ctx.shadowBlur = 12;
+      ctx.shadowColor = "#80ffdb";
+      ctx.shadowBlur = 18;
       ctx.fillStyle = "#7cffc7";
-      ctx.strokeStyle = "#ffe066";
-      ctx.lineWidth = 4;
+      ctx.strokeStyle = "#fff3b0";
+      ctx.lineWidth = 7;
       roundedRect(-billWidth / 2, -billHeight / 2, billWidth, billHeight, 7);
       ctx.fill();
+      ctx.stroke();
+      ctx.shadowBlur = 7;
+      ctx.strokeStyle = "#36d399";
+      ctx.lineWidth = 3;
+      roundedRect(-billWidth / 2, -billHeight / 2, billWidth, billHeight, 7);
       ctx.stroke();
       ctx.strokeStyle = "#0b6b5e";
       ctx.lineWidth = 2;
@@ -8572,12 +9407,20 @@ function drawDamageZones() {
       ctx.translate(p.x, p.y);
       ctx.globalCompositeOperation = "lighter";
       ctx.globalAlpha = 0.75;
+      ctx.shadowColor = isGiant ? "#ff4991" : "#ff8fab";
+      ctx.shadowBlur = isGiant ? 24 : 18;
       ctx.fillStyle = "rgba(255, 143, 171, 0.62)";
-      ctx.strokeStyle = "#ffc2d1";
-      ctx.lineWidth = isGiant ? 5 : 3;
+      ctx.strokeStyle = "#fff3e3";
+      ctx.lineWidth = isGiant ? 10 : 7;
       ctx.beginPath();
       ctx.arc(0, 0, zone.radius * (0.9 + shine * 0.08), 0, TAU);
       ctx.fill();
+      ctx.stroke();
+      ctx.shadowBlur = isGiant ? 12 : 8;
+      ctx.strokeStyle = "#ff8fab";
+      ctx.lineWidth = isGiant ? 5 : 3;
+      ctx.beginPath();
+      ctx.arc(0, 0, zone.radius * (0.9 + shine * 0.08), 0, TAU);
       ctx.stroke();
       ctx.globalAlpha = isGiant ? 0.95 : 0.85;
       ctx.fillStyle = "rgba(255,255,255,0.72)";
@@ -8594,7 +9437,9 @@ function drawDamageZones() {
       const size = zone.radius * 2.35;
       ctx.globalAlpha = 0.96;
       if (praiseThumbProjectileImage.complete && praiseThumbProjectileImage.naturalWidth > 0) {
+        ctx.filter = "drop-shadow(0 0 3px #fff3b0) drop-shadow(0 0 9px #c77dff)";
         ctx.drawImage(praiseThumbProjectileImage, -size / 2, -size / 2, size, size);
+        ctx.filter = "none";
       } else {
         ctx.fillStyle = "#ffbc80";
         ctx.strokeStyle = "#5c2a18";
@@ -8605,6 +9450,36 @@ function drawDamageZones() {
         ctx.roundRect(-size * 0.28, size * 0.16, size * 0.52, size * 0.2, size * 0.09);
         ctx.fill();
         ctx.stroke();
+      }
+      ctx.restore();
+      continue;
+    }
+
+    if (["midBossSlipperShot", "midBossRedFedoraShot", "midBossFloralBagShot"].includes(zone.kind)) {
+      const projectileImage =
+        zone.kind === "midBossSlipperShot"
+          ? midBossSlipperProjectileImage
+          : zone.kind === "midBossRedFedoraShot"
+            ? midBossRedFedoraProjectileImage
+            : midBossFloralBagProjectileImage;
+      ctx.translate(p.x, p.y);
+      const travelAngle = Math.atan2(zone.vy ?? 0, zone.vx ?? 1);
+      const spinDirection = zone.kind === "midBossRedFedoraShot" ? 1 : -1;
+      ctx.rotate(travelAngle + progress * Math.PI * 2.4 * spinDirection);
+      const size = zone.radius * 2.35 * MID_BOSS_PROJECTILE_VISUAL_SCALE;
+      ctx.globalAlpha = 0.98;
+      if (projectileImage.complete && projectileImage.naturalWidth > 0) {
+        const aspect = projectileImage.naturalWidth / Math.max(1, projectileImage.naturalHeight);
+        const drawWidth = aspect >= 1 ? size : size * aspect;
+        const drawHeight = aspect >= 1 ? size / aspect : size;
+        ctx.filter = `drop-shadow(0 0 3px #fff3b0) drop-shadow(0 0 9px ${zone.color})`;
+        ctx.drawImage(projectileImage, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+        ctx.filter = "none";
+      } else {
+        ctx.fillStyle = zone.color;
+        ctx.beginPath();
+        ctx.arc(0, 0, size / 2, 0, TAU);
+        ctx.fill();
       }
       ctx.restore();
       continue;
@@ -8824,6 +9699,12 @@ function drawDamageZones() {
       ctx.lineTo(-16, 14);
       ctx.closePath();
       ctx.fill();
+      ctx.shadowColor = "#ffd166";
+      ctx.shadowBlur = 16;
+      ctx.strokeStyle = "#fff3b0";
+      ctx.lineWidth = 6;
+      ctx.stroke();
+      ctx.shadowBlur = 6;
       ctx.strokeStyle = "#4a2c08";
       ctx.lineWidth = 2.4;
       ctx.stroke();
@@ -9235,7 +10116,13 @@ function render() {
 function frame(now) {
   const delta = Math.min(0.035, (now - lastFrame) / 1000 || 0);
   lastFrame = now;
-  update(delta);
+  let remaining = delta * (game.speedMultiplier ?? 1);
+  while (remaining > 0) {
+    const step = Math.min(0.035, remaining);
+    update(step);
+    remaining -= step;
+    if (game.state !== "playing" || game.paused || !player.alive) break;
+  }
   updateBgm();
   render();
   requestAnimationFrame(frame);
@@ -9333,12 +10220,16 @@ refs.taserButton?.addEventListener("click", useTaserGun);
 refs.chickenButton?.addEventListener("click", useChickenBreast);
 refs.stimButton?.addEventListener("click", useStimPack);
 refs.pauseButton?.addEventListener("click", togglePause);
+refs.speedButton?.addEventListener("click", toggleGameSpeed);
 refs.upgradePauseButton?.addEventListener("click", toggleUpgradePause);
 refs.trainingButton?.addEventListener("click", openTrainingPanel);
 refs.trainingCloseButton?.addEventListener("click", closeTrainingPanel);
 refs.trainingWeaponTab?.addEventListener("click", () => switchTrainingTab("weapon"));
 refs.trainingPassiveTab?.addEventListener("click", () => switchTrainingTab("passive"));
 refs.rankForm?.addEventListener("submit", submitLeaderboardEntry);
+window.addEventListener("online", () => {
+  flushPendingLeaderboardSubmissions().catch(() => undefined);
+});
 
 refs.app.addEventListener("pointerdown", (event) => {
   if (shouldIgnoreMovePointer(event)) return;
@@ -9388,12 +10279,16 @@ refs.app.addEventListener(
 
 resize();
 renderCodex();
-loadLeaderboard().catch(() => {
-  if (refs.rankHint) refs.rankHint.textContent = "Loading ranking";
-});
+loadLeaderboard()
+  .then(() => flushPendingLeaderboardSubmissions())
+  .catch(() => {
+    if (refs.rankHint) refs.rankHint.textContent = "공유 랭킹 서버 연결 실패";
+  });
 const previewMode = new URLSearchParams(window.location.search).get("preview");
 if (["pacemaker", "reserve", "police"].includes(previewMode)) {
   setupAllyPreview(previewMode);
+} else if (["energy25", "energy10"].includes(previewMode)) {
+  setupEnergyPreview(previewMode === "energy10" ? 10 : 25);
 }
 updateHud();
 requestAnimationFrame(frame);

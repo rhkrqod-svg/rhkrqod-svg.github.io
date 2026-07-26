@@ -38,9 +38,13 @@
       </div>
 
       <section class="hud top-hud" aria-label="게임 상태">
-        <div class="stat">
+        <div class="stat level-stat">
           <span>레벨</span>
           <strong id="level">1</strong>
+          <div class="level-controls" aria-label="게임 조작">
+            <button id="pauseButton" class="pause-button" type="button" aria-label="일시정지"><span class="control-icon" aria-hidden="true">❚❚</span><span>일시정지</span></button>
+            <button id="speedButton" class="speed-button" type="button" aria-label="게임 속도 변경"><span class="control-icon" aria-hidden="true">1x</span><span>1배속</span></button>
+          </div>
         </div>
         <div class="stat">
           <span>시간</span>
@@ -116,8 +120,6 @@
         <strong id="stimCount">0</strong>
       </button>
 
-      <button id="pauseButton" class="hud pause-button" type="button" aria-label="일시정지">Ⅱ</button>
-
       <aside class="hud codex" aria-label="빌런 도감">
         <strong>출몰 빌런</strong>
         <div id="codexList"></div>
@@ -191,8 +193,37 @@
     <script type="module" src="/src/main.js"></script>
     <script>
       if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-          navigator.serviceWorker.register("/sw.js").then((registration) => registration.update()).catch(() => {});
+        window.addEventListener("load", async () => {
+          const isLocalPreview = ["localhost", "127.0.0.1", "::1"].includes(location.hostname);
+
+          if (isLocalPreview) {
+            const hadController = Boolean(navigator.serviceWorker.controller);
+            const registrations = await navigator.serviceWorker.getRegistrations().catch(() => []);
+            await Promise.all(registrations.map((registration) => registration.unregister()));
+
+            if ("caches" in window) {
+              const cacheNames = await caches.keys().catch(() => []);
+              await Promise.all(
+                cacheNames
+                  .filter((name) => name.startsWith("subway-villain-hunter"))
+                  .map((name) => caches.delete(name))
+              );
+            }
+
+            if (hadController && !sessionStorage.getItem("local-sw-cleared-20260710")) {
+              sessionStorage.setItem("local-sw-cleared-20260710", "1");
+              location.reload();
+            }
+            return;
+          }
+
+          navigator.serviceWorker
+            .register("/sw.js?v=20260710", { updateViaCache: "none" })
+            .then((registration) => {
+              registration.waiting?.postMessage("SKIP_WAITING");
+              return registration.update();
+            })
+            .catch(() => {});
         });
       }
     </script>
