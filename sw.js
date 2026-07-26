@@ -1,7 +1,6 @@
-const CACHE_NAME = "subway-villain-hunter-v18-20260716";
+const CACHE_NAME = "subway-villain-hunter-v19-20260726";
 const CORE_ASSETS = [
   "/",
-  "/leaderboard-snapshot.json",
   "/manifest.webmanifest",
   "/assets/images/start-screen.png",
   "/assets/icons/icon-192.png",
