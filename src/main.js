@@ -240,11 +240,11 @@ const SLOW_BASIC_ATTACK_HERO_COOLDOWN_MULTIPLIER = 1.69;
 const heroTypes = [
   {
     id: "gae-hwanam",
-    name: "병우",
+    name: "개화남",
     image: "/assets/heroes/gae-hwanam-cutout.png",
     cardImage: "/assets/heroes/gae-hwanam-cutout.png",
     chickenImage: "/assets/heroes/byeongu-chicken-form.png",
-    quote: "정의는 방향이 아니라 선택입니다.",
+    quote: "I'm not very angry",
     hp: 120,
     maxHp: 120,
     atk: 90,
@@ -256,11 +256,11 @@ const heroTypes = [
   },
   {
     id: "gae-hwani",
-    name: "희빈",
+    name: "옥만춘",
     image: "/assets/heroes/gae-hwani-cutout.png",
     cardImage: "/assets/heroes/gae-hwani-cutout.png",
     chickenImage: "/assets/heroes/heebin-chicken-form.png",
-    quote: "작은 용기 하나가 내일을 바꿉니다.",
+    quote: "조용히 해. 자리에 앉아!",
     hp: 100,
     maxHp: 100,
     atk: 120,
@@ -5779,12 +5779,13 @@ function escapeHtml(value) {
 }
 
 function normalizeLeaderboard(entries) {
+  const renamedHeroes = { 병우: "개화남", 계화남: "개화남", 희빈: "옥만춘" };
   return (Array.isArray(entries) ? entries : [])
     .map((entry) => ({
       id: String(entry.id || "").slice(0, 80),
       name: String(entry.name || "이름없음").slice(0, 12),
       score: Math.max(0, Math.round(Number(entry.score) || 0)),
-      hero: String(entry.hero || "").slice(0, 12),
+      hero: String(renamedHeroes[entry.hero] || entry.hero || "").slice(0, 12),
       survivedSeconds: Math.max(0, Math.round(Number(entry.survivedSeconds) || 0)),
       createdAt: String(entry.createdAt || ""),
     }))
