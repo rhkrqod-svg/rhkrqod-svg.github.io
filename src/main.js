@@ -272,11 +272,11 @@ const heroTypes = [
   },
   {
     id: "juyeon",
-    name: "주연",
+    name: "강춘미",
     image: "/assets/heroes/juyeon-cutout.png",
     cardImage: "/assets/heroes/juyeon-card-tight.png",
     chickenImage: "/assets/heroes/juyeon-chicken-form.png",
-    quote: "그날 빌런은 떠올렸다, 지배 당해왔던 공포를",
+    quote: "오늘도 정의를 위해 달린다.",
     hp: 90,
     maxHp: 90,
     atk: 135,
@@ -5779,7 +5779,7 @@ function escapeHtml(value) {
 }
 
 function normalizeLeaderboard(entries) {
-  const renamedHeroes = { 병우: "개화남", 계화남: "개화남", 희빈: "옥만춘" };
+  const renamedHeroes = { 병우: "개화남", 계화남: "개화남", 희빈: "옥만춘", 주연: "강춘미" };
   return (Array.isArray(entries) ? entries : [])
     .map((entry) => ({
       id: String(entry.id || "").slice(0, 80),
